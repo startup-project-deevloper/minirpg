@@ -1,3 +1,7 @@
+/* Credits
+* Asset Pack:
+* https://pixel-poem.itch.io/dungeon-assetpuck
+*/
 import {
   init,
   GameLoop,

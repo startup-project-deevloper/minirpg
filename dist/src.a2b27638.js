@@ -4157,6 +4157,10 @@ var _kontra = require("kontra");
 
 var _helpers = require("./helpers");
 
+/* Credits
+* Asset Pack:
+* https://pixel-poem.itch.io/dungeon-assetpuck
+*/
 var _init = (0, _kontra.init)(),
     canvas = _init.canvas;
 
@@ -4305,7 +4309,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64152" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64255" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
