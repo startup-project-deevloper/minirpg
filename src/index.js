@@ -6,27 +6,23 @@
 import {
   init,
   GameLoop,
-  Sprite,
   load,
   TileEngine,
   dataAssets,
-  imageAssets,
   keyPressed,
-  initKeys,
-  SpriteSheet
+  initKeys
 } from "kontra";
-
 import Cache from "./cache";
-import { circleCollision, uniqueId } from "./helpers";
-import ConversationIterator from "./conversationIterator";
-import { mainFlow } from "./data";
+import { circleCollision } from "./helpers";
+import Entity from "./entity";
+import StateMachine from "./fsm";
+import blankState from "./states/blankState";
+import startConvo from "./states/startConvo";
 
 const gameCache = Cache.create("gameCache");
 gameCache.add("progress", {
   storyProgress: null
 });
-
-console.log(gameCache.get("progress"));
 
 const { canvas } = init();
 
@@ -38,101 +34,6 @@ ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 ctx.scale(3, 3);
 
-const State = ({ id, onEntry = () => {}, onExit = () => {} }) => {
-  let isComplete = false;
-
-  return {
-    id,
-    isComplete,
-    enter: props => {
-      console.log("Player entered a conversational state:");
-      console.log(props);
-
-      const convoIterator = ConversationIterator({
-        collection: mainFlow,
-        onChatComplete: lastPositionSaved => {
-          console.log("Exited:", lastPositionSaved);
-        },
-        onChainProgress: lastNodeId => {
-          gameCache.set("progress", {
-            storyProgress: lastNodeId
-          });
-        }
-      });
-
-      // Example starter convo
-      const val = convoIterator.goToExact("m1");
-      console.log(val);
-
-      onEntry(props);
-    },
-    update: () => {
-      //...
-    },
-    exit: () => {
-      onExit();
-    }
-  };
-};
-
-const StateMachine = ({ states = [], startIndex = 0 }) => {
-  let currentState = states[startIndex];
-
-  return {
-    setState: (stateId, props = {}) => {
-      if (currentState.id === stateId) return;
-
-      currentState = states.find(st => st.id === stateId);
-      currentState.enter(props);
-    },
-    update: () => {
-      currentState.update();
-
-      if (currentState.isComplete) {
-        currentState.exit();
-        currentState = states[0];
-      }
-    }
-  };
-};
-
-const Entity = ({
-  id = uniqueId("ent_"),
-  x,
-  y,
-  sheet,
-  name,
-  controlledByUser = false,
-  collidesWithTiles = true
-}) => {
-  let spriteSheet = SpriteSheet({
-    image: imageAssets[sheet],
-    frameWidth: 16,
-    frameHeight: 16,
-    animations: {
-      idle: {
-        frames: [0, 1, 2, 3],
-        frameRate: 8
-      },
-      walk: {
-        frames: [3, 4, 5, 6, 7],
-        frameRate: 16
-      }
-    }
-  });
-
-  return Sprite({
-    id,
-    name,
-    x,
-    y,
-    radius: 1,
-    animations: spriteSheet.animations,
-    collidesWithTiles,
-    controlledByUser
-  });
-};
-
 const Scene = () => {
   initKeys();
 
@@ -140,12 +41,14 @@ const Scene = () => {
 
   const sceneStateMachine = StateMachine({
     states: [
-      State({
+      blankState({
         id: "field",
+        cache: gameCache,
         onEntry: () => (appMode = 0)
       }),
-      State({
+      startConvo({
         id: "conversation",
+        cache: gameCache,
         onEntry: () => (appMode = 1)
       })
     ]

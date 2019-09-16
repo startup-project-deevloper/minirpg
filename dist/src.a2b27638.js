@@ -4257,6 +4257,122 @@ var circleCollision = function circleCollision(collider, targets) {
 };
 
 exports.circleCollision = circleCollision;
+},{}],"src/entity.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _kontra = require("kontra");
+
+var _helpers = require("./helpers");
+
+var _default = function _default(_ref) {
+  var _ref$id = _ref.id,
+      id = _ref$id === void 0 ? (0, _helpers.uniqueId)("ent_") : _ref$id,
+      x = _ref.x,
+      y = _ref.y,
+      sheet = _ref.sheet,
+      name = _ref.name,
+      _ref$controlledByUser = _ref.controlledByUser,
+      controlledByUser = _ref$controlledByUser === void 0 ? false : _ref$controlledByUser,
+      _ref$collidesWithTile = _ref.collidesWithTiles,
+      collidesWithTiles = _ref$collidesWithTile === void 0 ? true : _ref$collidesWithTile;
+  var spriteSheet = (0, _kontra.SpriteSheet)({
+    image: _kontra.imageAssets[sheet],
+    frameWidth: 16,
+    frameHeight: 16,
+    animations: {
+      idle: {
+        frames: [0, 1, 2, 3],
+        frameRate: 8
+      },
+      walk: {
+        frames: [3, 4, 5, 6, 7],
+        frameRate: 16
+      }
+    }
+  });
+  return (0, _kontra.Sprite)({
+    id: id,
+    name: name,
+    x: x,
+    y: y,
+    radius: 1,
+    animations: spriteSheet.animations,
+    collidesWithTiles: collidesWithTiles,
+    controlledByUser: controlledByUser
+  });
+};
+
+exports.default = _default;
+},{"kontra":"node_modules/kontra/kontra.mjs","./helpers":"src/helpers.js"}],"src/fsm.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _default = function _default(_ref) {
+  var _ref$states = _ref.states,
+      states = _ref$states === void 0 ? [] : _ref$states,
+      _ref$startIndex = _ref.startIndex,
+      startIndex = _ref$startIndex === void 0 ? 0 : _ref$startIndex;
+  var currentState = states[startIndex];
+  return {
+    setState: function setState(stateId) {
+      var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+      if (currentState.id === stateId) return;
+      currentState = states.find(function (st) {
+        return st.id === stateId;
+      });
+      currentState.enter(props);
+    },
+    update: function update() {
+      currentState.update();
+
+      if (currentState.isComplete) {
+        currentState.exit();
+        currentState = states[0];
+      }
+    }
+  };
+};
+
+exports.default = _default;
+},{}],"src/states/blankState.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _default = function _default(_ref) {
+  var id = _ref.id,
+      cache = _ref.cache,
+      _ref$onEntry = _ref.onEntry,
+      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
+      _ref$onExit = _ref.onExit,
+      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
+  var isComplete = false;
+  return {
+    id: id,
+    isComplete: isComplete,
+    enter: function enter(props) {
+      onEntry();
+    },
+    update: function update() {},
+    exit: function exit() {
+      onExit();
+    }
+  };
+};
+
+exports.default = _default;
 },{}],"src/conversationIterator.js":[function(require,module,exports) {
 "use strict";
 
@@ -4416,47 +4532,23 @@ var mainFlow = [{
   actions: ["endConversation", "save"]
 }];
 exports.mainFlow = mainFlow;
-},{}],"src/index.js":[function(require,module,exports) {
+},{}],"src/states/startConvo.js":[function(require,module,exports) {
 "use strict";
 
-var _kontra = require("kontra");
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
 
-var _cache = _interopRequireDefault(require("./cache"));
+var _conversationIterator = _interopRequireDefault(require("../conversationIterator"));
 
-var _helpers = require("./helpers");
-
-var _conversationIterator = _interopRequireDefault(require("./conversationIterator"));
-
-var _data = require("./data");
+var _data = require("../data");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var gameCache = _cache.default.create("gameCache");
-
-gameCache.add("progress", {
-  storyProgress: null
-});
-console.log(gameCache.get("progress"));
-
-var _init = (0, _kontra.init)(),
-    canvas = _init.canvas;
-
-var ctx = canvas.getContext("2d");
-ctx.imageSmoothingEnabled = false;
-ctx.webkitImageSmoothingEnabled = false;
-ctx.mozImageSmoothingEnabled = false;
-ctx.msImageSmoothingEnabled = false;
-ctx.oImageSmoothingEnabled = false;
-ctx.scale(3, 3);
-
-var State = function State(_ref) {
+var _default = function _default(_ref) {
   var id = _ref.id,
+      cache = _ref.cache,
       _ref$onEntry = _ref.onEntry,
       onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
       _ref$onExit = _ref.onExit,
@@ -4474,7 +4566,7 @@ var State = function State(_ref) {
           console.log("Exited:", lastPositionSaved);
         },
         onChainProgress: function onChainProgress(lastNodeId) {
-          gameCache.set("progress", {
+          cache.set("progress", {
             storyProgress: lastNodeId
           });
         }
@@ -4492,81 +4584,62 @@ var State = function State(_ref) {
   };
 };
 
-var StateMachine = function StateMachine(_ref2) {
-  var _ref2$states = _ref2.states,
-      states = _ref2$states === void 0 ? [] : _ref2$states,
-      _ref2$startIndex = _ref2.startIndex,
-      startIndex = _ref2$startIndex === void 0 ? 0 : _ref2$startIndex;
-  var currentState = states[startIndex];
-  return {
-    setState: function setState(stateId) {
-      var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      if (currentState.id === stateId) return;
-      currentState = states.find(function (st) {
-        return st.id === stateId;
-      });
-      currentState.enter(props);
-    },
-    update: function update() {
-      currentState.update();
+exports.default = _default;
+},{"../conversationIterator":"src/conversationIterator.js","../data":"src/data.js"}],"src/index.js":[function(require,module,exports) {
+"use strict";
 
-      if (currentState.isComplete) {
-        currentState.exit();
-        currentState = states[0];
-      }
-    }
-  };
-};
+var _kontra = require("kontra");
 
-var Entity = function Entity(_ref3) {
-  var _ref3$id = _ref3.id,
-      id = _ref3$id === void 0 ? (0, _helpers.uniqueId)("ent_") : _ref3$id,
-      x = _ref3.x,
-      y = _ref3.y,
-      sheet = _ref3.sheet,
-      name = _ref3.name,
-      _ref3$controlledByUse = _ref3.controlledByUser,
-      controlledByUser = _ref3$controlledByUse === void 0 ? false : _ref3$controlledByUse,
-      _ref3$collidesWithTil = _ref3.collidesWithTiles,
-      collidesWithTiles = _ref3$collidesWithTil === void 0 ? true : _ref3$collidesWithTil;
-  var spriteSheet = (0, _kontra.SpriteSheet)({
-    image: _kontra.imageAssets[sheet],
-    frameWidth: 16,
-    frameHeight: 16,
-    animations: {
-      idle: {
-        frames: [0, 1, 2, 3],
-        frameRate: 8
-      },
-      walk: {
-        frames: [3, 4, 5, 6, 7],
-        frameRate: 16
-      }
-    }
-  });
-  return (0, _kontra.Sprite)({
-    id: id,
-    name: name,
-    x: x,
-    y: y,
-    radius: 1,
-    animations: spriteSheet.animations,
-    collidesWithTiles: collidesWithTiles,
-    controlledByUser: controlledByUser
-  });
-};
+var _cache = _interopRequireDefault(require("./cache"));
+
+var _helpers = require("./helpers");
+
+var _entity = _interopRequireDefault(require("./entity"));
+
+var _fsm = _interopRequireDefault(require("./fsm"));
+
+var _blankState = _interopRequireDefault(require("./states/blankState"));
+
+var _startConvo = _interopRequireDefault(require("./states/startConvo"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var gameCache = _cache.default.create("gameCache");
+
+gameCache.add("progress", {
+  storyProgress: null
+});
+
+var _init = (0, _kontra.init)(),
+    canvas = _init.canvas;
+
+var ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+ctx.webkitImageSmoothingEnabled = false;
+ctx.mozImageSmoothingEnabled = false;
+ctx.msImageSmoothingEnabled = false;
+ctx.oImageSmoothingEnabled = false;
+ctx.scale(3, 3);
 
 var Scene = function Scene() {
   (0, _kontra.initKeys)();
   var appMode = 0;
-  var sceneStateMachine = StateMachine({
-    states: [State({
+  var sceneStateMachine = (0, _fsm.default)({
+    states: [(0, _blankState.default)({
       id: "field",
+      cache: gameCache,
       onEntry: function onEntry() {
         return appMode = 0;
       }
-    }), State({
+    }), (0, _startConvo.default)({
       id: "conversation",
+      cache: gameCache,
       onEntry: function onEntry() {
         return appMode = 1;
       }
@@ -4575,7 +4648,7 @@ var Scene = function Scene() {
   var mapKey = "assets/tiledata/test";
   var map = _kontra.dataAssets[mapKey];
   var tileEngine = (0, _kontra.TileEngine)(map);
-  var player = Entity({
+  var player = (0, _entity.default)({
     x: 120,
     y: 120,
     sheet: "assets/entityimages/little_devil.png",
@@ -4583,7 +4656,7 @@ var Scene = function Scene() {
     id: "player",
     controlledByUser: true
   });
-  var npc = Entity({
+  var npc = (0, _entity.default)({
     x: 120,
     y: 160,
     name: "Daryl",
@@ -4707,7 +4780,7 @@ var Scene = function Scene() {
 (0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png").then(function (assets) {
   return Scene().start();
 });
-},{"kontra":"node_modules/kontra/kontra.mjs","./cache":"src/cache.js","./helpers":"src/helpers.js","./conversationIterator":"src/conversationIterator.js","./data":"src/data.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./cache":"src/cache.js","./helpers":"src/helpers.js","./entity":"src/entity.js","./fsm":"src/fsm.js","./states/blankState":"src/states/blankState.js","./states/startConvo":"src/states/startConvo.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -4735,7 +4808,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62425" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64311" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
