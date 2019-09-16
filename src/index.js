@@ -27,7 +27,49 @@ ctx.mozImageSmoothingEnabled = false;
 ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 
+const State = ({ id, onEntry = () => {}, onExit = () => {} }) => {
+  let isComplete = false;
+
+  return {
+    id,
+    isComplete,
+    enter: props => {
+      console.log("Player entered a conversational state:");
+      console.log(props);
+      onEntry(props);
+    },
+    update: () => {
+      //...
+    },
+    exit: () => {
+      onExit();
+    }
+  };
+};
+
+const StateMachine = ({ states = [], startIndex = 0 }) => {
+  let currentState = states[startIndex];
+
+  return {
+    setState: (stateId, props = {}) => {
+      if (currentState.id === stateId) return;
+
+      currentState = states.find(st => st.id === stateId);
+      currentState.enter(props);
+    },
+    update: () => {
+      currentState.update();
+
+      if (currentState.isComplete) {
+        currentState.exit();
+        currentState = states[0];
+      }
+    }
+  };
+};
+
 const Entity = ({
+  id = uniqueId("ent_"),
   x,
   y,
   sheet,
@@ -52,7 +94,7 @@ const Entity = ({
   });
 
   return Sprite({
-    id: uniqueId("ety_"),
+    id,
     name,
     x,
     y,
@@ -66,6 +108,21 @@ const Entity = ({
 const Scene = () => {
   initKeys();
 
+  let appMode = 0;
+
+  const sceneStateMachine = StateMachine({
+    states: [
+      State({
+        id: "field",
+        onEntry: () => (appMode = 0)
+      }),
+      State({
+        id: "conversation",
+        onEntry: () => (appMode = 1)
+      })
+    ]
+  });
+
   const mapKey = "assets/tiledata/test";
   const map = dataAssets[mapKey];
   const tileEngine = TileEngine(map);
@@ -75,6 +132,7 @@ const Scene = () => {
     y: 120,
     sheet: "assets/entityimages/little_devil.png",
     name: "Player",
+    id: "player",
     controlledByUser: true
   });
 
@@ -82,6 +140,7 @@ const Scene = () => {
     x: 120,
     y: 160,
     name: "Daryl",
+    id: "daryl",
     sheet: "assets/entityimages/little_orc.png"
   });
 
@@ -89,6 +148,16 @@ const Scene = () => {
 
   return GameLoop({
     update: () => {
+      sceneStateMachine.update();
+
+      if (appMode === 1) {
+        sprites.map(sprite => {
+          sprite.playAnimation("idle");
+          sprite.update();
+        });
+        return;
+      }
+
       sprites.map(sprite => {
         // sprite is beyond the left edge
         if (sprite.x < 0) {
@@ -162,9 +231,13 @@ const Scene = () => {
             sprites.filter(s => s.id !== sprite.id)
           );
 
-          sprite.isColliding = collidingWith.length;
+          sprite.isColliding = collidingWith.length > 0;
 
-          console.log(collidingWith);
+          if (sprite.isColliding) {
+            sceneStateMachine.setState("conversation", {
+              ...collidingWith[0]
+            });
+          }
         }
 
         // Flip the sprite

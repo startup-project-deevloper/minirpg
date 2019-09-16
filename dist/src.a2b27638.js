@@ -4160,11 +4160,12 @@ var _kontra = require("kontra");
 
 var _helpers = require("./helpers");
 
-/* Credits
-* Asset Pack:
-* https://pixel-poem.itch.io/dungeon-assetpuck
-* https://0x72.itch.io/dungeontileset-ii
-*/
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 var _init = (0, _kontra.init)(),
     canvas = _init.canvas;
 
@@ -4175,15 +4176,66 @@ ctx.mozImageSmoothingEnabled = false;
 ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 
-var Entity = function Entity(_ref) {
-  var x = _ref.x,
-      y = _ref.y,
-      sheet = _ref.sheet,
-      name = _ref.name,
-      _ref$controlledByUser = _ref.controlledByUser,
-      controlledByUser = _ref$controlledByUser === void 0 ? false : _ref$controlledByUser,
-      _ref$collidesWithTile = _ref.collidesWithTiles,
-      collidesWithTiles = _ref$collidesWithTile === void 0 ? true : _ref$collidesWithTile;
+var State = function State(_ref) {
+  var id = _ref.id,
+      _ref$onEntry = _ref.onEntry,
+      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
+      _ref$onExit = _ref.onExit,
+      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
+  var isComplete = false;
+  return {
+    id: id,
+    isComplete: isComplete,
+    enter: function enter(props) {
+      console.log("Player entered a conversational state:");
+      console.log(props);
+      onEntry(props);
+    },
+    update: function update() {//...
+    },
+    exit: function exit() {
+      onExit();
+    }
+  };
+};
+
+var StateMachine = function StateMachine(_ref2) {
+  var _ref2$states = _ref2.states,
+      states = _ref2$states === void 0 ? [] : _ref2$states,
+      _ref2$startIndex = _ref2.startIndex,
+      startIndex = _ref2$startIndex === void 0 ? 0 : _ref2$startIndex;
+  var currentState = states[startIndex];
+  return {
+    setState: function setState(stateId) {
+      var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+      if (currentState.id === stateId) return;
+      currentState = states.find(function (st) {
+        return st.id === stateId;
+      });
+      currentState.enter(props);
+    },
+    update: function update() {
+      currentState.update();
+
+      if (currentState.isComplete) {
+        currentState.exit();
+        currentState = states[0];
+      }
+    }
+  };
+};
+
+var Entity = function Entity(_ref3) {
+  var _ref3$id = _ref3.id,
+      id = _ref3$id === void 0 ? (0, _helpers.uniqueId)("ent_") : _ref3$id,
+      x = _ref3.x,
+      y = _ref3.y,
+      sheet = _ref3.sheet,
+      name = _ref3.name,
+      _ref3$controlledByUse = _ref3.controlledByUser,
+      controlledByUser = _ref3$controlledByUse === void 0 ? false : _ref3$controlledByUse,
+      _ref3$collidesWithTil = _ref3.collidesWithTiles,
+      collidesWithTiles = _ref3$collidesWithTil === void 0 ? true : _ref3$collidesWithTil;
   var spriteSheet = (0, _kontra.SpriteSheet)({
     image: _kontra.imageAssets[sheet],
     frameWidth: 16,
@@ -4200,7 +4252,7 @@ var Entity = function Entity(_ref) {
     }
   });
   return (0, _kontra.Sprite)({
-    id: (0, _helpers.uniqueId)("ety_"),
+    id: id,
     name: name,
     x: x,
     y: y,
@@ -4213,6 +4265,20 @@ var Entity = function Entity(_ref) {
 
 var Scene = function Scene() {
   (0, _kontra.initKeys)();
+  var appMode = 0;
+  var sceneStateMachine = StateMachine({
+    states: [State({
+      id: "field",
+      onEntry: function onEntry() {
+        return appMode = 0;
+      }
+    }), State({
+      id: "conversation",
+      onEntry: function onEntry() {
+        return appMode = 1;
+      }
+    })]
+  });
   var mapKey = "assets/tiledata/test";
   var map = _kontra.dataAssets[mapKey];
   var tileEngine = (0, _kontra.TileEngine)(map);
@@ -4221,17 +4287,29 @@ var Scene = function Scene() {
     y: 120,
     sheet: "assets/entityimages/little_devil.png",
     name: "Player",
+    id: "player",
     controlledByUser: true
   });
   var npc = Entity({
     x: 120,
     y: 160,
     name: "Daryl",
+    id: "daryl",
     sheet: "assets/entityimages/little_orc.png"
   });
   var sprites = [player, npc];
   return (0, _kontra.GameLoop)({
     update: function update() {
+      sceneStateMachine.update();
+
+      if (appMode === 1) {
+        sprites.map(function (sprite) {
+          sprite.playAnimation("idle");
+          sprite.update();
+        });
+        return;
+      }
+
       sprites.map(function (sprite) {
         // sprite is beyond the left edge
         if (sprite.x < 0) {
@@ -4301,8 +4379,11 @@ var Scene = function Scene() {
           var collidingWith = (0, _helpers.circleCollision)(sprite, sprites.filter(function (s) {
             return s.id !== sprite.id;
           }));
-          sprite.isColliding = collidingWith.length;
-          console.log(collidingWith);
+          sprite.isColliding = collidingWith.length > 0;
+
+          if (sprite.isColliding) {
+            sceneStateMachine.setState("conversation", _objectSpread({}, collidingWith[0]));
+          }
         } // Flip the sprite
 
 
@@ -4361,7 +4442,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51536" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52098" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
