@@ -4160,6 +4160,7 @@ var _helpers = require("./helpers");
 /* Credits
 * Asset Pack:
 * https://pixel-poem.itch.io/dungeon-assetpuck
+* https://0x72.itch.io/dungeontileset-ii
 */
 var _init = (0, _kontra.init)(),
     canvas = _init.canvas;
@@ -4171,33 +4172,43 @@ ctx.mozImageSmoothingEnabled = false;
 ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 
+var Entity = function Entity(_ref) {
+  var sheet = _ref.sheet;
+  var spriteSheet = (0, _kontra.SpriteSheet)({
+    image: _kontra.imageAssets[sheet],
+    frameWidth: 16,
+    frameHeight: 16,
+    animations: {
+      idle: {
+        frames: [0, 1, 2, 3],
+        frameRate: 8
+      },
+      walk: {
+        frames: [3, 4, 5, 6, 7],
+        frameRate: 16
+      }
+    }
+  });
+  return (0, _kontra.Sprite)({
+    id: (0, _helpers.uniqueId)("ety_"),
+    x: 120,
+    y: 120,
+    animations: spriteSheet.animations,
+    collidesWithTiles: true,
+    controlledByUser: true
+  });
+};
+
 var Scene = function Scene() {
   (0, _kontra.initKeys)();
   var mapKey = "assets/tiledata/test";
   var map = _kontra.dataAssets[mapKey];
   var tileEngine = (0, _kontra.TileEngine)(map);
-  var player = (0, _kontra.Sprite)({
-    id: (0, _helpers.uniqueId)("player_"),
-    x: 120,
-    // starting x,y position of the sprite
-    y: 120,
-    color: "red",
-    // fill color of the sprite rectangle
-    width: 16,
-    // width and height of the sprite rectangle
-    height: 16,
-    collidesWithTiles: true,
-    controlledByUser: true
+  var player = Entity({
+    sheet: "assets/entityimages/little_devil.png"
   });
   var sprites = [];
-  sprites.push(player); // Look here for collision -> https://straker.github.io/kontra/api/tileEngine#basic-use
-  // Note: Not all tiles will have a type set, they should, but some get missed
-
-  var walls = tileEngine.tilesets[0].tiles.filter(function (t) {
-    return t.properties.find(function (prop) {
-      return prop.name === "type";
-    }).value === 1;
-  });
+  sprites.push(player);
   return (0, _kontra.GameLoop)({
     update: function update() {
       sprites.map(function (sprite) {
@@ -4216,7 +4227,7 @@ var Scene = function Scene() {
           // sprite is beyond the bottom edge
           sprite.y = 0;
         }
-        /* To move later on (don't forget to divide the diag movement to stop double speed - TODO) */
+        /* To move later on */
 
 
         var dir = sprite.controlledByUser ? {
@@ -4226,14 +4237,21 @@ var Scene = function Scene() {
           x: 0,
           y: 0
         }; // AI
-        /// For collisions with tiles
+
+        /* Normalise so you don't go super fast diagonally */
+
+        var dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
+        var dirNormal = {
+          x: dir.x !== 0 ? dir.x / dirLength : 0,
+          y: dir.y !== 0 ? dir.y / dirLength : 0
+        }; /// For collisions with tiles
 
         var oldPos = {
           x: sprite.x,
           y: sprite.y
-        }; // Move X then check X
+        }; // Move X then check X (careful editing directly, might lead to issues with camera)
 
-        sprite.x += dir.x; // Collider check
+        sprite.x += dirNormal.x; // Collider check
 
         var collidedWithX = tileEngine.layerCollidesWith("Collision", sprite);
 
@@ -4246,9 +4264,9 @@ var Scene = function Scene() {
         oldPos = {
           x: sprite.x,
           y: sprite.y
-        }; // Move Y then check Y
+        }; // Move Y then check Y (careful editing directly, might lead to issues with camera)
 
-        sprite.y += dir.y; // Collider check
+        sprite.y += dirNormal.y; // Collider check
 
         var collidedWithY = tileEngine.layerCollidesWith("Collision", sprite);
 
@@ -4260,8 +4278,18 @@ var Scene = function Scene() {
         //   sprite,
         //   sprites.filter(s => s.id !== sprite.id)
         // );
-        // Don't update until you've calcs positions
+        // Flip the sprite
 
+
+        if (dirNormal.x < 0) {
+          sprite.width = -sprite.width;
+        } else if (dirNormal.x > 0) {
+          sprite.width = sprite.width;
+        } // Do some animations
+
+
+        var isMoving = dirNormal.x !== 0 || dirNormal.y !== 0;
+        sprite.playAnimation(isMoving ? "walk" : "idle"); // Don't update until you've calcs positions
 
         sprite.update();
       });
@@ -4277,9 +4305,8 @@ var Scene = function Scene() {
 /* Make sure to embed your tilesets or it'll run in to problems */
 
 
-(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json").then(function (assets) {
-  var newScene = Scene();
-  newScene.start();
+(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/entityimages/little_devil.png").then(function (assets) {
+  return Scene().start();
 });
 },{"kontra":"node_modules/kontra/kontra.mjs","./helpers":"src/helpers.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
@@ -4309,7 +4336,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64255" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64390" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

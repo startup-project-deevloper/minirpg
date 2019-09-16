@@ -1,6 +1,7 @@
 /* Credits
 * Asset Pack:
 * https://pixel-poem.itch.io/dungeon-assetpuck
+* https://0x72.itch.io/dungeontileset-ii
 */
 import {
   init,
@@ -9,8 +10,10 @@ import {
   load,
   TileEngine,
   dataAssets,
+  imageAssets,
   keyPressed,
-  initKeys
+  initKeys,
+  SpriteSheet
 } from "kontra";
 
 import { circleCollision, uniqueId } from "./helpers";
@@ -24,6 +27,33 @@ ctx.mozImageSmoothingEnabled = false;
 ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 
+const Entity = ({ sheet }) => {
+  let spriteSheet = SpriteSheet({
+    image: imageAssets[sheet],
+    frameWidth: 16,
+    frameHeight: 16,
+    animations: {
+      idle: {
+        frames: [0, 1, 2, 3],
+        frameRate: 8
+      },
+      walk: {
+        frames: [3, 4, 5, 6, 7],
+        frameRate: 16
+      }
+    }
+  });
+
+  return Sprite({
+    id: uniqueId("ety_"),
+    x: 120,
+    y: 120,
+    animations: spriteSheet.animations,
+    collidesWithTiles: true,
+    controlledByUser: true
+  });
+};
+
 const Scene = () => {
   initKeys();
 
@@ -31,25 +61,12 @@ const Scene = () => {
   const map = dataAssets[mapKey];
   const tileEngine = TileEngine(map);
 
-  const player = Sprite({
-    id: uniqueId("player_"),
-    x: 120, // starting x,y position of the sprite
-    y: 120,
-    color: "red", // fill color of the sprite rectangle
-    width: 16, // width and height of the sprite rectangle
-    height: 16,
-    collidesWithTiles: true,
-    controlledByUser: true
+  const player = Entity({
+    sheet: "assets/entityimages/little_devil.png"
   });
 
   let sprites = [];
   sprites.push(player);
-
-  // Look here for collision -> https://straker.github.io/kontra/api/tileEngine#basic-use
-  // Note: Not all tiles will have a type set, they should, but some get missed
-  const walls = tileEngine.tilesets[0].tiles.filter(
-    t => t.properties.find(prop => prop.name === "type").value === 1
-  );
 
   return GameLoop({
     update: () => {
@@ -69,7 +86,7 @@ const Scene = () => {
           sprite.y = 0;
         }
 
-        /* To move later on (don't forget to divide the diag movement to stop double speed - TODO) */
+        /* To move later on */
         const dir = sprite.controlledByUser
           ? {
               x: keyPressed("a") ? -1 : keyPressed("d") ? 1 : 0,
@@ -77,14 +94,22 @@ const Scene = () => {
             }
           : { x: 0, y: 0 }; // AI
 
+        /* Normalise so you don't go super fast diagonally */
+        const dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y)
+
+        const dirNormal = {
+          x: dir.x !== 0 ? dir.x / dirLength : 0,
+          y: dir.y !== 0 ? dir.y / dirLength : 0
+        }
+
         /// For collisions with tiles
         let oldPos = {
           x: sprite.x,
           y: sprite.y
         };
 
-        // Move X then check X
-        sprite.x += dir.x;
+        // Move X then check X (careful editing directly, might lead to issues with camera)
+        sprite.x += dirNormal.x;
 
         // Collider check
         const collidedWithX = tileEngine.layerCollidesWith("Collision", sprite);
@@ -100,8 +125,8 @@ const Scene = () => {
           y: sprite.y
         };
 
-        // Move Y then check Y
-        sprite.y += dir.y;
+        // Move Y then check Y (careful editing directly, might lead to issues with camera)
+        sprite.y += dirNormal.y;
 
         // Collider check
         const collidedWithY = tileEngine.layerCollidesWith("Collision", sprite);
@@ -117,6 +142,17 @@ const Scene = () => {
         //   sprites.filter(s => s.id !== sprite.id)
         // );
 
+        // Flip the sprite
+        if (dirNormal.x < 0) {
+          sprite.width = -sprite.width;
+        } else if (dirNormal.x > 0) {
+          sprite.width = sprite.width;
+        }
+
+        // Do some animations
+        const isMoving = dirNormal.x !== 0 || dirNormal.y !== 0;
+        sprite.playAnimation(isMoving ? "walk" : "idle");
+
         // Don't update until you've calcs positions
         sprite.update();
       });
@@ -129,7 +165,8 @@ const Scene = () => {
 };
 
 /* Make sure to embed your tilesets or it'll run in to problems */
-load("assets/tileimages/test.png", "assets/tiledata/test.json").then(assets => {
-  const newScene = Scene();
-  newScene.start();
-});
+load(
+  "assets/tileimages/test.png",
+  "assets/tiledata/test.json",
+  "assets/entityimages/little_devil.png"
+).then(assets => Scene().start());
