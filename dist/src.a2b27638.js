@@ -4136,7 +4136,11 @@ var vmulti = function vmulti(vec, v) {
 exports.vmulti = vmulti;
 
 var circleCollision = function circleCollision(collider, targets) {
-  var colliding = targets.filter(function (target) {
+  if (!collider.radius) {
+    console.error("Cannot detect collisions without radious property.");
+  }
+
+  return targets.filter(function (target) {
     var dx = target.x - collider.x;
     var dy = target.y - collider.y;
 
@@ -4146,7 +4150,6 @@ var circleCollision = function circleCollision(collider, targets) {
       return target;
     }
   });
-  return colliding.length;
 };
 
 exports.circleCollision = circleCollision;
@@ -4173,7 +4176,14 @@ ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 
 var Entity = function Entity(_ref) {
-  var sheet = _ref.sheet;
+  var x = _ref.x,
+      y = _ref.y,
+      sheet = _ref.sheet,
+      name = _ref.name,
+      _ref$controlledByUser = _ref.controlledByUser,
+      controlledByUser = _ref$controlledByUser === void 0 ? false : _ref$controlledByUser,
+      _ref$collidesWithTile = _ref.collidesWithTiles,
+      collidesWithTiles = _ref$collidesWithTile === void 0 ? true : _ref$collidesWithTile;
   var spriteSheet = (0, _kontra.SpriteSheet)({
     image: _kontra.imageAssets[sheet],
     frameWidth: 16,
@@ -4191,11 +4201,13 @@ var Entity = function Entity(_ref) {
   });
   return (0, _kontra.Sprite)({
     id: (0, _helpers.uniqueId)("ety_"),
-    x: 120,
-    y: 120,
+    name: name,
+    x: x,
+    y: y,
+    radius: 1,
     animations: spriteSheet.animations,
-    collidesWithTiles: true,
-    controlledByUser: true
+    collidesWithTiles: collidesWithTiles,
+    controlledByUser: controlledByUser
   });
 };
 
@@ -4205,10 +4217,19 @@ var Scene = function Scene() {
   var map = _kontra.dataAssets[mapKey];
   var tileEngine = (0, _kontra.TileEngine)(map);
   var player = Entity({
-    sheet: "assets/entityimages/little_devil.png"
+    x: 120,
+    y: 120,
+    sheet: "assets/entityimages/little_devil.png",
+    name: "Player",
+    controlledByUser: true
   });
-  var sprites = [];
-  sprites.push(player);
+  var npc = Entity({
+    x: 120,
+    y: 160,
+    name: "Daryl",
+    sheet: "assets/entityimages/little_orc.png"
+  });
+  var sprites = [player, npc];
   return (0, _kontra.GameLoop)({
     update: function update() {
       sprites.map(function (sprite) {
@@ -4273,12 +4294,16 @@ var Scene = function Scene() {
         if (sprite.collidesWithTiles && collidedWithY) {
           sprite.x = oldPos.x;
           sprite.y = oldPos.y;
-        } /// For collisions with other sprites
-        // sprite.isColliding = circleCollision(
-        //   sprite,
-        //   sprites.filter(s => s.id !== sprite.id)
-        // );
-        // Flip the sprite
+        } /// For collisions with other sprites (you could optimise further with distance too)
+
+
+        if (sprite.controlledByUser && (0, _kontra.keyPressed)("e")) {
+          var collidingWith = (0, _helpers.circleCollision)(sprite, sprites.filter(function (s) {
+            return s.id !== sprite.id;
+          }));
+          sprite.isColliding = collidingWith.length;
+          console.log(collidingWith);
+        } // Flip the sprite
 
 
         if (dirNormal.x < 0) {
@@ -4305,7 +4330,7 @@ var Scene = function Scene() {
 /* Make sure to embed your tilesets or it'll run in to problems */
 
 
-(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/entityimages/little_devil.png").then(function (assets) {
+(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png").then(function (assets) {
   return Scene().start();
 });
 },{"kontra":"node_modules/kontra/kontra.mjs","./helpers":"src/helpers.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
@@ -4336,7 +4361,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64390" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51536" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

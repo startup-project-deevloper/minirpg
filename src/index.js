@@ -27,7 +27,14 @@ ctx.mozImageSmoothingEnabled = false;
 ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 
-const Entity = ({ sheet }) => {
+const Entity = ({
+  x,
+  y,
+  sheet,
+  name,
+  controlledByUser = false,
+  collidesWithTiles = true
+}) => {
   let spriteSheet = SpriteSheet({
     image: imageAssets[sheet],
     frameWidth: 16,
@@ -46,11 +53,13 @@ const Entity = ({ sheet }) => {
 
   return Sprite({
     id: uniqueId("ety_"),
-    x: 120,
-    y: 120,
+    name,
+    x,
+    y,
+    radius: 1,
     animations: spriteSheet.animations,
-    collidesWithTiles: true,
-    controlledByUser: true
+    collidesWithTiles,
+    controlledByUser
   });
 };
 
@@ -62,11 +71,21 @@ const Scene = () => {
   const tileEngine = TileEngine(map);
 
   const player = Entity({
-    sheet: "assets/entityimages/little_devil.png"
+    x: 120,
+    y: 120,
+    sheet: "assets/entityimages/little_devil.png",
+    name: "Player",
+    controlledByUser: true
   });
 
-  let sprites = [];
-  sprites.push(player);
+  const npc = Entity({
+    x: 120,
+    y: 160,
+    name: "Daryl",
+    sheet: "assets/entityimages/little_orc.png"
+  });
+
+  let sprites = [player, npc];
 
   return GameLoop({
     update: () => {
@@ -95,12 +114,12 @@ const Scene = () => {
           : { x: 0, y: 0 }; // AI
 
         /* Normalise so you don't go super fast diagonally */
-        const dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y)
+        const dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
 
         const dirNormal = {
           x: dir.x !== 0 ? dir.x / dirLength : 0,
           y: dir.y !== 0 ? dir.y / dirLength : 0
-        }
+        };
 
         /// For collisions with tiles
         let oldPos = {
@@ -136,11 +155,17 @@ const Scene = () => {
           sprite.y = oldPos.y;
         }
 
-        /// For collisions with other sprites
-        // sprite.isColliding = circleCollision(
-        //   sprite,
-        //   sprites.filter(s => s.id !== sprite.id)
-        // );
+        /// For collisions with other sprites (you could optimise further with distance too)
+        if (sprite.controlledByUser && keyPressed("e")) {
+          const collidingWith = circleCollision(
+            sprite,
+            sprites.filter(s => s.id !== sprite.id)
+          );
+
+          sprite.isColliding = collidingWith.length;
+
+          console.log(collidingWith);
+        }
 
         // Flip the sprite
         if (dirNormal.x < 0) {
@@ -168,5 +193,6 @@ const Scene = () => {
 load(
   "assets/tileimages/test.png",
   "assets/tiledata/test.json",
-  "assets/entityimages/little_devil.png"
+  "assets/entityimages/little_devil.png",
+  "assets/entityimages/little_orc.png"
 ).then(assets => Scene().start());
