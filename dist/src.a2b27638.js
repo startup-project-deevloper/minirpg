@@ -4095,13 +4095,103 @@ let kontra = {
 };
 var _default = kontra;
 exports.default = _default;
+},{}],"src/cache.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var _default = {
+  create: function create() {
+    var e = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : (Number(String(Math.random()).slice(2)) + Date.now() + Math.round(performance.now())).toString(36);
+    var a = [];
+
+    var t = function t() {
+      return a.map(function (e) {
+        return e;
+      });
+    },
+        r = function r() {
+      return a.map(function (_ref) {
+        var e = _ref.value;
+        return e;
+      });
+    };
+
+    return {
+      id: e,
+      items: t,
+      keys: function keys() {
+        return a.map(function (_ref2) {
+          var e = _ref2.key;
+          return e;
+        });
+      },
+      values: r,
+      get: function get(e) {
+        return function (e) {
+          return void 0 !== e ? _objectSpread({}, e) : null;
+        }(a.filter(function (a) {
+          return a.key === e;
+        })[0]);
+      },
+      query: function query() {
+        var e = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+        return e.map(function (e) {
+          return e(r());
+        });
+      },
+      add: function add(e, t) {
+        return !a.some(function (a) {
+          return a.key === e;
+        }) && a.push({
+          key: e,
+          value: t
+        });
+      },
+      remove: function remove(e) {
+        return a = a.filter(function (_ref3) {
+          var a = _ref3.key;
+          return e !== a;
+        });
+      },
+      flush: function flush() {
+        return a.splice(0, a.length);
+      },
+      update: function update(e, t, r) {
+        a = a.map(function (a) {
+          return a.key === e ? _objectSpread({}, a, {
+            value: _objectSpread({}, a.value, _defineProperty({}, t, r))
+          }) : _objectSpread({}, a);
+        });
+      },
+      export: function _export() {
+        return JSON.stringify(t());
+      },
+      import: function _import(e) {
+        return a = JSON.parse(e).map(function (e) {
+          return e;
+        });
+      }
+    };
+  }
+};
+exports.default = _default;
 },{}],"src/helpers.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.circleCollision = exports.vmulti = exports.between = exports.uniqueId = void 0;
+exports.circleCollision = exports.vmulti = exports.between = exports.useState = exports.uniqueId = void 0;
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
@@ -4111,6 +4201,20 @@ var uniqueId = function uniqueId() {
 };
 
 exports.uniqueId = uniqueId;
+
+var useState = function useState(state) {
+  var setter = function setter(modifiedState) {
+    return state = modifiedState;
+  };
+
+  var getter = function getter() {
+    return state;
+  };
+
+  return [getter, setter];
+};
+
+exports.useState = useState;
 
 var between = function between(v, a, b) {
   return v > a && v < b;
@@ -4153,18 +4257,192 @@ var circleCollision = function circleCollision(collider, targets) {
 };
 
 exports.circleCollision = circleCollision;
+},{}],"src/conversationIterator.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _helpers = require("./helpers");
+
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
+
+function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+var _default = function _default(_ref) {
+  var collection = _ref.collection,
+      _ref$onChatComplete = _ref.onChatComplete,
+      onChatComplete = _ref$onChatComplete === void 0 ? function (lastPositionSaved) {} : _ref$onChatComplete,
+      _ref$onChainProgress = _ref.onChainProgress,
+      onChainProgress = _ref$onChainProgress === void 0 ? function (lastNodeId) {} : _ref$onChainProgress;
+
+  var _useState = (0, _helpers.useState)(0),
+      _useState2 = _slicedToArray(_useState, 2),
+      index = _useState2[0],
+      setIndex = _useState2[1];
+
+  var _useState3 = (0, _helpers.useState)(collection[index()]),
+      _useState4 = _slicedToArray(_useState3, 2),
+      currentNode = _useState4[0],
+      setCurrentNode = _useState4[1];
+
+  var _displayNode = function _displayNode(queriedNode) {
+    if (queriedNode) {
+      setCurrentNode(queriedNode);
+      setIndex(queriedNode.index);
+      return queriedNode;
+    } else {
+      throw "No node match.";
+    }
+  };
+
+  var _queryNode = function _queryNode(query) {
+    var queriedNode = collection.length ? collection.filter(function (node, index) {
+      return query === node.id ? {
+        node: node,
+        index: index
+      } : null;
+    })[0] : null;
+    return _displayNode(queriedNode);
+  };
+
+  return {
+    currentIndex: function currentIndex() {
+      return index();
+    },
+    goToExact: function goToExact(query) {
+      var queriedNode = _queryNode(query);
+
+      setIndex(queriedNode.index);
+      setCurrentNode(queriedNode);
+      return _displayNode(queriedNode);
+    },
+    goToNext: function goToNext() {
+      // TODO: Beware, if you're not checking for existent choices, this will error out,
+      // or do something a little funky. May want to check for choices here instead?
+      var _currentNode = currentNode(),
+          id = _currentNode.id,
+          to = _currentNode.to,
+          actions = _currentNode.actions; // TODO: Consts please.
+
+
+      if (actions.some(function (action) {
+        return action === "endConversation";
+      }) || !to) {
+        if (actions.some(function (action) {
+          return action === "save";
+        })) {
+          // ... onSave, etc
+          onChainProgress(id);
+          console.log("Saved chain position to:", id);
+        }
+
+        if (actions.some(function (action) {
+          return action === "cancel";
+        })) {
+          // ... onCancel, etc
+          console.log("Cancelled, nothing was saved.");
+        }
+
+        onChatComplete(id);
+        console.log("End reached, close the convo.");
+        return;
+      }
+
+      var queriedNode = _queryNode(to);
+
+      setIndex(queriedNode.index);
+      setCurrentNode(queriedNode);
+      return _displayNode(queriedNode);
+    }
+  };
+};
+
+exports.default = _default;
+},{"./helpers":"src/helpers.js"}],"src/data.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.mainFlow = void 0;
+var mainFlow = [{
+  id: "m1",
+  from: null,
+  to: null,
+  text: "This is the first message",
+  choices: [{
+    id: "m1a",
+    from: "m1",
+    to: "m2",
+    text: "I will select A.",
+    choices: [],
+    actions: []
+  }, {
+    id: "m1b",
+    from: "m1",
+    to: "m3",
+    text: "I will select B.",
+    choices: [],
+    actions: []
+  }],
+  actions: []
+}, {
+  id: "m2",
+  from: "m1a",
+  to: "m4",
+  text: "This is if you select A.",
+  choices: [],
+  actions: []
+}, {
+  id: "m3",
+  from: "m1b",
+  to: null,
+  text: "This is if you select B.",
+  choices: [],
+  actions: ["cancel"]
+}, {
+  id: "m4",
+  from: "m2",
+  to: null,
+  text: "This should be the last in the chain for A.",
+  choices: [],
+  actions: ["endConversation", "save"]
+}];
+exports.mainFlow = mainFlow;
 },{}],"src/index.js":[function(require,module,exports) {
 "use strict";
 
 var _kontra = require("kontra");
 
+var _cache = _interopRequireDefault(require("./cache"));
+
 var _helpers = require("./helpers");
+
+var _conversationIterator = _interopRequireDefault(require("./conversationIterator"));
+
+var _data = require("./data");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var gameCache = _cache.default.create("gameCache");
+
+gameCache.add("progress", {
+  storyProgress: null
+});
+console.log(gameCache.get("progress"));
 
 var _init = (0, _kontra.init)(),
     canvas = _init.canvas;
@@ -4175,6 +4453,7 @@ ctx.webkitImageSmoothingEnabled = false;
 ctx.mozImageSmoothingEnabled = false;
 ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
+ctx.scale(3, 3);
 
 var State = function State(_ref) {
   var id = _ref.id,
@@ -4189,6 +4468,20 @@ var State = function State(_ref) {
     enter: function enter(props) {
       console.log("Player entered a conversational state:");
       console.log(props);
+      var convoIterator = (0, _conversationIterator.default)({
+        collection: _data.mainFlow,
+        onChatComplete: function onChatComplete(lastPositionSaved) {
+          console.log("Exited:", lastPositionSaved);
+        },
+        onChainProgress: function onChainProgress(lastNodeId) {
+          gameCache.set("progress", {
+            storyProgress: lastNodeId
+          });
+        }
+      }); // Example starter convo
+
+      var val = convoIterator.goToExact("m1");
+      console.log(val);
       onEntry(props);
     },
     update: function update() {//...
@@ -4414,7 +4707,7 @@ var Scene = function Scene() {
 (0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png").then(function (assets) {
   return Scene().start();
 });
-},{"kontra":"node_modules/kontra/kontra.mjs","./helpers":"src/helpers.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./cache":"src/cache.js","./helpers":"src/helpers.js","./conversationIterator":"src/conversationIterator.js","./data":"src/data.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -4442,7 +4735,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52098" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62425" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

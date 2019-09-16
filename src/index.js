@@ -16,7 +16,17 @@ import {
   SpriteSheet
 } from "kontra";
 
+import Cache from "./cache";
 import { circleCollision, uniqueId } from "./helpers";
+import ConversationIterator from "./conversationIterator";
+import { mainFlow } from "./data";
+
+const gameCache = Cache.create("gameCache");
+gameCache.add("progress", {
+  storyProgress: null
+});
+
+console.log(gameCache.get("progress"));
 
 const { canvas } = init();
 
@@ -26,6 +36,7 @@ ctx.webkitImageSmoothingEnabled = false;
 ctx.mozImageSmoothingEnabled = false;
 ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
+ctx.scale(3, 3);
 
 const State = ({ id, onEntry = () => {}, onExit = () => {} }) => {
   let isComplete = false;
@@ -36,6 +47,23 @@ const State = ({ id, onEntry = () => {}, onExit = () => {} }) => {
     enter: props => {
       console.log("Player entered a conversational state:");
       console.log(props);
+
+      const convoIterator = ConversationIterator({
+        collection: mainFlow,
+        onChatComplete: lastPositionSaved => {
+          console.log("Exited:", lastPositionSaved);
+        },
+        onChainProgress: lastNodeId => {
+          gameCache.set("progress", {
+            storyProgress: lastNodeId
+          });
+        }
+      });
+
+      // Example starter convo
+      const val = convoIterator.goToExact("m1");
+      console.log(val);
+
       onEntry(props);
     },
     update: () => {

@@ -10,8 +10,6 @@
         }
 
         canvas {
-            width: 768px;
-            height: 768px;
             position: absolute;
             top: 50%;
             left: 50%;
@@ -27,8 +25,8 @@
 </head>
 
 <body>
-    <!-- Width and height of native canvas, then zoom it in with css above (smoothing is still enabled annoyingly) -->
-    <canvas width="256" height="256"></canvas>
+    <!-- Must be set here and in index.js (256 base * 3 scaleFactor = 768) -->
+    <canvas width="768" height="768"></canvas>
     <script src="src/index.js"></script>
 </body>
 

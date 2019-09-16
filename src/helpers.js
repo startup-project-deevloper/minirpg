@@ -4,6 +4,12 @@ export const uniqueId = (pre = "") =>
     Date.now() +
     Math.round(performance.now())).toString(36);
 
+export const useState = state => {
+  const setter = modifiedState => (state = modifiedState);
+  const getter = () => state;
+  return [getter, setter];
+};
+
 export const between = (v, a, b) => v > a && v < b;
 
 export const vmulti = (vec, v) => {
