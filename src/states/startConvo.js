@@ -1,5 +1,6 @@
 import ConversationIterator from "../conversationIterator";
 import { mainFlow } from "../data";
+import { emit, ES_CONVOSTART } from "../events";
 
 export default ({ id, cache, onEntry = () => {}, onExit = () => {} }) => {
   let isComplete = false;
@@ -26,6 +27,8 @@ export default ({ id, cache, onEntry = () => {}, onExit = () => {} }) => {
       // Example starter convo
       const val = convoIterator.goToExact("m1");
       console.log(val);
+
+      emit(ES_CONVOSTART, { ...props, val });
 
       onEntry(props);
     },

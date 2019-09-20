@@ -4,29 +4,15 @@
 <head>
     <title>Kontra & Friends</title>
     <meta charset="UTF-8" />
-    <style>
-        body {
-            background: #111;
-        }
-
-        canvas {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            margin-right: -50%;
-            transform: translate(-50%, -50%);
-            image-rendering: optimizeSpeed;
-            image-rendering: -moz-crisp-edges;
-            image-rendering: -webkit-optimize-contrast;
-            image-rendering: optimize-contrast;
-            -ms-interpolation-mode: nearest-neighbor;
-        }
-    </style>
+    <link rel="stylesheet" type="text/css" href="src/game.css">
 </head>
 
 <body>
     <!-- Must be set here and in index.js (256 base * 3 scaleFactor = 768) -->
-    <canvas width="768" height="768"></canvas>
+    <div id="root">
+        <div id="ui"></div>
+        <canvas width="768" height="768"></canvas>
+    </div>
     <script src="src/index.js"></script>
 </body>
 

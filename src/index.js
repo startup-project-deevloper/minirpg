@@ -12,6 +12,7 @@ import {
   keyPressed,
   initKeys
 } from "kontra";
+import UI from './ui';
 import Cache from "./cache";
 import { circleCollision } from "./helpers";
 import Entity from "./entity";
@@ -199,4 +200,7 @@ load(
   "assets/tiledata/test.json",
   "assets/entityimages/little_devil.png",
   "assets/entityimages/little_orc.png"
-).then(assets => Scene().start());
+).then(assets => {
+  Scene().start();
+  UI().start();
+});
