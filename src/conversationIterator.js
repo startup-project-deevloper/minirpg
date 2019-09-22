@@ -2,12 +2,16 @@ import { useState } from "./helpers";
 
 export default ({
   collection,
-  onChatNext = node => { },
-  onChatComplete = lastPositionSaved => { },
-  onChainProgress = lastNodeId => { }
+  onChatStarted = (node, props) => {},
+  onChatNext = (node, props) => {},
+  onChatComplete = lastPositionSaved => {},
+  onChainProgress = lastNodeId => {}
 }) => {
   const [index, setIndex] = useState(0);
   const [currentNode, setCurrentNode] = useState(collection[index()]);
+  const [isRunning, setIsRunning] = useState(false);
+
+  let isComplete = false;
 
   const _displayNode = queriedNode => {
     if (queriedNode) {
@@ -22,13 +26,13 @@ export default ({
   const _queryNode = query => {
     const queriedNode = collection.length
       ? collection.filter((node, index) => {
-        return query === node.id
-          ? {
-            node,
-            index
-          }
-          : null;
-      })[0]
+          return query === node.id
+            ? {
+                node,
+                index
+              }
+            : null;
+        })[0]
       : null;
 
     return _displayNode(queriedNode);
@@ -36,15 +40,20 @@ export default ({
 
   return {
     currentIndex: () => index(),
-    goToExact: query => {
+    // TODO: Can't we just alias or condense these?
+    start: (query, props = {}) => {
       const queriedNode = _queryNode(query);
 
       setIndex(queriedNode.index);
       setCurrentNode(queriedNode);
+      setIsRunning(true);
+      isComplete = false;
+
+      onChatStarted(queriedNode, props);
 
       return _displayNode(queriedNode);
     },
-    goToChoice: (query, props = {}) => {
+    goToExact: (query, props = {}) => {
       const queriedNode = _queryNode(query);
 
       setIndex(queriedNode.index);
@@ -55,6 +64,15 @@ export default ({
       return _displayNode(queriedNode);
     },
     goToNext: (props = {}) => {
+      // We need to run this 'after' the finish so it avoids chained exec on exit.
+      if (!isRunning()) return;
+      
+      if (isComplete) {
+        setIsRunning(false);
+        
+        return;
+      }
+
       // TODO: Beware, if you're not checking for existent choices, this will error out,
       // or do something a little funky. May want to check for choices here instead?
       const { id, to, choices, actions } = currentNode();
@@ -76,6 +94,7 @@ export default ({
           // ... onCancel, etc
           console.log("Cancelled, nothing was saved.");
         }
+        isComplete = true;
         onChatComplete(id);
         console.log("End reached, close the convo.");
         return;

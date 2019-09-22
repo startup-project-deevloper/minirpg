@@ -1,27 +1,34 @@
 import { keyPressed } from "kontra";
 
-export default ({ id, convoIterator, onEntry = () => {}, onExit = () => {}, onNext = () => {} }) => {
-  let currentActors = [];
+export default ({
+  id,
+  sprites,
+  onEntry = () => {},
+  onExit = () => {},
+  onNext = () => {}
+}) => {
   let isComplete = false;
+  let pushed = false;
 
   return {
     id,
-    isComplete,
+    isComplete: () => isComplete,
     enter: props => {
-      currentActors.push(props);
       console.log("Player entered a conversational state:");
       console.log(props);
-      onEntry({
-        actorProps: currentActors[0],
-        conversationProps: convoIterator.goToExact("m1")
-      });
+      onEntry();
     },
     update: () => {
-      if (keyPressed("e")) {
-        onNext({
-          actorProps: currentActors[0],
-          conversationProps: convoIterator.goToNext()
-        });
+      sprites.map(sprite => {
+        sprite.playAnimation("idle");
+        sprite.update();
+      });
+
+      if (keyPressed("e") && !pushed) {
+        onNext();
+        pushed = true;
+      } else if (pushed && !keyPressed("e")) {
+        pushed = false;
       }
     },
     exit: () => onExit()

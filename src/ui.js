@@ -1,22 +1,29 @@
 import { h, render } from "preact";
 import { useEffect, useState } from "preact/compat";
-import { on, EV_CONVOSTART, EV_CONVONEXT } from "./events";
+import { on, EV_CONVOSTART, EV_CONVONEXT, EV_CONVOEND } from "./events";
 
 const typeWriter = ({
   text,
   speed = 100,
-  onNext = () => { },
-  onComplete = () => { }
+  onNext = () => {},
+  onComplete = () => {}
 }) => {
-  const nextText = (i = 0, str = "") => {
+  let str = "";
+  let waiting = false;
+
+  const nextText = (i = 0) => {
+    if (waiting) return;
+
     if (i < text.length) {
+      waiting = true;
       str = str + text.charAt(i);
       i++;
       onNext(str);
-      setTimeout(() => {
-        nextText(i, str);
-      }, speed);
-    } else {
+      //setTimeout(() => {
+      waiting = false;
+      nextText(i, str);
+      //}, speed);
+    } else if (!waiting) {
       onComplete();
     }
   };
@@ -29,22 +36,26 @@ const typeWriter = ({
 const DialogueBox = ({
   title,
   text,
+  canProceed = false,
   children,
-  onTextStarted = () => { },
-  onTextComplete = () => { }
+  onTextStarted = () => {},
+  onTextComplete = () => {}
 }) => {
   const [textStep, setTextStep] = useState("");
 
-  useEffect(() => {
-    onTextStarted();
+  useEffect(
+    () => {
+      onTextStarted();
 
-    typeWriter({
-      speed: 50,
-      text,
-      onNext: text => setTextStep(text),
-      onComplete: () => onTextComplete()
-    }).start();
-  }, []);
+      typeWriter({
+        speed: 25,
+        text,
+        onNext: text => setTextStep(text),
+        onComplete: () => onTextComplete()
+      }).start();
+    },
+    [text]
+  );
 
   return (
     <div class="dialogueBoxOuter">
@@ -55,7 +66,7 @@ const DialogueBox = ({
         <p>
           {textStep}
         </p>
-        <div class="arrow" />
+        {canProceed && <div class="arrow" />}
         <div class="children">
           {children}
         </div>
@@ -64,7 +75,7 @@ const DialogueBox = ({
   );
 };
 
-const ChoiceWindow = ({ choices = [], onChoiceSelected = () => { } }) => {
+const ChoiceWindow = ({ choices = [], onChoiceSelected = () => {} }) => {
   return (
     <div class="choiceWindow">
       {choices.map(choice => {
@@ -92,40 +103,53 @@ const DebugWindow = ({ ...props }) => {
   );
 };
 
-const Shell = ({ onConversationChoice = () => { } }) => {
+const Shell = ({ onConversationChoice = () => {} }) => {
   const [debugData] = useState({});
   const [currentDialogue, setCurrentDialogue] = useState(null);
-  const [currentChoices, setCurrentChoices] = useState(null);
+  const [currentChoices, setCurrentChoices] = useState([]);
   const [canProceed, setCanProceed] = useState(true);
 
-  const onConvoStarted = data => {
-    if (!canProceed) return;
+  const onConvoStarted = ({ node, passedProps = {} }) => {
+    const speakingActor = passedProps.currentActors.find(
+      actor => actor.id === node.actor
+    );
 
-    console.log("Conversation started:");
-    console.log(data.conversationProps);
+    if (!canProceed) return;
 
     setCanProceed(false);
 
     setCurrentDialogue({
-      title: data.actorProps.name,
-      text: data.conversationProps.actor
-        ? `"${data.conversationProps.text}"`
-        : data.conversationProps.text
+      title: speakingActor ? speakingActor.name : "No name set",
+      text: node.actor ? `"${node.text}"` : node.text
     });
 
-    setCurrentChoices(data.conversationProps.choices);
+    setCurrentChoices(node.choices);
   };
 
-  const onConvoNext = data => {
-    if (canProceed && !currentChoices) {
-      console.log("Conversation next:");
-      setCurrentDialogue(data);
+  const onConvoNext = ({ node, passedProps = {} }) => {
+    if (canProceed && currentChoices.length === 0) {
+      console.log("Conversation next:", node, passedProps);
+
+      const speakingActor = passedProps.currentActors.find(
+        actor => actor.id === node.actor
+      );
+
+      setCurrentDialogue({
+        title: speakingActor ? speakingActor.name : "No name set",
+        text: node.actor ? `"${node.text}"` : node.text
+      });
+
+      setCurrentChoices(node.choices);
     }
   };
 
+  const onConvoEnd = () => {
+    setCurrentDialogue(null);
+    setCurrentChoices([]);
+  };
+
   const onChoiceSelected = choice => {
-    console.log(choice);
-    setCurrentChoices(null);
+    setCurrentChoices([]);
     onConversationChoice(choice);
   };
 
@@ -134,8 +158,10 @@ const Shell = ({ onConversationChoice = () => { } }) => {
   const onTextComplete = () => setCanProceed(true);
 
   useEffect(() => {
+    // TODO: Make sure these are only binding once! If things do reload, unbind and rebind.
     on(EV_CONVOSTART, onConvoStarted);
     on(EV_CONVONEXT, onConvoNext);
+    on(EV_CONVOEND, onConvoEnd);
   }, []);
 
   return (
@@ -144,6 +170,7 @@ const Shell = ({ onConversationChoice = () => { } }) => {
       {currentDialogue &&
         <DialogueBox
           {...currentDialogue}
+          canProceed={canProceed}
           onTextStarted={onTextStarted}
           onTextComplete={onTextComplete}
         >

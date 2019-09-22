@@ -9,20 +9,19 @@ import {
   load,
   TileEngine,
   dataAssets,
-  keyPressed,
-  initKeys
+  initKeys,
+  keyPressed
 } from "kontra";
 import UI from "./ui";
 import Cache from "./cache";
-import { circleCollision } from "./helpers";
 import Entity from "./entity";
 import ConversationIterator from "./conversationIterator";
 import StateMachine from "./fsm";
-import blankState from "./states/blankState";
 import startConvo from "./states/startConvo";
-import { emit, EV_CONVONEXT } from './events';
-
+import { emit, on, EV_CONVONEXT, EV_CONVOSTART, EV_CONVOEND } from "./events";
+import { circleCollision } from "./helpers";
 import { mainFlow } from "./data";
+import fieldState from "./states/fieldState";
 
 const gameCache = Cache.create("gameCache");
 gameCache.add("progress", {
@@ -41,27 +40,50 @@ ctx.scale(3, 3);
 
 const convoIterator = ConversationIterator({
   collection: mainFlow,
-  onChatNext: node => {
-    emit(EV_CONVONEXT, node);
+  onChatStarted: (node, passedProps = {}) => {
+    emit(EV_CONVOSTART, { node, passedProps });
   },
-  onChatComplete: lastPositionSaved => {
-    console.log("Exited:", lastPositionSaved);
+  onChatNext: (node, passedProps = {}) => {
+    emit(EV_CONVONEXT, { node, passedProps });
+  },
+  onChatComplete: exitId => {
+    emit(EV_CONVOEND, { exitId });
   },
   onChainProgress: lastNodeId => {
-    gameCache.set("progress", {
+    gameCache.update("progress", {
       storyProgress: lastNodeId
     });
   }
 });
 
+const createFieldState = ({ sprites, canvas, tileEngine }) => {
+  return fieldState({
+    id: "field",
+    sprites,
+    canvas,
+    tileEngine
+  });
+};
+
+const createConversationState = ({ sprites }) => {
+  return startConvo({
+    id: "conversation",
+    sprites,
+    onNext: props => {
+      convoIterator.goToNext({
+        currentActors: sprites
+      });
+    },
+    onEntry: props => {
+      convoIterator.start("m1", {
+        currentActors: sprites
+      });
+    }
+  });
+};
+
 const Scene = () => {
   initKeys();
-
-  const ui = UI({
-    onConversationChoice: choice => {
-      convoIterator.goToChoice(choice.to);
-    }
-  }).start();
 
   const mapKey = "assets/tiledata/test";
   const map = dataAssets[mapKey];
@@ -86,138 +108,71 @@ const Scene = () => {
 
   let sprites = [player, npc];
 
-  let appMode = 0;
+  const sceneStateMachine = StateMachine();
 
-  const sceneStateMachine = StateMachine({
-    states: [
-      blankState({
-        id: "field",
-        cache: gameCache,
-        onEntry: () => (appMode = 0)
-      }),
-      startConvo({
-        id: "conversation",
-        sprites,
-        convoIterator,
-        onNext: props => {
-          convoIterator.goToNext(props);
-        },
-        onEntry: props => {
-          appMode = 1;
-          convoIterator.goToExact('m1', props);
-        }
-      })
-    ]
+  sceneStateMachine.push(
+    createFieldState({
+      sprites,
+      canvas,
+      tileEngine
+    })
+  );
+
+  // Experimental
+  let pushed = false;
+  let justTalked = false;
+  const onCollisionDetected = (origin, colliders) => {
+    if (origin.controlledByUser && keyPressed("e") && !pushed) {
+      if (!justTalked) {
+        sceneStateMachine.push(
+          createConversationState({
+            sprites
+          }),
+          {
+            currentActors: sprites
+          }
+        );
+      } else {
+        justTalked = false;
+      }
+
+      pushed = true;
+    } else if (pushed && !keyPressed("e")) {
+      pushed = false;
+    }
+  };
+  //
+
+  // Experimental
+  on(EV_CONVOEND, () => {
+    sceneStateMachine.pop();
+    justTalked = true;
   });
+  //
+
+  UI({
+    onConversationChoice: choice => {
+      convoIterator.goToExact(choice.to, {
+        currentActors: sprites
+      });
+    }
+  }).start();
 
   return GameLoop({
     update: () => {
       sceneStateMachine.update();
 
-      if (appMode === 1) {
-        sprites.map(sprite => {
-          sprite.playAnimation("idle");
-          sprite.update();
-        });
-
-        return;
-      }
-
       sprites.map(sprite => {
-        // sprite is beyond the left edge
-        if (sprite.x < 0) {
-          sprite.x = canvas.width;
-        } else if (sprite.x > canvas.width) {
-          // sprite is beyond the right edge
-          sprite.x = 0;
+        const collidingWith = circleCollision(
+          sprite,
+          sprites.filter(s => s.id !== sprite.id)
+        );
+
+        sprite.isColliding = collidingWith.length > 0;
+
+        if (sprite.isColliding) {
+          onCollisionDetected(sprite, collidingWith);
         }
-        // sprite is beyond the top edge
-        if (sprite.y < 0) {
-          sprite.y = canvas.height;
-        } else if (sprite.y > canvas.height) {
-          // sprite is beyond the bottom edge
-          sprite.y = 0;
-        }
-
-        /* To move later on */
-        const dir = sprite.controlledByUser
-          ? {
-            x: keyPressed("a") ? -1 : keyPressed("d") ? 1 : 0,
-            y: keyPressed("w") ? -1 : keyPressed("s") ? 1 : 0
-          }
-          : { x: 0, y: 0 }; // AI
-
-        /* Normalise so you don't go super fast diagonally */
-        const dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
-
-        const dirNormal = {
-          x: dir.x !== 0 ? dir.x / dirLength : 0,
-          y: dir.y !== 0 ? dir.y / dirLength : 0
-        };
-
-        /// For collisions with tiles
-        let oldPos = {
-          x: sprite.x,
-          y: sprite.y
-        };
-
-        // Move X then check X (careful editing directly, might lead to issues with camera)
-        sprite.x += dirNormal.x;
-
-        // Collider check
-        const collidedWithX = tileEngine.layerCollidesWith("Collision", sprite);
-
-        if (sprite.collidesWithTiles && collidedWithX) {
-          sprite.x = oldPos.x;
-          sprite.y = oldPos.y;
-        }
-
-        // Update old pos ref
-        oldPos = {
-          x: sprite.x,
-          y: sprite.y
-        };
-
-        // Move Y then check Y (careful editing directly, might lead to issues with camera)
-        sprite.y += dirNormal.y;
-
-        // Collider check
-        const collidedWithY = tileEngine.layerCollidesWith("Collision", sprite);
-
-        if (sprite.collidesWithTiles && collidedWithY) {
-          sprite.x = oldPos.x;
-          sprite.y = oldPos.y;
-        }
-
-        /// For collisions with other sprites (you could optimise further with distance too)
-        if (sprite.controlledByUser && keyPressed("e")) {
-          const collidingWith = circleCollision(
-            sprite,
-            sprites.filter(s => s.id !== sprite.id)
-          );
-
-          sprite.isColliding = collidingWith.length > 0;
-
-          if (sprite.isColliding) {
-            sceneStateMachine.setState("conversation", {
-              ...collidingWith[0]
-            });
-          }
-        }
-
-        // Flip the sprite
-        if (dirNormal.x < 0) {
-          sprite.width = -sprite.width;
-        } else if (dirNormal.x > 0) {
-          sprite.width = sprite.width;
-        }
-
-        // Do some animations
-        const isMoving = dirNormal.x !== 0 || dirNormal.y !== 0;
-        sprite.playAnimation(isMoving ? "walk" : "idle");
-
-        // Don't update until you've calcs positions
-        sprite.update();
       });
     },
     render: () => {

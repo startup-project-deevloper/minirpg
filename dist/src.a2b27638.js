@@ -5095,7 +5095,7 @@ module.exports = function NanoEvents() {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.emit = exports.on = exports.EVENTS = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOSTART = void 0;
+exports.emit = exports.on = exports.EVENTS = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
 
 var _nanoevents = _interopRequireDefault(require("nanoevents"));
 
@@ -5105,11 +5105,13 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var emitter = new _nanoevents.default();
 var EV_CONVOSTART = 'ev.convoStart';
 exports.EV_CONVOSTART = EV_CONVOSTART;
+var EV_CONVOEND = 'ev.convoEnd';
+exports.EV_CONVOEND = EV_CONVOEND;
 var EV_CONVONEXT = 'ev.convoNext';
 exports.EV_CONVONEXT = EV_CONVONEXT;
 var EV_CONVOCHOICE = 'ev.convoChoice';
 exports.EV_CONVOCHOICE = EV_CONVOCHOICE;
-var EVENTS = [EV_CONVOSTART, EV_CONVONEXT, EV_CONVOCHOICE];
+var EVENTS = [EV_CONVOSTART, EV_CONVOEND, EV_CONVONEXT, EV_CONVOCHOICE];
 exports.EVENTS = EVENTS;
 
 var hasEvent = function hasEvent(e) {
@@ -5162,19 +5164,22 @@ var typeWriter = function typeWriter(_ref) {
       onNext = _ref$onNext === void 0 ? function () {} : _ref$onNext,
       _ref$onComplete = _ref.onComplete,
       onComplete = _ref$onComplete === void 0 ? function () {} : _ref$onComplete;
+  var str = "";
+  var waiting = false;
 
   var nextText = function nextText() {
     var i = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-    var str = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+    if (waiting) return;
 
     if (i < text.length) {
+      waiting = true;
       str = str + text.charAt(i);
       i++;
-      onNext(str);
-      setTimeout(function () {
-        nextText(i, str);
-      }, speed);
-    } else {
+      onNext(str); //setTimeout(() => {
+
+      waiting = false;
+      nextText(i, str); //}, speed);
+    } else if (!waiting) {
       onComplete();
     }
   };
@@ -5189,6 +5194,8 @@ var typeWriter = function typeWriter(_ref) {
 var DialogueBox = function DialogueBox(_ref2) {
   var title = _ref2.title,
       text = _ref2.text,
+      _ref2$canProceed = _ref2.canProceed,
+      canProceed = _ref2$canProceed === void 0 ? false : _ref2$canProceed,
       children = _ref2.children,
       _ref2$onTextStarted = _ref2.onTextStarted,
       onTextStarted = _ref2$onTextStarted === void 0 ? function () {} : _ref2$onTextStarted,
@@ -5203,7 +5210,7 @@ var DialogueBox = function DialogueBox(_ref2) {
   (0, _compat.useEffect)(function () {
     onTextStarted();
     typeWriter({
-      speed: 50,
+      speed: 25,
       text: text,
       onNext: function onNext(text) {
         return setTextStep(text);
@@ -5212,12 +5219,12 @@ var DialogueBox = function DialogueBox(_ref2) {
         return onTextComplete();
       }
     }).start();
-  }, []);
+  }, [text]);
   return (0, _preact.h)("div", {
     class: "dialogueBoxOuter"
   }, (0, _preact.h)("div", {
     class: "dialogue"
-  }, (0, _preact.h)("p", null, title, ":"), (0, _preact.h)("p", null, textStep), (0, _preact.h)("div", {
+  }, (0, _preact.h)("p", null, title, ":"), (0, _preact.h)("p", null, textStep), canProceed && (0, _preact.h)("div", {
     class: "arrow"
   }), (0, _preact.h)("div", {
     class: "children"
@@ -5261,7 +5268,7 @@ var Shell = function Shell(_ref5) {
       currentDialogue = _useState6[0],
       setCurrentDialogue = _useState6[1];
 
-  var _useState7 = (0, _compat.useState)(null),
+  var _useState7 = (0, _compat.useState)([]),
       _useState8 = _slicedToArray(_useState7, 2),
       currentChoices = _useState8[0],
       setCurrentChoices = _useState8[1];
@@ -5271,28 +5278,47 @@ var Shell = function Shell(_ref5) {
       canProceed = _useState10[0],
       setCanProceed = _useState10[1];
 
-  var onConvoStarted = function onConvoStarted(data) {
+  var onConvoStarted = function onConvoStarted(_ref6) {
+    var node = _ref6.node,
+        _ref6$passedProps = _ref6.passedProps,
+        passedProps = _ref6$passedProps === void 0 ? {} : _ref6$passedProps;
+    var speakingActor = passedProps.currentActors.find(function (actor) {
+      return actor.id === node.actor;
+    });
     if (!canProceed) return;
-    console.log("Conversation started:");
-    console.log(data.conversationProps);
     setCanProceed(false);
     setCurrentDialogue({
-      title: data.actorProps.name,
-      text: data.conversationProps.actor ? "\"".concat(data.conversationProps.text, "\"") : data.conversationProps.text
+      title: speakingActor ? speakingActor.name : "No name set",
+      text: node.actor ? "\"".concat(node.text, "\"") : node.text
     });
-    setCurrentChoices(data.conversationProps.choices);
+    setCurrentChoices(node.choices);
   };
 
-  var onConvoNext = function onConvoNext(data) {
-    if (canProceed && !currentChoices) {
-      console.log("Conversation next:");
-      setCurrentDialogue(data);
+  var onConvoNext = function onConvoNext(_ref7) {
+    var node = _ref7.node,
+        _ref7$passedProps = _ref7.passedProps,
+        passedProps = _ref7$passedProps === void 0 ? {} : _ref7$passedProps;
+
+    if (canProceed && currentChoices.length === 0) {
+      console.log("Conversation next:", node, passedProps);
+      var speakingActor = passedProps.currentActors.find(function (actor) {
+        return actor.id === node.actor;
+      });
+      setCurrentDialogue({
+        title: speakingActor ? speakingActor.name : "No name set",
+        text: node.actor ? "\"".concat(node.text, "\"") : node.text
+      });
+      setCurrentChoices(node.choices);
     }
   };
 
+  var onConvoEnd = function onConvoEnd() {
+    setCurrentDialogue(null);
+    setCurrentChoices([]);
+  };
+
   var onChoiceSelected = function onChoiceSelected(choice) {
-    console.log(choice);
-    setCurrentChoices(null);
+    setCurrentChoices([]);
     onConversationChoice(choice);
   };
 
@@ -5305,12 +5331,15 @@ var Shell = function Shell(_ref5) {
   };
 
   (0, _compat.useEffect)(function () {
+    // TODO: Make sure these are only binding once! If things do reload, unbind and rebind.
     (0, _events.on)(_events.EV_CONVOSTART, onConvoStarted);
     (0, _events.on)(_events.EV_CONVONEXT, onConvoNext);
+    (0, _events.on)(_events.EV_CONVOEND, onConvoEnd);
   }, []);
   return (0, _preact.h)("div", {
     class: "uiShell"
   }, debugData && (0, _preact.h)(DebugWindow, debugData), currentDialogue && (0, _preact.h)(DialogueBox, _extends({}, currentDialogue, {
+    canProceed: canProceed,
     onTextStarted: onTextStarted,
     onTextComplete: onTextComplete
   }), currentChoices && canProceed && (0, _preact.h)(ChoiceWindow, {
@@ -5562,9 +5591,9 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 var _default = function _default(_ref) {
   var collection = _ref.collection,
       _ref$onChatStarted = _ref.onChatStarted,
-      onChatStarted = _ref$onChatStarted === void 0 ? function () {} : _ref$onChatStarted,
+      onChatStarted = _ref$onChatStarted === void 0 ? function (node, props) {} : _ref$onChatStarted,
       _ref$onChatNext = _ref.onChatNext,
-      onChatNext = _ref$onChatNext === void 0 ? function (node) {} : _ref$onChatNext,
+      onChatNext = _ref$onChatNext === void 0 ? function (node, props) {} : _ref$onChatNext,
       _ref$onChatComplete = _ref.onChatComplete,
       onChatComplete = _ref$onChatComplete === void 0 ? function (lastPositionSaved) {} : _ref$onChatComplete,
       _ref$onChainProgress = _ref.onChainProgress,
@@ -5579,6 +5608,13 @@ var _default = function _default(_ref) {
       _useState4 = _slicedToArray(_useState3, 2),
       currentNode = _useState4[0],
       setCurrentNode = _useState4[1];
+
+  var _useState5 = (0, _helpers.useState)(false),
+      _useState6 = _slicedToArray(_useState5, 2),
+      isRunning = _useState6[0],
+      setIsRunning = _useState6[1];
+
+  var isComplete = false;
 
   var _displayNode = function _displayNode(queriedNode) {
     if (queriedNode) {
@@ -5604,16 +5640,41 @@ var _default = function _default(_ref) {
     currentIndex: function currentIndex() {
       return index();
     },
-    goToExact: function goToExact(query) {
+    // TODO: Can't we just alias or condense these?
+    start: function start(query) {
+      var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
       var queriedNode = _queryNode(query);
 
       setIndex(queriedNode.index);
       setCurrentNode(queriedNode);
+      setIsRunning(true);
+      isComplete = false;
+      onChatStarted(queriedNode, props);
+      return _displayNode(queriedNode);
+    },
+    goToExact: function goToExact(query) {
+      var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+      var queriedNode = _queryNode(query);
+
+      setIndex(queriedNode.index);
+      setCurrentNode(queriedNode);
+      onChatNext(queriedNode, props);
       return _displayNode(queriedNode);
     },
     goToNext: function goToNext() {
-      // TODO: Beware, if you're not checking for existent choices, this will error out,
+      var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      // We need to run this 'after' the finish so it avoids chained exec on exit.
+      if (!isRunning()) return;
+
+      if (isComplete) {
+        setIsRunning(false);
+        return;
+      } // TODO: Beware, if you're not checking for existent choices, this will error out,
       // or do something a little funky. May want to check for choices here instead?
+
+
       var _currentNode = currentNode(),
           id = _currentNode.id,
           to = _currentNode.to,
@@ -5621,9 +5682,7 @@ var _default = function _default(_ref) {
           actions = _currentNode.actions; // Wait if choices are presented.
 
 
-      if (choices.length) return; // Fires regardless of validity
-
-      onChatNext(currentNode()); // TODO: Consts please.
+      if (choices.length) return; // TODO: Consts please.
 
       if (actions.some(function (action) {
         return action === "endConversation";
@@ -5643,6 +5702,7 @@ var _default = function _default(_ref) {
           console.log("Cancelled, nothing was saved.");
         }
 
+        isComplete = true;
         onChatComplete(id);
         console.log("End reached, close the convo.");
         return;
@@ -5652,6 +5712,7 @@ var _default = function _default(_ref) {
 
       setIndex(queriedNode.index);
       setCurrentNode(queriedNode);
+      onChatNext(queriedNode, props);
       return _displayNode(queriedNode);
     }
   };
@@ -5666,58 +5727,35 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _default = function _default(_ref) {
-  var _ref$states = _ref.states,
-      states = _ref$states === void 0 ? [] : _ref$states,
-      _ref$startIndex = _ref.startIndex,
-      startIndex = _ref$startIndex === void 0 ? 0 : _ref$startIndex;
-  var currentState = states[startIndex];
-  return {
-    setState: function setState(stateId) {
-      var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      if (currentState.id === stateId) return;
-      currentState = states.find(function (st) {
-        return st.id === stateId;
-      });
-      currentState.enter(props);
-    },
-    update: function update() {
-      currentState.update();
-
-      if (currentState.isComplete) {
-        currentState.exit();
-        currentState = states[0];
-      }
-    }
-  };
+var top = function top(arr) {
+  return arr[arr.length - 1];
 };
 
-exports.default = _default;
-},{}],"src/states/blankState.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      cache = _ref.cache,
-      _ref$onEntry = _ref.onEntry,
-      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
-      _ref$onExit = _ref.onExit,
-      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
-  var isComplete = false;
+var _default = function _default() {
+  var states = [];
   return {
-    id: id,
-    isComplete: isComplete,
-    enter: function enter(props) {
-      onEntry();
+    push: function push(state, props) {
+      if (!states.some(function (s) {
+        return s.id === state.id;
+      })) {
+        states.push(state);
+        top(states).enter(props);
+      }
     },
-    update: function update() {},
-    exit: function exit() {
-      onExit();
+    update: function update() {
+      var currentState = top(states);
+      currentState.update(); // Attempts an auto-complete if internal isComplete has been set somehow.
+
+      if (currentState.isComplete()) {
+        currentState.exit();
+        states.pop();
+      }
+    },
+    pop: function pop() {
+      // Unlike above, some states may require manual intervention.
+      var currentState = top(states);
+      currentState.exit();
+      states.pop();
     }
   };
 };
@@ -5735,33 +5773,36 @@ var _kontra = require("kontra");
 
 var _default = function _default(_ref) {
   var id = _ref.id,
-      convoIterator = _ref.convoIterator,
+      sprites = _ref.sprites,
       _ref$onEntry = _ref.onEntry,
       onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
       _ref$onExit = _ref.onExit,
       onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit,
       _ref$onNext = _ref.onNext,
       onNext = _ref$onNext === void 0 ? function () {} : _ref$onNext;
-  var currentActors = [];
-  var isComplete = false;
+  var _isComplete = false;
+  var pushed = false;
   return {
     id: id,
-    isComplete: isComplete,
+    isComplete: function isComplete() {
+      return _isComplete;
+    },
     enter: function enter(props) {
-      currentActors.push(props);
       console.log("Player entered a conversational state:");
       console.log(props);
-      onEntry({
-        actorProps: currentActors[0],
-        conversationProps: convoIterator.goToExact("m1")
-      });
+      onEntry();
     },
     update: function update() {
-      if ((0, _kontra.keyPressed)("e")) {
-        onNext({
-          actorProps: currentActors[0],
-          conversationProps: convoIterator.goToNext()
-        });
+      sprites.map(function (sprite) {
+        sprite.playAnimation("idle");
+        sprite.update();
+      });
+
+      if ((0, _kontra.keyPressed)("e") && !pushed) {
+        onNext();
+        pushed = true;
+      } else if (pushed && !(0, _kontra.keyPressed)("e")) {
+        pushed = false;
       }
     },
     exit: function exit() {
@@ -5828,127 +5869,35 @@ var mainFlow = [{
   actions: ["endConversation", "save"]
 }];
 exports.mainFlow = mainFlow;
-},{}],"src/index.js":[function(require,module,exports) {
+},{}],"src/states/fieldState.js":[function(require,module,exports) {
 "use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
 
 var _kontra = require("kontra");
 
-var _ui = _interopRequireDefault(require("./ui"));
-
-var _cache = _interopRequireDefault(require("./cache"));
-
-var _helpers = require("./helpers");
-
-var _entity = _interopRequireDefault(require("./entity"));
-
-var _conversationIterator = _interopRequireDefault(require("./conversationIterator"));
-
-var _fsm = _interopRequireDefault(require("./fsm"));
-
-var _blankState = _interopRequireDefault(require("./states/blankState"));
-
-var _startConvo = _interopRequireDefault(require("./states/startConvo"));
-
-var _events = require("./events");
-
-var _data = require("./data");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var gameCache = _cache.default.create("gameCache");
-
-gameCache.add("progress", {
-  storyProgress: null
-});
-
-var _init = (0, _kontra.init)(),
-    canvas = _init.canvas;
-
-var ctx = canvas.getContext("2d");
-ctx.imageSmoothingEnabled = false;
-ctx.webkitImageSmoothingEnabled = false;
-ctx.mozImageSmoothingEnabled = false;
-ctx.msImageSmoothingEnabled = false;
-ctx.oImageSmoothingEnabled = false;
-ctx.scale(3, 3);
-var convoIterator = (0, _conversationIterator.default)({
-  collection: _data.mainFlow,
-  onChatNext: function onChatNext(node) {
-    (0, _events.emit)(_events.EV_CONVONEXT, node);
-  },
-  onChatComplete: function onChatComplete(lastPositionSaved) {
-    console.log("Exited:", lastPositionSaved);
-  },
-  onChainProgress: function onChainProgress(lastNodeId) {
-    gameCache.set("progress", {
-      storyProgress: lastNodeId
-    });
-  }
-});
-
-var Scene = function Scene() {
-  (0, _kontra.initKeys)();
-  var ui = (0, _ui.default)({
-    onConversationChoice: function onConversationChoice(choice) {// convoIterator.goToExact(choice.to);
-      // emit here
-    }
-  }).start();
-  var mapKey = "assets/tiledata/test";
-  var map = _kontra.dataAssets[mapKey];
-  var tileEngine = (0, _kontra.TileEngine)(map);
-  var player = (0, _entity.default)({
-    x: 120,
-    y: 120,
-    sheet: "assets/entityimages/little_devil.png",
-    name: "Player",
-    id: "player",
-    controlledByUser: true
-  });
-  var npc = (0, _entity.default)({
-    x: 120,
-    y: 160,
-    name: "Daryl",
-    id: "daryl",
-    sheet: "assets/entityimages/little_orc.png"
-  });
-  var sprites = [player, npc];
-  var appMode = 0;
-  var sceneStateMachine = (0, _fsm.default)({
-    states: [(0, _blankState.default)({
-      id: "field",
-      cache: gameCache,
-      onEntry: function onEntry() {
-        return appMode = 0;
-      }
-    }), (0, _startConvo.default)({
-      id: "conversation",
-      sprites: sprites,
-      convoIterator: convoIterator,
-      onNext: function onNext(props) {},
-      onEntry: function onEntry(props) {
-        appMode = 1;
-        convoIterator.goToExact('m1');
-      }
-    })]
-  });
-  return (0, _kontra.GameLoop)({
+var _default = function _default(_ref) {
+  var id = _ref.id,
+      sprites = _ref.sprites,
+      canvas = _ref.canvas,
+      tileEngine = _ref.tileEngine,
+      _ref$onEntry = _ref.onEntry,
+      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
+      _ref$onExit = _ref.onExit,
+      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
+  var _isComplete = false;
+  return {
+    id: id,
+    isComplete: function isComplete() {
+      return _isComplete;
+    },
+    enter: function enter(props) {
+      onEntry();
+    },
     update: function update() {
-      sceneStateMachine.update();
-
-      if (appMode === 1) {
-        sprites.map(function (sprite) {
-          sprite.playAnimation("idle");
-          sprite.update();
-        });
-        return;
-      }
-
       sprites.map(function (sprite) {
         // sprite is beyond the left edge
         if (sprite.x < 0) {
@@ -6004,26 +5953,14 @@ var Scene = function Scene() {
           y: sprite.y
         }; // Move Y then check Y (careful editing directly, might lead to issues with camera)
 
-        sprite.y += dirNormal.y; // Collider check
+        sprite.y += dirNormal.y; // Collider check against tiles
 
         var collidedWithY = tileEngine.layerCollidesWith("Collision", sprite);
 
         if (sprite.collidesWithTiles && collidedWithY) {
           sprite.x = oldPos.x;
           sprite.y = oldPos.y;
-        } /// For collisions with other sprites (you could optimise further with distance too)
-
-
-        if (sprite.controlledByUser && (0, _kontra.keyPressed)("e")) {
-          var collidingWith = (0, _helpers.circleCollision)(sprite, sprites.filter(function (s) {
-            return s.id !== sprite.id;
-          }));
-          sprite.isColliding = collidingWith.length > 0;
-
-          if (sprite.isColliding) {
-            sceneStateMachine.setState("conversation", _objectSpread({}, collidingWith[0]));
-          }
-        } // Flip the sprite
+        } // Flip the sprite on movement
 
 
         if (dirNormal.x < 0) {
@@ -6037,6 +5974,196 @@ var Scene = function Scene() {
         sprite.playAnimation(isMoving ? "walk" : "idle"); // Don't update until you've calcs positions
 
         sprite.update();
+      });
+    },
+    exit: function exit() {
+      onExit();
+    }
+  };
+};
+
+exports.default = _default;
+},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/index.js":[function(require,module,exports) {
+"use strict";
+
+var _kontra = require("kontra");
+
+var _ui = _interopRequireDefault(require("./ui"));
+
+var _cache = _interopRequireDefault(require("./cache"));
+
+var _entity = _interopRequireDefault(require("./entity"));
+
+var _conversationIterator = _interopRequireDefault(require("./conversationIterator"));
+
+var _fsm = _interopRequireDefault(require("./fsm"));
+
+var _startConvo = _interopRequireDefault(require("./states/startConvo"));
+
+var _events = require("./events");
+
+var _helpers = require("./helpers");
+
+var _data = require("./data");
+
+var _fieldState = _interopRequireDefault(require("./states/fieldState"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/* Credits
+* Asset Pack:
+* https://pixel-poem.itch.io/dungeon-assetpuck
+* https://0x72.itch.io/dungeontileset-ii
+*/
+var gameCache = _cache.default.create("gameCache");
+
+gameCache.add("progress", {
+  storyProgress: null
+});
+
+var _init = (0, _kontra.init)(),
+    canvas = _init.canvas;
+
+var ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+ctx.webkitImageSmoothingEnabled = false;
+ctx.mozImageSmoothingEnabled = false;
+ctx.msImageSmoothingEnabled = false;
+ctx.oImageSmoothingEnabled = false;
+ctx.scale(3, 3);
+var convoIterator = (0, _conversationIterator.default)({
+  collection: _data.mainFlow,
+  onChatStarted: function onChatStarted(node) {
+    var passedProps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    (0, _events.emit)(_events.EV_CONVOSTART, {
+      node: node,
+      passedProps: passedProps
+    });
+  },
+  onChatNext: function onChatNext(node) {
+    var passedProps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    (0, _events.emit)(_events.EV_CONVONEXT, {
+      node: node,
+      passedProps: passedProps
+    });
+  },
+  onChatComplete: function onChatComplete(exitId) {
+    (0, _events.emit)(_events.EV_CONVOEND, {
+      exitId: exitId
+    });
+  },
+  onChainProgress: function onChainProgress(lastNodeId) {
+    gameCache.update("progress", {
+      storyProgress: lastNodeId
+    });
+  }
+});
+
+var createFieldState = function createFieldState(_ref) {
+  var sprites = _ref.sprites,
+      canvas = _ref.canvas,
+      tileEngine = _ref.tileEngine;
+  return (0, _fieldState.default)({
+    id: "field",
+    sprites: sprites,
+    canvas: canvas,
+    tileEngine: tileEngine
+  });
+};
+
+var createConversationState = function createConversationState(_ref2) {
+  var sprites = _ref2.sprites;
+  return (0, _startConvo.default)({
+    id: "conversation",
+    sprites: sprites,
+    onNext: function onNext(props) {
+      convoIterator.goToNext({
+        currentActors: sprites
+      });
+    },
+    onEntry: function onEntry(props) {
+      convoIterator.start("m1", {
+        currentActors: sprites
+      });
+    }
+  });
+};
+
+var Scene = function Scene() {
+  (0, _kontra.initKeys)();
+  var mapKey = "assets/tiledata/test";
+  var map = _kontra.dataAssets[mapKey];
+  var tileEngine = (0, _kontra.TileEngine)(map);
+  var player = (0, _entity.default)({
+    x: 120,
+    y: 120,
+    sheet: "assets/entityimages/little_devil.png",
+    name: "Player",
+    id: "player",
+    controlledByUser: true
+  });
+  var npc = (0, _entity.default)({
+    x: 120,
+    y: 160,
+    name: "Daryl",
+    id: "daryl",
+    sheet: "assets/entityimages/little_orc.png"
+  });
+  var sprites = [player, npc];
+  var sceneStateMachine = (0, _fsm.default)();
+  sceneStateMachine.push(createFieldState({
+    sprites: sprites,
+    canvas: canvas,
+    tileEngine: tileEngine
+  })); // Experimental
+
+  var pushed = false;
+  var justTalked = false;
+
+  var onCollisionDetected = function onCollisionDetected(origin, colliders) {
+    if (origin.controlledByUser && (0, _kontra.keyPressed)("e") && !pushed) {
+      if (!justTalked) {
+        sceneStateMachine.push(createConversationState({
+          sprites: sprites
+        }), {
+          currentActors: sprites
+        });
+      } else {
+        justTalked = false;
+      }
+
+      pushed = true;
+    } else if (pushed && !(0, _kontra.keyPressed)("e")) {
+      pushed = false;
+    }
+  }; //
+  // Experimental
+
+
+  (0, _events.on)(_events.EV_CONVOEND, function () {
+    sceneStateMachine.pop();
+    justTalked = true;
+  }); //
+
+  (0, _ui.default)({
+    onConversationChoice: function onConversationChoice(choice) {
+      convoIterator.goToExact(choice.to, {
+        currentActors: sprites
+      });
+    }
+  }).start();
+  return (0, _kontra.GameLoop)({
+    update: function update() {
+      sceneStateMachine.update();
+      sprites.map(function (sprite) {
+        var collidingWith = (0, _helpers.circleCollision)(sprite, sprites.filter(function (s) {
+          return s.id !== sprite.id;
+        }));
+        sprite.isColliding = collidingWith.length > 0;
+
+        if (sprite.isColliding) {
+          onCollisionDetected(sprite, collidingWith);
+        }
       });
     },
     render: function render() {
@@ -6053,7 +6180,7 @@ var Scene = function Scene() {
 (0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png").then(function (assets) {
   Scene().start();
 });
-},{"kontra":"node_modules/kontra/kontra.mjs","./ui":"src/ui.js","./cache":"src/cache.js","./helpers":"src/helpers.js","./entity":"src/entity.js","./conversationIterator":"src/conversationIterator.js","./fsm":"src/fsm.js","./states/blankState":"src/states/blankState.js","./states/startConvo":"src/states/startConvo.js","./events":"src/events.js","./data":"src/data.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./ui":"src/ui.js","./cache":"src/cache.js","./entity":"src/entity.js","./conversationIterator":"src/conversationIterator.js","./fsm":"src/fsm.js","./states/startConvo":"src/states/startConvo.js","./events":"src/events.js","./helpers":"src/helpers.js","./data":"src/data.js","./states/fieldState":"src/states/fieldState.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -6081,7 +6208,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64183" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58007" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

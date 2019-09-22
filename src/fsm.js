@@ -1,20 +1,29 @@
-export default ({ states = [], startIndex = 0 }) => {
-  let currentState = states[startIndex];
+const top = arr => arr[arr.length - 1];
 
+export default () => {
+  let states = [];
   return {
-    setState: (stateId, props = {}) => {
-      if (currentState.id === stateId) return;
-
-      currentState = states.find(st => st.id === stateId);
-      currentState.enter(props);
+    push: (state, props) => {
+      if (!states.some(s => s.id === state.id)) {
+        states.push(state);
+        top(states).enter(props);
+      }
     },
     update: () => {
+      const currentState = top(states);
       currentState.update();
 
-      if (currentState.isComplete) {
+      // Attempts an auto-complete if internal isComplete has been set somehow.
+      if (currentState.isComplete()) {
         currentState.exit();
-        currentState = states[0];
+        states.pop();
       }
+    },
+    pop: () => {
+      // Unlike above, some states may require manual intervention.
+      const currentState = top(states);
+      currentState.exit();
+      states.pop();
     }
   };
 };
