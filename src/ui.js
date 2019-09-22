@@ -2,36 +2,34 @@ import { h, render } from "preact";
 import { useEffect, useState } from "preact/compat";
 import { on, EV_CONVOSTART, EV_CONVONEXT, EV_CONVOEND } from "./events";
 
-const typeWriter = ({
-  text,
-  speed = 100,
-  onNext = () => {},
-  onComplete = () => {}
-}) => {
-  let str = "";
-  let waiting = false;
+const TypeWriter = ({ text, onTextStarted = () => {}, onTextComplete = () => {} }) => {
 
-  const nextText = (i = 0) => {
-    if (waiting) return;
+  const [str, setString] = useState('')
 
-    if (i < text.length) {
-      waiting = true;
-      str = str + text.charAt(i);
-      i++;
-      onNext(str);
-      setTimeout(() => {
-        waiting = false;
-        nextText(i, str);
-      }, speed);
-    } else if (!waiting) {
-      onComplete();
-    }
-  };
+  const t = (s, i) => {
 
-  return {
-    start: () => nextText()
-  };
-};
+    if (i > text.length) {
+      onTextComplete();
+      return;
+    };
+    
+    const nextString = s + text.charAt(i);
+    setString(nextString)
+
+    i += 1;
+
+    setTimeout(() => {
+      t(nextString, i)
+    }, 50)
+  }
+
+  useEffect(() => {
+    onTextStarted();
+    t('', 0);
+  }, [text])
+
+  return <span>{str}</span>
+}
 
 const DialogueBox = ({
   title,
@@ -41,31 +39,13 @@ const DialogueBox = ({
   onTextStarted = () => {},
   onTextComplete = () => {}
 }) => {
-  const [textStep, setTextStep] = useState("");
-
-  useEffect(
-    () => {
-      onTextStarted();
-
-      typeWriter({
-        speed: 200,
-        text,
-        onNext: text => setTextStep(text),
-        onComplete: () => onTextComplete()
-      }).start();
-    },
-    [text]
-  );
-
   return (
     <div class="dialogueBoxOuter">
       <div class="dialogue">
         <p>
           {title}:
         </p>
-        <p>
-          {textStep}
-        </p>
+        <TypeWriter text={text} onTextStarted={onTextStarted} onTextComplete={onTextComplete} />
         {canProceed && <div class="arrow" />}
         <div class="children">
           {children}
@@ -128,13 +108,15 @@ const Shell = ({ onConversationChoice = () => {} }) => {
 
   const onConvoNext = ({ node, passedProps = {} }) => {
     // It seems you can proceed way before you're supposed to...
-    console.log("Next call:")
+    console.log("Next call:", canProceed)
     if (canProceed && currentChoices.length === 0) {
       console.log("Conversation next:", node, passedProps);
 
       const speakingActor = passedProps.currentActors.find(
         actor => actor.id === node.actor
       );
+
+      setCanProceed(false);
 
       setCurrentDialogue({
         title: speakingActor ? speakingActor.name : "No name set",
@@ -155,10 +137,11 @@ const Shell = ({ onConversationChoice = () => {} }) => {
     onConversationChoice(choice);
   };
 
-  const onTextStarted = () => setCanProceed(false);
-
   // TODO: This runs in to trouble as different callbacks start to overlap, it needs to be more linear.
-  const onTextComplete = () => setCanProceed(true);
+  const onTextComplete = () => {
+    console.log('Text complete')
+    //setCanProceed(true);
+  }
 
   useEffect(() => {
     // TODO: Make sure these are only binding once! If things do reload, unbind and rebind.
@@ -174,7 +157,6 @@ const Shell = ({ onConversationChoice = () => {} }) => {
         <DialogueBox
           {...currentDialogue}
           canProceed={canProceed}
-          onTextStarted={onTextStarted}
           onTextComplete={onTextComplete}
         >
           {currentChoices &&

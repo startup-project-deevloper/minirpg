@@ -5156,40 +5156,38 @@ function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) ||
 
 function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
-var typeWriter = function typeWriter(_ref) {
+var TypeWriter = function TypeWriter(_ref) {
   var text = _ref.text,
-      _ref$speed = _ref.speed,
-      speed = _ref$speed === void 0 ? 100 : _ref$speed,
-      _ref$onNext = _ref.onNext,
-      onNext = _ref$onNext === void 0 ? function () {} : _ref$onNext,
-      _ref$onComplete = _ref.onComplete,
-      onComplete = _ref$onComplete === void 0 ? function () {} : _ref$onComplete;
-  var str = "";
-  var waiting = false;
+      _ref$onTextStarted = _ref.onTextStarted,
+      onTextStarted = _ref$onTextStarted === void 0 ? function () {} : _ref$onTextStarted,
+      _ref$onTextComplete = _ref.onTextComplete,
+      onTextComplete = _ref$onTextComplete === void 0 ? function () {} : _ref$onTextComplete;
 
-  var nextText = function nextText() {
-    var i = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-    if (waiting) return;
+  var _useState = (0, _compat.useState)(''),
+      _useState2 = _slicedToArray(_useState, 2),
+      str = _useState2[0],
+      setString = _useState2[1];
 
-    if (i < text.length) {
-      waiting = true;
-      str = str + text.charAt(i);
-      i++;
-      onNext(str);
-      setTimeout(function () {
-        waiting = false;
-        nextText(i, str);
-      }, speed);
-    } else if (!waiting) {
-      onComplete();
+  var t = function t(s, i) {
+    if (i > text.length) {
+      onTextComplete();
+      return;
     }
+
+    ;
+    var nextString = s + text.charAt(i);
+    setString(nextString);
+    i += 1;
+    setTimeout(function () {
+      t(nextString, i);
+    }, 50);
   };
 
-  return {
-    start: function start() {
-      return nextText();
-    }
-  };
+  (0, _compat.useEffect)(function () {
+    onTextStarted();
+    t('', 0);
+  }, [text]);
+  return (0, _preact.h)("span", null, str);
 };
 
 var DialogueBox = function DialogueBox(_ref2) {
@@ -5202,30 +5200,15 @@ var DialogueBox = function DialogueBox(_ref2) {
       onTextStarted = _ref2$onTextStarted === void 0 ? function () {} : _ref2$onTextStarted,
       _ref2$onTextComplete = _ref2.onTextComplete,
       onTextComplete = _ref2$onTextComplete === void 0 ? function () {} : _ref2$onTextComplete;
-
-  var _useState = (0, _compat.useState)(""),
-      _useState2 = _slicedToArray(_useState, 2),
-      textStep = _useState2[0],
-      setTextStep = _useState2[1];
-
-  (0, _compat.useEffect)(function () {
-    onTextStarted();
-    typeWriter({
-      speed: 200,
-      text: text,
-      onNext: function onNext(text) {
-        return setTextStep(text);
-      },
-      onComplete: function onComplete() {
-        return onTextComplete();
-      }
-    }).start();
-  }, [text]);
   return (0, _preact.h)("div", {
     class: "dialogueBoxOuter"
   }, (0, _preact.h)("div", {
     class: "dialogue"
-  }, (0, _preact.h)("p", null, title, ":"), (0, _preact.h)("p", null, textStep), canProceed && (0, _preact.h)("div", {
+  }, (0, _preact.h)("p", null, title, ":"), (0, _preact.h)(TypeWriter, {
+    text: text,
+    onTextStarted: onTextStarted,
+    onTextComplete: onTextComplete
+  }), canProceed && (0, _preact.h)("div", {
     class: "arrow"
   }), (0, _preact.h)("div", {
     class: "children"
@@ -5300,13 +5283,14 @@ var Shell = function Shell(_ref5) {
         _ref7$passedProps = _ref7.passedProps,
         passedProps = _ref7$passedProps === void 0 ? {} : _ref7$passedProps;
     // It seems you can proceed way before you're supposed to...
-    console.log("Next call:");
+    console.log("Next call:", canProceed);
 
     if (canProceed && currentChoices.length === 0) {
       console.log("Conversation next:", node, passedProps);
       var speakingActor = passedProps.currentActors.find(function (actor) {
         return actor.id === node.actor;
       });
+      setCanProceed(false);
       setCurrentDialogue({
         title: speakingActor ? speakingActor.name : "No name set",
         text: node.actor ? "\"".concat(node.text, "\"") : node.text
@@ -5323,15 +5307,11 @@ var Shell = function Shell(_ref5) {
   var onChoiceSelected = function onChoiceSelected(choice) {
     setCurrentChoices([]);
     onConversationChoice(choice);
-  };
-
-  var onTextStarted = function onTextStarted() {
-    return setCanProceed(false);
   }; // TODO: This runs in to trouble as different callbacks start to overlap, it needs to be more linear.
 
 
   var onTextComplete = function onTextComplete() {
-    return setCanProceed(true);
+    console.log('Text complete'); //setCanProceed(true);
   };
 
   (0, _compat.useEffect)(function () {
@@ -5344,7 +5324,6 @@ var Shell = function Shell(_ref5) {
     class: "uiShell"
   }, debugData && (0, _preact.h)(DebugWindow, debugData), currentDialogue && (0, _preact.h)(DialogueBox, _extends({}, currentDialogue, {
     canProceed: canProceed,
-    onTextStarted: onTextStarted,
     onTextComplete: onTextComplete
   }), currentChoices && canProceed && (0, _preact.h)(ChoiceWindow, {
     choices: currentChoices,
@@ -6212,7 +6191,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52879" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51022" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
