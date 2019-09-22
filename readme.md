@@ -3,7 +3,7 @@ Create a really small RPG, try to aim for under 56kb (built).
 
 ### It must have:
 - Movement [Done]
-- Conversations (with choices) [Partial]
+- Conversations (with choices) [Done]
 - Interaction with things around the map [x]
 - Super simple inventory [x]
 - Animations [Partial]

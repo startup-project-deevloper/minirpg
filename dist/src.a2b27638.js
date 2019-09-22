@@ -5175,10 +5175,11 @@ var typeWriter = function typeWriter(_ref) {
       waiting = true;
       str = str + text.charAt(i);
       i++;
-      onNext(str); //setTimeout(() => {
-
-      waiting = false;
-      nextText(i, str); //}, speed);
+      onNext(str);
+      setTimeout(function () {
+        waiting = false;
+        nextText(i, str);
+      }, speed);
     } else if (!waiting) {
       onComplete();
     }
@@ -5210,7 +5211,7 @@ var DialogueBox = function DialogueBox(_ref2) {
   (0, _compat.useEffect)(function () {
     onTextStarted();
     typeWriter({
-      speed: 25,
+      speed: 200,
       text: text,
       onNext: function onNext(text) {
         return setTextStep(text);
@@ -5298,6 +5299,8 @@ var Shell = function Shell(_ref5) {
     var node = _ref7.node,
         _ref7$passedProps = _ref7.passedProps,
         passedProps = _ref7$passedProps === void 0 ? {} : _ref7$passedProps;
+    // It seems you can proceed way before you're supposed to...
+    console.log("Next call:");
 
     if (canProceed && currentChoices.length === 0) {
       console.log("Conversation next:", node, passedProps);
@@ -5324,7 +5327,8 @@ var Shell = function Shell(_ref5) {
 
   var onTextStarted = function onTextStarted() {
     return setCanProceed(false);
-  };
+  }; // TODO: This runs in to trouble as different callbacks start to overlap, it needs to be more linear.
+
 
   var onTextComplete = function onTextComplete() {
     return setCanProceed(true);
@@ -6208,7 +6212,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58007" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52879" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

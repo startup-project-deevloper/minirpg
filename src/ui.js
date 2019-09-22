@@ -19,10 +19,10 @@ const typeWriter = ({
       str = str + text.charAt(i);
       i++;
       onNext(str);
-      //setTimeout(() => {
-      waiting = false;
-      nextText(i, str);
-      //}, speed);
+      setTimeout(() => {
+        waiting = false;
+        nextText(i, str);
+      }, speed);
     } else if (!waiting) {
       onComplete();
     }
@@ -48,7 +48,7 @@ const DialogueBox = ({
       onTextStarted();
 
       typeWriter({
-        speed: 25,
+        speed: 200,
         text,
         onNext: text => setTextStep(text),
         onComplete: () => onTextComplete()
@@ -127,6 +127,8 @@ const Shell = ({ onConversationChoice = () => {} }) => {
   };
 
   const onConvoNext = ({ node, passedProps = {} }) => {
+    // It seems you can proceed way before you're supposed to...
+    console.log("Next call:")
     if (canProceed && currentChoices.length === 0) {
       console.log("Conversation next:", node, passedProps);
 
@@ -155,6 +157,7 @@ const Shell = ({ onConversationChoice = () => {} }) => {
 
   const onTextStarted = () => setCanProceed(false);
 
+  // TODO: This runs in to trouble as different callbacks start to overlap, it needs to be more linear.
   const onTextComplete = () => setCanProceed(true);
 
   useEffect(() => {
