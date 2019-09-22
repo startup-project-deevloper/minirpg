@@ -59,8 +59,7 @@ const Scene = () => {
 
   const ui = UI({
     onConversationChoice: choice => {
-      // convoIterator.goToExact(choice.to);
-      // emit here
+      convoIterator.goToChoice(choice.to);
     }
   }).start();
 
@@ -101,11 +100,11 @@ const Scene = () => {
         sprites,
         convoIterator,
         onNext: props => {
-          
+          convoIterator.goToNext(props);
         },
         onEntry: props => {
           appMode = 1;
-          convoIterator.goToExact('m1');
+          convoIterator.goToExact('m1', props);
         }
       })
     ]

@@ -2,10 +2,9 @@ import { useState } from "./helpers";
 
 export default ({
   collection,
-  onChatStarted = () => {},
-  onChatNext = node => {},
-  onChatComplete = lastPositionSaved => {},
-  onChainProgress = lastNodeId => {}
+  onChatNext = node => { },
+  onChatComplete = lastPositionSaved => { },
+  onChainProgress = lastNodeId => { }
 }) => {
   const [index, setIndex] = useState(0);
   const [currentNode, setCurrentNode] = useState(collection[index()]);
@@ -23,13 +22,13 @@ export default ({
   const _queryNode = query => {
     const queriedNode = collection.length
       ? collection.filter((node, index) => {
-          return query === node.id
-            ? {
-                node,
-                index
-              }
-            : null;
-        })[0]
+        return query === node.id
+          ? {
+            node,
+            index
+          }
+          : null;
+      })[0]
       : null;
 
     return _displayNode(queriedNode);
@@ -45,16 +44,23 @@ export default ({
 
       return _displayNode(queriedNode);
     },
-    goToNext: () => {
+    goToChoice: (query, props = {}) => {
+      const queriedNode = _queryNode(query);
+
+      setIndex(queriedNode.index);
+      setCurrentNode(queriedNode);
+
+      onChatNext(queriedNode, props);
+
+      return _displayNode(queriedNode);
+    },
+    goToNext: (props = {}) => {
       // TODO: Beware, if you're not checking for existent choices, this will error out,
       // or do something a little funky. May want to check for choices here instead?
       const { id, to, choices, actions } = currentNode();
 
       // Wait if choices are presented.
       if (choices.length) return;
-
-      // Fires regardless of validity
-      onChatNext(currentNode());
 
       // TODO: Consts please.
       if (
@@ -79,6 +85,8 @@ export default ({
 
       setIndex(queriedNode.index);
       setCurrentNode(queriedNode);
+
+      onChatNext(queriedNode, props);
 
       return _displayNode(queriedNode);
     }
