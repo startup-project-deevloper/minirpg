@@ -1,12 +1,14 @@
 export const mainFlow = [
   {
     id: "m1",
+    actor: "daryl",
     from: null,
     to: null,
-    text: "This is the first message",
+    text: "This is the first message, what will you choose?",
     choices: [
       {
         id: "m1a",
+        actor: "player",
         from: "m1",
         to: "m2",
         text: "I will select A.",
@@ -15,6 +17,7 @@ export const mainFlow = [
       },
       {
         id: "m1b",
+        actor: "player",
         from: "m1",
         to: "m3",
         text: "I will select B.",
@@ -26,6 +29,7 @@ export const mainFlow = [
   },
   {
     id: "m2",
+    actor: "daryl",
     from: "m1a",
     to: "m4",
     text: "This is if you select A.",
@@ -34,6 +38,7 @@ export const mainFlow = [
   },
   {
     id: "m3",
+    actor: "daryl",
     from: "m1b",
     to: null,
     text: "This is if you select B.",
@@ -42,6 +47,7 @@ export const mainFlow = [
   },
   {
     id: "m4",
+    actor: "daryl",
     from: "m2",
     to: null,
     text: "This should be the last in the chain for A.",

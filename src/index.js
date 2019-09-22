@@ -12,13 +12,16 @@ import {
   keyPressed,
   initKeys
 } from "kontra";
-import UI from './ui';
+import UI from "./ui";
 import Cache from "./cache";
 import { circleCollision } from "./helpers";
 import Entity from "./entity";
+import ConversationIterator from "./conversationIterator";
 import StateMachine from "./fsm";
 import blankState from "./states/blankState";
 import startConvo from "./states/startConvo";
+
+import { mainFlow } from "./data";
 
 const gameCache = Cache.create("gameCache");
 gameCache.add("progress", {
@@ -35,25 +38,20 @@ ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 ctx.scale(3, 3);
 
+const convoIterator = ConversationIterator({
+  collection: mainFlow,
+  onChatComplete: lastPositionSaved => {
+    console.log("Exited:", lastPositionSaved);
+  },
+  onChainProgress: lastNodeId => {
+    gameCache.set("progress", {
+      storyProgress: lastNodeId
+    });
+  }
+});
+
 const Scene = () => {
   initKeys();
-
-  let appMode = 0;
-
-  const sceneStateMachine = StateMachine({
-    states: [
-      blankState({
-        id: "field",
-        cache: gameCache,
-        onEntry: () => (appMode = 0)
-      }),
-      startConvo({
-        id: "conversation",
-        cache: gameCache,
-        onEntry: () => (appMode = 1)
-      })
-    ]
-  });
 
   const mapKey = "assets/tiledata/test";
   const map = dataAssets[mapKey];
@@ -78,6 +76,24 @@ const Scene = () => {
 
   let sprites = [player, npc];
 
+  let appMode = 0;
+
+  const sceneStateMachine = StateMachine({
+    states: [
+      blankState({
+        id: "field",
+        cache: gameCache,
+        onEntry: () => (appMode = 0)
+      }),
+      startConvo({
+        id: "conversation",
+        sprites,
+        convoIterator,
+        onEntry: () => (appMode = 1)
+      })
+    ]
+  });
+
   return GameLoop({
     update: () => {
       sceneStateMachine.update();
@@ -87,6 +103,7 @@ const Scene = () => {
           sprite.playAnimation("idle");
           sprite.update();
         });
+
         return;
       }
 
@@ -202,5 +219,5 @@ load(
   "assets/entityimages/little_orc.png"
 ).then(assets => {
   Scene().start();
-  UI().start();
+  UI({ convoIterator }).start();
 });

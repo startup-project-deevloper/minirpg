@@ -46,10 +46,16 @@ export default ({
     goToNext: () => {
       // TODO: Beware, if you're not checking for existent choices, this will error out,
       // or do something a little funky. May want to check for choices here instead?
-      const { id, to, actions } = currentNode();
+      const { id, to, choices, actions } = currentNode();
+
+      // Wait if choices are presented.
+      if (choices.length) return;
 
       // TODO: Consts please.
-      if (actions.some(action => action === "endConversation") || !to) {
+      if (
+        actions.some(action => action === "endConversation") ||
+        (choices.length === 0 && !to)
+      ) {
         if (actions.some(action => action === "save")) {
           // ... onSave, etc
           onChainProgress(id);

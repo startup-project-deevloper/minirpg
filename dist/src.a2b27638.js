@@ -4095,762 +4095,911 @@ let kontra = {
 };
 var _default = kontra;
 exports.default = _default;
-},{}],"node_modules/preact/dist/preact.umd.js":[function(require,module,exports) {
-var define;
-var global = arguments[3];
-(function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-	typeof define === 'function' && define.amd ? define(['exports'], factory) :
-	(factory((global.preact = {})));
-}(this, (function (exports) { 'use strict';
-
-	var VNode = function VNode() {};
-
-	var options = {};
-
-	var stack = [];
-
-	var EMPTY_CHILDREN = [];
-
-	function h(nodeName, attributes) {
-		var children = EMPTY_CHILDREN,
-		    lastSimple = void 0,
-		    child = void 0,
-		    simple = void 0,
-		    i = void 0;
-		for (i = arguments.length; i-- > 2;) {
-			stack.push(arguments[i]);
-		}
-		if (attributes && attributes.children != null) {
-			if (!stack.length) stack.push(attributes.children);
-			delete attributes.children;
-		}
-		while (stack.length) {
-			if ((child = stack.pop()) && child.pop !== undefined) {
-				for (i = child.length; i--;) {
-					stack.push(child[i]);
-				}
-			} else {
-				if (typeof child === 'boolean') child = null;
-
-				if (simple = typeof nodeName !== 'function') {
-					if (child == null) child = '';else if (typeof child === 'number') child = String(child);else if (typeof child !== 'string') simple = false;
-				}
-
-				if (simple && lastSimple) {
-					children[children.length - 1] += child;
-				} else if (children === EMPTY_CHILDREN) {
-					children = [child];
-				} else {
-					children.push(child);
-				}
-
-				lastSimple = simple;
-			}
-		}
-
-		var p = new VNode();
-		p.nodeName = nodeName;
-		p.children = children;
-		p.attributes = attributes == null ? undefined : attributes;
-		p.key = attributes == null ? undefined : attributes.key;
-
-		if (options.vnode !== undefined) options.vnode(p);
-
-		return p;
-	}
-
-	function extend(obj, props) {
-	  for (var i in props) {
-	    obj[i] = props[i];
-	  }return obj;
-	}
-
-	function applyRef(ref, value) {
-	  if (ref) {
-	    if (typeof ref == 'function') ref(value);else ref.current = value;
-	  }
-	}
-
-	var defer = typeof Promise == 'function' ? Promise.resolve().then.bind(Promise.resolve()) : setTimeout;
-
-	function cloneElement(vnode, props) {
-	  return h(vnode.nodeName, extend(extend({}, vnode.attributes), props), arguments.length > 2 ? [].slice.call(arguments, 2) : vnode.children);
-	}
-
-	var NO_RENDER = 0;
-
-	var SYNC_RENDER = 1;
-
-	var FORCE_RENDER = 2;
-
-	var ASYNC_RENDER = 3;
-
-	var ATTR_KEY = '__preactattr_';
-
-	var IS_NON_DIMENSIONAL = /acit|ex(?:s|g|n|p|$)|rph|ows|mnc|ntw|ine[ch]|zoo|^ord/i;
-
-	var items = [];
-
-	function enqueueRender(component) {
-		if (!component._dirty && (component._dirty = true) && items.push(component) == 1) {
-			(options.debounceRendering || defer)(rerender);
-		}
-	}
-
-	function rerender() {
-		var p = void 0;
-		while (p = items.pop()) {
-			if (p._dirty) renderComponent(p);
-		}
-	}
-
-	function isSameNodeType(node, vnode, hydrating) {
-		if (typeof vnode === 'string' || typeof vnode === 'number') {
-			return node.splitText !== undefined;
-		}
-		if (typeof vnode.nodeName === 'string') {
-			return !node._componentConstructor && isNamedNode(node, vnode.nodeName);
-		}
-		return hydrating || node._componentConstructor === vnode.nodeName;
-	}
-
-	function isNamedNode(node, nodeName) {
-		return node.normalizedNodeName === nodeName || node.nodeName.toLowerCase() === nodeName.toLowerCase();
-	}
-
-	function getNodeProps(vnode) {
-		var props = extend({}, vnode.attributes);
-		props.children = vnode.children;
-
-		var defaultProps = vnode.nodeName.defaultProps;
-		if (defaultProps !== undefined) {
-			for (var i in defaultProps) {
-				if (props[i] === undefined) {
-					props[i] = defaultProps[i];
-				}
-			}
-		}
-
-		return props;
-	}
-
-	function createNode(nodeName, isSvg) {
-		var node = isSvg ? document.createElementNS('http://www.w3.org/2000/svg', nodeName) : document.createElement(nodeName);
-		node.normalizedNodeName = nodeName;
-		return node;
-	}
-
-	function removeNode(node) {
-		var parentNode = node.parentNode;
-		if (parentNode) parentNode.removeChild(node);
-	}
-
-	function setAccessor(node, name, old, value, isSvg) {
-		if (name === 'className') name = 'class';
-
-		if (name === 'key') {} else if (name === 'ref') {
-			applyRef(old, null);
-			applyRef(value, node);
-		} else if (name === 'class' && !isSvg) {
-			node.className = value || '';
-		} else if (name === 'style') {
-			if (!value || typeof value === 'string' || typeof old === 'string') {
-				node.style.cssText = value || '';
-			}
-			if (value && typeof value === 'object') {
-				if (typeof old !== 'string') {
-					for (var i in old) {
-						if (!(i in value)) node.style[i] = '';
-					}
-				}
-				for (var _i in value) {
-					node.style[_i] = typeof value[_i] === 'number' && IS_NON_DIMENSIONAL.test(_i) === false ? value[_i] + 'px' : value[_i];
-				}
-			}
-		} else if (name === 'dangerouslySetInnerHTML') {
-			if (value) node.innerHTML = value.__html || '';
-		} else if (name[0] == 'o' && name[1] == 'n') {
-			var useCapture = name !== (name = name.replace(/Capture$/, ''));
-			name = name.toLowerCase().substring(2);
-			if (value) {
-				if (!old) node.addEventListener(name, eventProxy, useCapture);
-			} else {
-				node.removeEventListener(name, eventProxy, useCapture);
-			}
-			(node._listeners || (node._listeners = {}))[name] = value;
-		} else if (name !== 'list' && name !== 'type' && !isSvg && name in node) {
-			try {
-				node[name] = value == null ? '' : value;
-			} catch (e) {}
-			if ((value == null || value === false) && name != 'spellcheck') node.removeAttribute(name);
-		} else {
-			var ns = isSvg && name !== (name = name.replace(/^xlink:?/, ''));
-
-			if (value == null || value === false) {
-				if (ns) node.removeAttributeNS('http://www.w3.org/1999/xlink', name.toLowerCase());else node.removeAttribute(name);
-			} else if (typeof value !== 'function') {
-				if (ns) node.setAttributeNS('http://www.w3.org/1999/xlink', name.toLowerCase(), value);else node.setAttribute(name, value);
-			}
-		}
-	}
-
-	function eventProxy(e) {
-		return this._listeners[e.type](options.event && options.event(e) || e);
-	}
-
-	var mounts = [];
-
-	var diffLevel = 0;
-
-	var isSvgMode = false;
-
-	var hydrating = false;
-
-	function flushMounts() {
-		var c = void 0;
-		while (c = mounts.shift()) {
-			if (options.afterMount) options.afterMount(c);
-			if (c.componentDidMount) c.componentDidMount();
-		}
-	}
-
-	function diff(dom, vnode, context, mountAll, parent, componentRoot) {
-		if (!diffLevel++) {
-			isSvgMode = parent != null && parent.ownerSVGElement !== undefined;
-
-			hydrating = dom != null && !(ATTR_KEY in dom);
-		}
-
-		var ret = idiff(dom, vnode, context, mountAll, componentRoot);
-
-		if (parent && ret.parentNode !== parent) parent.appendChild(ret);
-
-		if (! --diffLevel) {
-			hydrating = false;
-
-			if (!componentRoot) flushMounts();
-		}
-
-		return ret;
-	}
-
-	function idiff(dom, vnode, context, mountAll, componentRoot) {
-		var out = dom,
-		    prevSvgMode = isSvgMode;
-
-		if (vnode == null || typeof vnode === 'boolean') vnode = '';
-
-		if (typeof vnode === 'string' || typeof vnode === 'number') {
-			if (dom && dom.splitText !== undefined && dom.parentNode && (!dom._component || componentRoot)) {
-				if (dom.nodeValue != vnode) {
-					dom.nodeValue = vnode;
-				}
-			} else {
-				out = document.createTextNode(vnode);
-				if (dom) {
-					if (dom.parentNode) dom.parentNode.replaceChild(out, dom);
-					recollectNodeTree(dom, true);
-				}
-			}
-
-			out[ATTR_KEY] = true;
-
-			return out;
-		}
-
-		var vnodeName = vnode.nodeName;
-		if (typeof vnodeName === 'function') {
-			return buildComponentFromVNode(dom, vnode, context, mountAll);
-		}
-
-		isSvgMode = vnodeName === 'svg' ? true : vnodeName === 'foreignObject' ? false : isSvgMode;
-
-		vnodeName = String(vnodeName);
-		if (!dom || !isNamedNode(dom, vnodeName)) {
-			out = createNode(vnodeName, isSvgMode);
-
-			if (dom) {
-				while (dom.firstChild) {
-					out.appendChild(dom.firstChild);
-				}
-				if (dom.parentNode) dom.parentNode.replaceChild(out, dom);
-
-				recollectNodeTree(dom, true);
-			}
-		}
-
-		var fc = out.firstChild,
-		    props = out[ATTR_KEY],
-		    vchildren = vnode.children;
-
-		if (props == null) {
-			props = out[ATTR_KEY] = {};
-			for (var a = out.attributes, i = a.length; i--;) {
-				props[a[i].name] = a[i].value;
-			}
-		}
-
-		if (!hydrating && vchildren && vchildren.length === 1 && typeof vchildren[0] === 'string' && fc != null && fc.splitText !== undefined && fc.nextSibling == null) {
-			if (fc.nodeValue != vchildren[0]) {
-				fc.nodeValue = vchildren[0];
-			}
-		} else if (vchildren && vchildren.length || fc != null) {
-				innerDiffNode(out, vchildren, context, mountAll, hydrating || props.dangerouslySetInnerHTML != null);
-			}
-
-		diffAttributes(out, vnode.attributes, props);
-
-		isSvgMode = prevSvgMode;
-
-		return out;
-	}
-
-	function innerDiffNode(dom, vchildren, context, mountAll, isHydrating) {
-		var originalChildren = dom.childNodes,
-		    children = [],
-		    keyed = {},
-		    keyedLen = 0,
-		    min = 0,
-		    len = originalChildren.length,
-		    childrenLen = 0,
-		    vlen = vchildren ? vchildren.length : 0,
-		    j = void 0,
-		    c = void 0,
-		    f = void 0,
-		    vchild = void 0,
-		    child = void 0;
-
-		if (len !== 0) {
-			for (var i = 0; i < len; i++) {
-				var _child = originalChildren[i],
-				    props = _child[ATTR_KEY],
-				    key = vlen && props ? _child._component ? _child._component.__key : props.key : null;
-				if (key != null) {
-					keyedLen++;
-					keyed[key] = _child;
-				} else if (props || (_child.splitText !== undefined ? isHydrating ? _child.nodeValue.trim() : true : isHydrating)) {
-					children[childrenLen++] = _child;
-				}
-			}
-		}
-
-		if (vlen !== 0) {
-			for (var _i = 0; _i < vlen; _i++) {
-				vchild = vchildren[_i];
-				child = null;
-
-				var _key = vchild.key;
-				if (_key != null) {
-					if (keyedLen && keyed[_key] !== undefined) {
-						child = keyed[_key];
-						keyed[_key] = undefined;
-						keyedLen--;
-					}
-				} else if (min < childrenLen) {
-						for (j = min; j < childrenLen; j++) {
-							if (children[j] !== undefined && isSameNodeType(c = children[j], vchild, isHydrating)) {
-								child = c;
-								children[j] = undefined;
-								if (j === childrenLen - 1) childrenLen--;
-								if (j === min) min++;
-								break;
-							}
-						}
-					}
-
-				child = idiff(child, vchild, context, mountAll);
-
-				f = originalChildren[_i];
-				if (child && child !== dom && child !== f) {
-					if (f == null) {
-						dom.appendChild(child);
-					} else if (child === f.nextSibling) {
-						removeNode(f);
-					} else {
-						dom.insertBefore(child, f);
-					}
-				}
-			}
-		}
-
-		if (keyedLen) {
-			for (var _i2 in keyed) {
-				if (keyed[_i2] !== undefined) recollectNodeTree(keyed[_i2], false);
-			}
-		}
-
-		while (min <= childrenLen) {
-			if ((child = children[childrenLen--]) !== undefined) recollectNodeTree(child, false);
-		}
-	}
-
-	function recollectNodeTree(node, unmountOnly) {
-		var component = node._component;
-		if (component) {
-			unmountComponent(component);
-		} else {
-			if (node[ATTR_KEY] != null) applyRef(node[ATTR_KEY].ref, null);
-
-			if (unmountOnly === false || node[ATTR_KEY] == null) {
-				removeNode(node);
-			}
-
-			removeChildren(node);
-		}
-	}
-
-	function removeChildren(node) {
-		node = node.lastChild;
-		while (node) {
-			var next = node.previousSibling;
-			recollectNodeTree(node, true);
-			node = next;
-		}
-	}
-
-	function diffAttributes(dom, attrs, old) {
-		var name = void 0;
-
-		for (name in old) {
-			if (!(attrs && attrs[name] != null) && old[name] != null) {
-				setAccessor(dom, name, old[name], old[name] = undefined, isSvgMode);
-			}
-		}
-
-		for (name in attrs) {
-			if (name !== 'children' && name !== 'innerHTML' && (!(name in old) || attrs[name] !== (name === 'value' || name === 'checked' ? dom[name] : old[name]))) {
-				setAccessor(dom, name, old[name], old[name] = attrs[name], isSvgMode);
-			}
-		}
-	}
-
-	var recyclerComponents = [];
-
-	function createComponent(Ctor, props, context) {
-		var inst = void 0,
-		    i = recyclerComponents.length;
-
-		if (Ctor.prototype && Ctor.prototype.render) {
-			inst = new Ctor(props, context);
-			Component.call(inst, props, context);
-		} else {
-			inst = new Component(props, context);
-			inst.constructor = Ctor;
-			inst.render = doRender;
-		}
-
-		while (i--) {
-			if (recyclerComponents[i].constructor === Ctor) {
-				inst.nextBase = recyclerComponents[i].nextBase;
-				recyclerComponents.splice(i, 1);
-				return inst;
-			}
-		}
-
-		return inst;
-	}
-
-	function doRender(props, state, context) {
-		return this.constructor(props, context);
-	}
-
-	function setComponentProps(component, props, renderMode, context, mountAll) {
-		if (component._disable) return;
-		component._disable = true;
-
-		component.__ref = props.ref;
-		component.__key = props.key;
-		delete props.ref;
-		delete props.key;
-
-		if (typeof component.constructor.getDerivedStateFromProps === 'undefined') {
-			if (!component.base || mountAll) {
-				if (component.componentWillMount) component.componentWillMount();
-			} else if (component.componentWillReceiveProps) {
-				component.componentWillReceiveProps(props, context);
-			}
-		}
-
-		if (context && context !== component.context) {
-			if (!component.prevContext) component.prevContext = component.context;
-			component.context = context;
-		}
-
-		if (!component.prevProps) component.prevProps = component.props;
-		component.props = props;
-
-		component._disable = false;
-
-		if (renderMode !== NO_RENDER) {
-			if (renderMode === SYNC_RENDER || options.syncComponentUpdates !== false || !component.base) {
-				renderComponent(component, SYNC_RENDER, mountAll);
-			} else {
-				enqueueRender(component);
-			}
-		}
-
-		applyRef(component.__ref, component);
-	}
-
-	function renderComponent(component, renderMode, mountAll, isChild) {
-		if (component._disable) return;
-
-		var props = component.props,
-		    state = component.state,
-		    context = component.context,
-		    previousProps = component.prevProps || props,
-		    previousState = component.prevState || state,
-		    previousContext = component.prevContext || context,
-		    isUpdate = component.base,
-		    nextBase = component.nextBase,
-		    initialBase = isUpdate || nextBase,
-		    initialChildComponent = component._component,
-		    skip = false,
-		    snapshot = previousContext,
-		    rendered = void 0,
-		    inst = void 0,
-		    cbase = void 0;
-
-		if (component.constructor.getDerivedStateFromProps) {
-			state = extend(extend({}, state), component.constructor.getDerivedStateFromProps(props, state));
-			component.state = state;
-		}
-
-		if (isUpdate) {
-			component.props = previousProps;
-			component.state = previousState;
-			component.context = previousContext;
-			if (renderMode !== FORCE_RENDER && component.shouldComponentUpdate && component.shouldComponentUpdate(props, state, context) === false) {
-				skip = true;
-			} else if (component.componentWillUpdate) {
-				component.componentWillUpdate(props, state, context);
-			}
-			component.props = props;
-			component.state = state;
-			component.context = context;
-		}
-
-		component.prevProps = component.prevState = component.prevContext = component.nextBase = null;
-		component._dirty = false;
-
-		if (!skip) {
-			rendered = component.render(props, state, context);
-
-			if (component.getChildContext) {
-				context = extend(extend({}, context), component.getChildContext());
-			}
-
-			if (isUpdate && component.getSnapshotBeforeUpdate) {
-				snapshot = component.getSnapshotBeforeUpdate(previousProps, previousState);
-			}
-
-			var childComponent = rendered && rendered.nodeName,
-			    toUnmount = void 0,
-			    base = void 0;
-
-			if (typeof childComponent === 'function') {
-
-				var childProps = getNodeProps(rendered);
-				inst = initialChildComponent;
-
-				if (inst && inst.constructor === childComponent && childProps.key == inst.__key) {
-					setComponentProps(inst, childProps, SYNC_RENDER, context, false);
-				} else {
-					toUnmount = inst;
-
-					component._component = inst = createComponent(childComponent, childProps, context);
-					inst.nextBase = inst.nextBase || nextBase;
-					inst._parentComponent = component;
-					setComponentProps(inst, childProps, NO_RENDER, context, false);
-					renderComponent(inst, SYNC_RENDER, mountAll, true);
-				}
-
-				base = inst.base;
-			} else {
-				cbase = initialBase;
-
-				toUnmount = initialChildComponent;
-				if (toUnmount) {
-					cbase = component._component = null;
-				}
-
-				if (initialBase || renderMode === SYNC_RENDER) {
-					if (cbase) cbase._component = null;
-					base = diff(cbase, rendered, context, mountAll || !isUpdate, initialBase && initialBase.parentNode, true);
-				}
-			}
-
-			if (initialBase && base !== initialBase && inst !== initialChildComponent) {
-				var baseParent = initialBase.parentNode;
-				if (baseParent && base !== baseParent) {
-					baseParent.replaceChild(base, initialBase);
-
-					if (!toUnmount) {
-						initialBase._component = null;
-						recollectNodeTree(initialBase, false);
-					}
-				}
-			}
-
-			if (toUnmount) {
-				unmountComponent(toUnmount);
-			}
-
-			component.base = base;
-			if (base && !isChild) {
-				var componentRef = component,
-				    t = component;
-				while (t = t._parentComponent) {
-					(componentRef = t).base = base;
-				}
-				base._component = componentRef;
-				base._componentConstructor = componentRef.constructor;
-			}
-		}
-
-		if (!isUpdate || mountAll) {
-			mounts.push(component);
-		} else if (!skip) {
-
-			if (component.componentDidUpdate) {
-				component.componentDidUpdate(previousProps, previousState, snapshot);
-			}
-			if (options.afterUpdate) options.afterUpdate(component);
-		}
-
-		while (component._renderCallbacks.length) {
-			component._renderCallbacks.pop().call(component);
-		}if (!diffLevel && !isChild) flushMounts();
-	}
-
-	function buildComponentFromVNode(dom, vnode, context, mountAll) {
-		var c = dom && dom._component,
-		    originalComponent = c,
-		    oldDom = dom,
-		    isDirectOwner = c && dom._componentConstructor === vnode.nodeName,
-		    isOwner = isDirectOwner,
-		    props = getNodeProps(vnode);
-		while (c && !isOwner && (c = c._parentComponent)) {
-			isOwner = c.constructor === vnode.nodeName;
-		}
-
-		if (c && isOwner && (!mountAll || c._component)) {
-			setComponentProps(c, props, ASYNC_RENDER, context, mountAll);
-			dom = c.base;
-		} else {
-			if (originalComponent && !isDirectOwner) {
-				unmountComponent(originalComponent);
-				dom = oldDom = null;
-			}
-
-			c = createComponent(vnode.nodeName, props, context);
-			if (dom && !c.nextBase) {
-				c.nextBase = dom;
-
-				oldDom = null;
-			}
-			setComponentProps(c, props, SYNC_RENDER, context, mountAll);
-			dom = c.base;
-
-			if (oldDom && dom !== oldDom) {
-				oldDom._component = null;
-				recollectNodeTree(oldDom, false);
-			}
-		}
-
-		return dom;
-	}
-
-	function unmountComponent(component) {
-		if (options.beforeUnmount) options.beforeUnmount(component);
-
-		var base = component.base;
-
-		component._disable = true;
-
-		if (component.componentWillUnmount) component.componentWillUnmount();
-
-		component.base = null;
-
-		var inner = component._component;
-		if (inner) {
-			unmountComponent(inner);
-		} else if (base) {
-			if (base[ATTR_KEY] != null) applyRef(base[ATTR_KEY].ref, null);
-
-			component.nextBase = base;
-
-			removeNode(base);
-			recyclerComponents.push(component);
-
-			removeChildren(base);
-		}
-
-		applyRef(component.__ref, null);
-	}
-
-	function Component(props, context) {
-		this._dirty = true;
-
-		this.context = context;
-
-		this.props = props;
-
-		this.state = this.state || {};
-
-		this._renderCallbacks = [];
-	}
-
-	extend(Component.prototype, {
-		setState: function setState(state, callback) {
-			if (!this.prevState) this.prevState = this.state;
-			this.state = extend(extend({}, this.state), typeof state === 'function' ? state(this.state, this.props) : state);
-			if (callback) this._renderCallbacks.push(callback);
-			enqueueRender(this);
-		},
-		forceUpdate: function forceUpdate(callback) {
-			if (callback) this._renderCallbacks.push(callback);
-			renderComponent(this, FORCE_RENDER);
-		},
-		render: function render() {}
-	});
-
-	function render(vnode, parent, merge) {
-	  return diff(merge, vnode, {}, false, parent, false);
-	}
-
-	function createRef() {
-		return {};
-	}
-
-	var preact = {
-		h: h,
-		createElement: h,
-		cloneElement: cloneElement,
-		createRef: createRef,
-		Component: Component,
-		render: render,
-		rerender: rerender,
-		options: options
-	};
-
-	exports.default = preact;
-	exports.h = h;
-	exports.createElement = h;
-	exports.cloneElement = cloneElement;
-	exports.createRef = createRef;
-	exports.Component = Component;
-	exports.render = render;
-	exports.rerender = rerender;
-	exports.options = options;
-
-	Object.defineProperty(exports, '__esModule', { value: true });
-
-})));
-
-
-},{}],"node_modules/nanoevents/index.js":[function(require,module,exports) {
+},{}],"node_modules/preact/dist/preact.module.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.render = I;
+exports.hydrate = L;
+exports.h = exports.createElement = h;
+exports.Fragment = y;
+exports.createRef = p;
+exports.Component = m;
+exports.cloneElement = M;
+exports.createContext = O;
+exports.toChildArray = x;
+exports._unmount = D;
+exports.options = exports.isValidElement = void 0;
+var n,
+    l,
+    u,
+    t,
+    i,
+    r,
+    o,
+    f = {},
+    e = [],
+    c = /acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|^--/i;
+exports.isValidElement = l;
+exports.options = n;
+
+function s(n, l) {
+  for (var u in l) n[u] = l[u];
+
+  return n;
+}
+
+function a(n) {
+  var l = n.parentNode;
+  l && l.removeChild(n);
+}
+
+function h(n, l, u) {
+  var t,
+      i,
+      r,
+      o,
+      f = arguments;
+  if (l = s({}, l), arguments.length > 3) for (u = [u], t = 3; t < arguments.length; t++) u.push(f[t]);
+  if (null != u && (l.children = u), null != n && null != n.defaultProps) for (i in n.defaultProps) void 0 === l[i] && (l[i] = n.defaultProps[i]);
+  return o = l.key, null != (r = l.ref) && delete l.ref, null != o && delete l.key, v(n, l, o, r);
+}
+
+function v(l, u, t, i) {
+  var r = {
+    type: l,
+    props: u,
+    key: t,
+    ref: i,
+    __k: null,
+    __p: null,
+    __b: 0,
+    __e: null,
+    l: null,
+    __c: null,
+    constructor: void 0
+  };
+  return n.vnode && n.vnode(r), r;
+}
+
+function p() {
+  return {};
+}
+
+function y(n) {
+  return n.children;
+}
+
+function d(n) {
+  if (null == n || "boolean" == typeof n) return null;
+  if ("string" == typeof n || "number" == typeof n) return v(null, n, null, null);
+
+  if (null != n.__e || null != n.__c) {
+    var l = v(n.type, n.props, n.key, null);
+    return l.__e = n.__e, l;
+  }
+
+  return n;
+}
+
+function m(n, l) {
+  this.props = n, this.context = l;
+}
+
+function w(n, l) {
+  if (null == l) return n.__p ? w(n.__p, n.__p.__k.indexOf(n) + 1) : null;
+
+  for (var u; l < n.__k.length; l++) if (null != (u = n.__k[l]) && null != u.__e) return u.__e;
+
+  return "function" == typeof n.type ? w(n) : null;
+}
+
+function g(n) {
+  var l, u;
+
+  if (null != (n = n.__p) && null != n.__c) {
+    for (n.__e = n.__c.base = null, l = 0; l < n.__k.length; l++) if (null != (u = n.__k[l]) && null != u.__e) {
+      n.__e = n.__c.base = u.__e;
+      break;
+    }
+
+    return g(n);
+  }
+}
+
+function k(l) {
+  (!l.__d && (l.__d = !0) && 1 === u.push(l) || i !== n.debounceRendering) && (i = n.debounceRendering, (n.debounceRendering || t)(_));
+}
+
+function _() {
+  var n;
+
+  for (u.sort(function (n, l) {
+    return l.__v.__b - n.__v.__b;
+  }); n = u.pop();) n.__d && n.forceUpdate(!1);
+}
+
+function b(n, l, u, t, i, r, o, c, s) {
+  var h,
+      v,
+      p,
+      y,
+      d,
+      m,
+      g,
+      k = u && u.__k || e,
+      _ = k.length;
+  if (c == f && (c = null != r ? r[0] : _ ? w(u, 0) : null), h = 0, l.__k = x(l.__k, function (u) {
+    if (null != u) {
+      if (u.__p = l, u.__b = l.__b + 1, null === (p = k[h]) || p && u.key == p.key && u.type === p.type) k[h] = void 0;else for (v = 0; v < _; v++) {
+        if ((p = k[v]) && u.key == p.key && u.type === p.type) {
+          k[v] = void 0;
+          break;
+        }
+
+        p = null;
+      }
+
+      if (y = $(n, u, p = p || f, t, i, r, o, null, c, s), (v = u.ref) && p.ref != v && (g || (g = [])).push(v, u.__c || y, u), null != y) {
+        if (null == m && (m = y), null != u.l) y = u.l, u.l = null;else if (r == p || y != c || null == y.parentNode) {
+          n: if (null == c || c.parentNode !== n) n.appendChild(y);else {
+            for (d = c, v = 0; (d = d.nextSibling) && v < _; v += 2) if (d == y) break n;
+
+            n.insertBefore(y, c);
+          }
+
+          "option" == l.type && (n.value = "");
+        }
+        c = y.nextSibling, "function" == typeof l.type && (l.l = y);
+      }
+    }
+
+    return h++, u;
+  }), l.__e = m, null != r && "function" != typeof l.type) for (h = r.length; h--;) null != r[h] && a(r[h]);
+
+  for (h = _; h--;) null != k[h] && D(k[h], k[h]);
+
+  if (g) for (h = 0; h < g.length; h++) A(g[h], g[++h], g[++h]);
+}
+
+function x(n, l, u) {
+  if (null == u && (u = []), null == n || "boolean" == typeof n) l && u.push(l(null));else if (Array.isArray(n)) for (var t = 0; t < n.length; t++) x(n[t], l, u);else u.push(l ? l(d(n)) : n);
+  return u;
+}
+
+function C(n, l, u, t, i) {
+  var r;
+
+  for (r in u) r in l || N(n, r, null, u[r], t);
+
+  for (r in l) i && "function" != typeof l[r] || "value" === r || "checked" === r || u[r] === l[r] || N(n, r, l[r], u[r], t);
+}
+
+function P(n, l, u) {
+  "-" === l[0] ? n.setProperty(l, u) : n[l] = "number" == typeof u && !1 === c.test(l) ? u + "px" : u || "";
+}
+
+function N(n, l, u, t, i) {
+  var r, o, f, e, c;
+  if ("key" === (l = i ? "className" === l ? "class" : l : "class" === l ? "className" : l) || "children" === l) ;else if ("style" === l) {
+    if (r = n.style, "string" == typeof u) r.cssText = u;else {
+      if ("string" == typeof t && (r.cssText = "", t = null), t) for (o in t) u && o in u || P(r, o, "");
+      if (u) for (f in u) t && u[f] === t[f] || P(r, f, u[f]);
+    }
+  } else "o" === l[0] && "n" === l[1] ? (e = l !== (l = l.replace(/Capture$/, "")), c = l.toLowerCase(), l = (c in n ? c : l).slice(2), u ? (t || n.addEventListener(l, T, e), (n.u || (n.u = {}))[l] = u) : n.removeEventListener(l, T, e)) : "list" !== l && "tagName" !== l && "form" !== l && !i && l in n ? n[l] = null == u ? "" : u : "function" != typeof u && "dangerouslySetInnerHTML" !== l && (l !== (l = l.replace(/^xlink:?/, "")) ? null == u || !1 === u ? n.removeAttributeNS("http://www.w3.org/1999/xlink", l.toLowerCase()) : n.setAttributeNS("http://www.w3.org/1999/xlink", l.toLowerCase(), u) : null == u || !1 === u ? n.removeAttribute(l) : n.setAttribute(l, u));
+}
+
+function T(l) {
+  return this.u[l.type](n.event ? n.event(l) : l);
+}
+
+function $(l, u, t, i, r, o, f, e, c, a) {
+  var h,
+      v,
+      p,
+      d,
+      w,
+      g,
+      k,
+      _,
+      x,
+      C,
+      P = u.type;
+
+  if (void 0 !== u.constructor) return null;
+  (h = n.__b) && h(u);
+
+  try {
+    n: if ("function" == typeof P) {
+      if (_ = u.props, x = (h = P.contextType) && i[h.__c], C = h ? x ? x.props.value : h.__p : i, t.__c ? k = (v = u.__c = t.__c).__p = v.__E : ("prototype" in P && P.prototype.render ? u.__c = v = new P(_, C) : (u.__c = v = new m(_, C), v.constructor = P, v.render = H), x && x.sub(v), v.props = _, v.state || (v.state = {}), v.context = C, v.__n = i, p = v.__d = !0, v.__h = []), null == v.__s && (v.__s = v.state), null != P.getDerivedStateFromProps && s(v.__s == v.state ? v.__s = s({}, v.__s) : v.__s, P.getDerivedStateFromProps(_, v.__s)), p) null == P.getDerivedStateFromProps && null != v.componentWillMount && v.componentWillMount(), null != v.componentDidMount && f.push(v);else {
+        if (null == P.getDerivedStateFromProps && null == e && null != v.componentWillReceiveProps && v.componentWillReceiveProps(_, C), !e && null != v.shouldComponentUpdate && !1 === v.shouldComponentUpdate(_, v.__s, C)) {
+          for (v.props = _, v.state = v.__s, v.__d = !1, v.__v = u, u.__e = null != c ? c !== t.__e ? c : t.__e : null, u.__k = t.__k, h = 0; h < u.__k.length; h++) u.__k[h] && (u.__k[h].__p = u);
+
+          break n;
+        }
+
+        null != v.componentWillUpdate && v.componentWillUpdate(_, v.__s, C);
+      }
+
+      for (d = v.props, w = v.state, v.context = C, v.props = _, v.state = v.__s, (h = n.__r) && h(u), v.__d = !1, v.__v = u, v.__P = l, h = v.render(v.props, v.state, v.context), u.__k = null != h && h.type == y && null == h.key ? h.props.children : h, null != v.getChildContext && (i = s(s({}, i), v.getChildContext())), p || null == v.getSnapshotBeforeUpdate || (g = v.getSnapshotBeforeUpdate(d, w)), b(l, u, t, i, r, o, f, c, a), v.base = u.__e; h = v.__h.pop();) v.__s && (v.state = v.__s), h.call(v);
+
+      p || null == d || null == v.componentDidUpdate || v.componentDidUpdate(d, w, g), k && (v.__E = v.__p = null);
+    } else u.__e = z(t.__e, u, t, i, r, o, f, a);
+
+    (h = n.diffed) && h(u);
+  } catch (l) {
+    n.__e(l, u, t);
+  }
+
+  return u.__e;
+}
+
+function j(l, u) {
+  for (var t; t = l.pop();) try {
+    t.componentDidMount();
+  } catch (l) {
+    n.__e(l, t.__v);
+  }
+
+  n.__c && n.__c(u);
+}
+
+function z(n, l, u, t, i, r, o, c) {
+  var s,
+      a,
+      h,
+      v,
+      p = u.props,
+      y = l.props;
+  if (i = "svg" === l.type || i, null == n && null != r) for (s = 0; s < r.length; s++) if (null != (a = r[s]) && (null === l.type ? 3 === a.nodeType : a.localName === l.type)) {
+    n = a, r[s] = null;
+    break;
+  }
+
+  if (null == n) {
+    if (null === l.type) return document.createTextNode(y);
+    n = i ? document.createElementNS("http://www.w3.org/2000/svg", l.type) : document.createElement(l.type), r = null;
+  }
+
+  return null === l.type ? p !== y && (null != r && (r[r.indexOf(n)] = null), n.data = y) : l !== u && (null != r && (r = e.slice.call(n.childNodes)), h = (p = u.props || f).dangerouslySetInnerHTML, v = y.dangerouslySetInnerHTML, c || (v || h) && (v && h && v.__html == h.__html || (n.innerHTML = v && v.__html || "")), C(n, y, p, i, c), l.__k = l.props.children, v || b(n, l, u, t, "foreignObject" !== l.type && i, r, o, f, c), c || ("value" in y && void 0 !== y.value && y.value !== n.value && (n.value = null == y.value ? "" : y.value), "checked" in y && void 0 !== y.checked && y.checked !== n.checked && (n.checked = y.checked))), n;
+}
+
+function A(l, u, t) {
+  try {
+    "function" == typeof l ? l(u) : l.current = u;
+  } catch (l) {
+    n.__e(l, t);
+  }
+}
+
+function D(l, u, t) {
+  var i, r, o;
+
+  if (n.unmount && n.unmount(l), (i = l.ref) && A(i, null, u), t || "function" == typeof l.type || (t = null != (r = l.__e)), l.__e = l.l = null, null != (i = l.__c)) {
+    if (i.componentWillUnmount) try {
+      i.componentWillUnmount();
+    } catch (l) {
+      n.__e(l, u);
+    }
+    i.base = i.__P = null;
+  }
+
+  if (i = l.__k) for (o = 0; o < i.length; o++) i[o] && D(i[o], u, t);
+  null != r && a(r);
+}
+
+function H(n, l, u) {
+  return this.constructor(n, u);
+}
+
+function I(l, u, t) {
+  var i, o, c;
+  n.__p && n.__p(l, u), o = (i = t === r) ? null : t && t.__k || u.__k, l = h(y, null, [l]), c = [], $(u, i ? u.__k = l : (t || u).__k = l, o || f, f, void 0 !== u.ownerSVGElement, t && !i ? [t] : o ? null : e.slice.call(u.childNodes), c, !1, t || f, i), j(c, l);
+}
+
+function L(n, l) {
+  I(n, l, r);
+}
+
+function M(n, l) {
+  return l = s(s({}, n.props), l), arguments.length > 2 && (l.children = e.slice.call(arguments, 2)), v(n.type, l, l.key || n.key, l.ref || n.ref);
+}
+
+function O(n) {
+  var l = {},
+      u = {
+    __c: "__cC" + o++,
+    __p: n,
+    Consumer: function (n, l) {
+      return this.shouldComponentUpdate = function (n, u, t) {
+        return t !== l;
+      }, n.children(l);
+    },
+    Provider: function (n) {
+      var t,
+          i = this;
+      return this.getChildContext || (t = [], this.getChildContext = function () {
+        return l[u.__c] = i, l;
+      }, this.shouldComponentUpdate = function (n) {
+        t.some(function (l) {
+          l.__P && (l.context = n.value, k(l));
+        });
+      }, this.sub = function (n) {
+        t.push(n);
+        var l = n.componentWillUnmount;
+
+        n.componentWillUnmount = function () {
+          t.splice(t.indexOf(n), 1), l && l.call(n);
+        };
+      }), n.children;
+    }
+  };
+  return u.Consumer.contextType = u, u;
+}
+
+exports.options = n = {}, exports.isValidElement = l = function (n) {
+  return null != n && void 0 === n.constructor;
+}, m.prototype.setState = function (n, l) {
+  var u = this.__s !== this.state && this.__s || (this.__s = s({}, this.state));
+  ("function" != typeof n || (n = n(u, this.props))) && s(u, n), null != n && this.__v && (l && this.__h.push(l), k(this));
+}, m.prototype.forceUpdate = function (n) {
+  var l,
+      u,
+      t,
+      i = this.__v,
+      r = this.__v.__e,
+      o = this.__P;
+  o && (l = !1 !== n, u = [], t = $(o, i, s({}, i), this.__n, void 0 !== o.ownerSVGElement, null, u, l, null == r ? w(i) : r), j(u, i), t != r && g(i)), n && n();
+}, m.prototype.render = y, u = [], t = "function" == typeof Promise ? Promise.prototype.then.bind(Promise.resolve()) : setTimeout, i = n.debounceRendering, n.__e = function (n, l, u) {
+  for (var t; l = l.__p;) if ((t = l.__c) && !t.__p) try {
+    if (t.constructor && null != t.constructor.getDerivedStateFromError) t.setState(t.constructor.getDerivedStateFromError(n));else {
+      if (null == t.componentDidCatch) continue;
+      t.componentDidCatch(n);
+    }
+    return k(t.__E = t);
+  } catch (l) {
+    n = l;
+  }
+
+  throw n;
+}, r = f, o = 0;
+},{}],"node_modules/preact/hooks/dist/hooks.module.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.useState = c;
+exports.useReducer = a;
+exports.useEffect = v;
+exports.useLayoutEffect = l;
+exports.useRef = m;
+exports.useImperativeHandle = p;
+exports.useMemo = d;
+exports.useCallback = s;
+exports.useContext = y;
+exports.useDebugValue = _;
+
+var _preact = require("preact");
+
+var t,
+    r,
+    u = [],
+    i = _preact.options.__r;
+
+_preact.options.__r = function (n) {
+  i && i(n), t = 0, (r = n.__c).__H && (r.__H.t = A(r.__H.t));
+};
+
+var f = _preact.options.diffed;
+
+_preact.options.diffed = function (n) {
+  f && f(n);
+  var t = n.__c;
+
+  if (t) {
+    var r = t.__H;
+    r && (r.u = (r.u.some(function (n) {
+      n.ref && (n.ref.current = n.createHandle());
+    }), []), r.i = A(r.i));
+  }
+};
+
+var o = _preact.options.unmount;
+
+function e(t) {
+  _preact.options.__h && _preact.options.__h(r);
+  var u = r.__H || (r.__H = {
+    o: [],
+    t: [],
+    i: [],
+    u: []
+  });
+  return t >= u.o.length && u.o.push({}), u.o[t];
+}
+
+function c(n) {
+  return a(q, n);
+}
+
+function a(n, u, i) {
+  var f = e(t++);
+  return f.__c || (f.__c = r, f.v = [i ? i(u) : q(null, u), function (t) {
+    var r = n(f.v[0], t);
+    f.v[0] !== r && (f.v[0] = r, f.__c.setState({}));
+  }]), f.v;
+}
+
+function v(n, u) {
+  var i = e(t++);
+  h(i.l, u) && (i.v = n, i.l = u, r.__H.t.push(i), T(r));
+}
+
+function l(n, u) {
+  var i = e(t++);
+  h(i.l, u) && (i.v = n, i.l = u, r.__H.i.push(i));
+}
+
+function m(n) {
+  return d(function () {
+    return {
+      current: n
+    };
+  }, []);
+}
+
+function p(n, u, i) {
+  var f = e(t++);
+  h(f.l, i) && (f.l = i, r.__H.u.push({
+    ref: n,
+    createHandle: u
+  }));
+}
+
+function d(n, r) {
+  var u = e(t++);
+  return h(u.l, r) ? (u.l = r, u.m = n, u.v = n()) : u.v;
+}
+
+function s(n, t) {
+  return d(function () {
+    return n;
+  }, t);
+}
+
+function y(n) {
+  var u = r.context[n.__c];
+  if (!u) return n.__p;
+  var i = e(t++);
+  return null == i.v && (i.v = !0, u.sub(r)), u.props.value;
+}
+
+function _(t, r) {
+  _preact.options.useDebugValue && _preact.options.useDebugValue(r ? r(t) : t);
+}
+
+_preact.options.unmount = function (n) {
+  o && o(n);
+  var t = n.__c;
+
+  if (t) {
+    var r = t.__H;
+    r && r.o.forEach(function (n) {
+      return n.p && n.p();
+    });
+  }
+};
+
+var T = function () {};
+
+function g() {
+  u.some(function (n) {
+    n.s = !1, n.__P && (n.__H.t = A(n.__H.t));
+  }), u = [];
+}
+
+if ("undefined" != typeof window) {
+  var w = _preact.options.requestAnimationFrame;
+
+  T = function (t) {
+    (!t.s && (t.s = !0) && 1 === u.push(t) || w !== _preact.options.requestAnimationFrame) && (w = _preact.options.requestAnimationFrame, (_preact.options.requestAnimationFrame || function (n) {
+      var t = function () {
+        clearTimeout(r), cancelAnimationFrame(u), setTimeout(n);
+      },
+          r = setTimeout(t, 100),
+          u = requestAnimationFrame(t);
+    })(g));
+  };
+}
+
+function A(n) {
+  return n.forEach(E), n.forEach(F), [];
+}
+
+function E(n) {
+  n.p && n.p();
+}
+
+function F(n) {
+  var t = n.v();
+  "function" == typeof t && (n.p = t);
+}
+
+function h(n, t) {
+  return !n || t.some(function (t, r) {
+    return t !== n[r];
+  });
+}
+
+function q(n, t) {
+  return "function" == typeof t ? t(n) : t;
+}
+},{"preact":"node_modules/preact/dist/preact.module.js"}],"node_modules/preact/compat/dist/compat.module.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+var _exportNames = {
+  version: true,
+  Children: true,
+  render: true,
+  hydrate: true,
+  unmountComponentAtNode: true,
+  createPortal: true,
+  createElement: true,
+  createFactory: true,
+  cloneElement: true,
+  isValidElement: true,
+  findDOMNode: true,
+  PureComponent: true,
+  memo: true,
+  forwardRef: true,
+  unstable_batchedUpdates: true,
+  Suspense: true,
+  lazy: true,
+  createContext: true,
+  createRef: true,
+  Fragment: true,
+  Component: true
+};
+exports.hydrate = exports.render = k;
+exports.unmountComponentAtNode = z;
+exports.createPortal = F;
+exports.createElement = S;
+exports.createFactory = w;
+exports.cloneElement = _;
+exports.isValidElement = j;
+exports.findDOMNode = U;
+exports.memo = Z;
+exports.forwardRef = L;
+exports.Suspense = m;
+exports.lazy = y;
+Object.defineProperty(exports, "createContext", {
+  enumerable: true,
+  get: function () {
+    return _preact.createContext;
+  }
+});
+Object.defineProperty(exports, "createRef", {
+  enumerable: true,
+  get: function () {
+    return _preact.createRef;
+  }
+});
+Object.defineProperty(exports, "Fragment", {
+  enumerable: true,
+  get: function () {
+    return _preact.Fragment;
+  }
+});
+Object.defineProperty(exports, "Component", {
+  enumerable: true,
+  get: function () {
+    return _preact.Component;
+  }
+});
+exports.unstable_batchedUpdates = exports.PureComponent = exports.Children = exports.version = exports.default = void 0;
+
+var n = _interopRequireWildcard(require("preact/hooks"));
+
+Object.keys(n).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  if (Object.prototype.hasOwnProperty.call(_exportNames, key)) return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function () {
+      return n[key];
+    }
+  });
+});
+
+var _preact = require("preact");
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; if (obj != null) { var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+function d(n, t) {
+  for (var r in t) n[r] = t[r];
+
+  return n;
+}
+
+function p(n) {
+  var t = n.parentNode;
+  t && t.removeChild(n);
+}
+
+var h = _preact.options.__e;
+
+function m() {
+  this.t = [];
+}
+
+function y(n) {
+  var t, e, o;
+
+  function i(i) {
+    if (t || (t = n()).then(function (n) {
+      e = n.default;
+    }, function (n) {
+      o = n;
+    }), o) throw o;
+    if (!e) throw t;
+    return (0, _preact.createElement)(e, i);
+  }
+
+  return i.displayName = "Lazy", i.o = !0, i;
+}
+
+_preact.options.__e = function (n, t, r) {
+  if (n.then && r) for (var e, o = t; o = o.__p;) if ((e = o.__c) && e.i) return r && (t.__e = r.__e, t.__k = r.__k), void e.i(n);
+  h(n, t, r);
+}, (m.prototype = new _preact.Component()).i = function (n) {
+  var t = this;
+  t.t.push(n);
+
+  var r = function () {
+    t.t[t.t.indexOf(n)] = t.t[t.t.length - 1], t.t.pop(), 0 == t.t.length && ((0, _preact._unmount)(t.props.fallback), t.__v.__e = null, t.__v.__k = t.state.u, t.setState({
+      u: null
+    }));
+  };
+
+  null == t.state.u && (t.setState({
+    u: t.__v.__k
+  }), function n(t) {
+    for (var r = 0; r < t.length; r++) {
+      var e = t[r];
+      null != e && ("function" != typeof e.type && e.__e ? p(e.__e) : e.__k && n(e.__k));
+    }
+  }(t.__v.__k), t.__v.__k = []), n.then(r, r);
+}, m.prototype.render = function (n, t) {
+  return t.u ? n.fallback : n.children;
+};
+var b = "16.8.0",
+    g = "undefined" != typeof Symbol && Symbol.for && Symbol.for("react.element") || 60103,
+    x = /^(?:accent|alignment|arabic|baseline|cap|clip|color|fill|flood|font|glyph|horiz|marker|overline|paint|stop|strikethrough|stroke|text|underline|unicode|units|v|vector|vert|word|writing|x)[A-Z]/,
+    C = _preact.options.event;
+exports.version = b;
+
+function w(n) {
+  return S.bind(null, n);
+}
+
+function k(n, t, r) {
+  if (null == t.__k) for (; t.firstChild;) p(t.firstChild);
+  return (0, _preact.render)(n, t), "function" == typeof r && r(), n ? n.__c : null;
+}
+
+_preact.options.event = function (n) {
+  return C && (n = C(n)), n.persist = function () {}, n.nativeEvent = n;
+};
+
+var E = function () {};
+
+function A(n) {
+  var t = this,
+      r = n.container,
+      o = (0, _preact.h)(E, {
+    context: t.context
+  }, n.vnode);
+  return t.l && t.l !== r && (t.s.parentNode && t.l.removeChild(t.s), (0, _preact._unmount)(t.v), t.p = !1), n.vnode ? t.p ? (r.__k = t.__k, (0, _preact.render)(o, r), t.__k = r.__k) : (t.s = document.createTextNode(""), (0, _preact.hydrate)("", r), r.insertBefore(t.s, r.firstChild), t.p = !0, t.l = r, (0, _preact.render)(o, r, t.s), t.__k = this.s.__k) : t.p && (t.s.parentNode && t.l.removeChild(t.s), (0, _preact._unmount)(t.v)), t.v = o, t.componentWillUnmount = function () {
+    t.s.parentNode && t.l.removeChild(t.s), (0, _preact._unmount)(t.v);
+  }, null;
+}
+
+function F(n, t) {
+  return (0, _preact.h)(A, {
+    vnode: n,
+    container: t
+  });
+}
+
+E.prototype.getChildContext = function () {
+  return this.props.context;
+}, E.prototype.render = function (n) {
+  return n.children;
+};
+
+var N = function (n, t) {
+  return n ? (0, _preact.toChildArray)(n).map(t) : null;
+},
+    R = {
+  map: N,
+  forEach: N,
+  count: function (n) {
+    return n ? (0, _preact.toChildArray)(n).length : 0;
+  },
+  only: function (n) {
+    if (1 !== (n = (0, _preact.toChildArray)(n)).length) throw new Error("Children.only() expects only one child.");
+    return n[0];
+  },
+  toArray: _preact.toChildArray
+};
+
+exports.Children = R;
+
+function S() {
+  for (var n = [], t = arguments.length; t--;) n[t] = arguments[t];
+
+  var r = _preact.h.apply(void 0, n),
+      e = r.type,
+      o = r.props;
+
+  return "function" != typeof e && (o.defaultValue && (o.value || 0 === o.value || (o.value = o.defaultValue), delete o.defaultValue), Array.isArray(o.value) && o.multiple && "select" === e && ((0, _preact.toChildArray)(o.children).forEach(function (n) {
+    -1 != o.value.indexOf(n.props.value) && (n.props.selected = !0);
+  }), delete o.value), function (n, t) {
+    var r, e, o;
+
+    for (o in t) if (r = x.test(o)) break;
+
+    if (r) for (o in e = n.props = {}, t) e[x.test(o) ? o.replace(/([A-Z0-9])/, "-$1").toLowerCase() : o] = t[o];
+  }(r, o)), r.preactCompatNormalized = !1, O(r);
+}
+
+function O(n) {
+  return n.preactCompatNormalized = !0, function (n) {
+    var t = n.props;
+    (t.class || t.className) && (M.enumerable = "className" in t, t.className && (t.class = t.className), Object.defineProperty(t, "className", M));
+  }(n), n;
+}
+
+function _(n) {
+  return j(n) ? O(_preact.cloneElement.apply(null, arguments)) : n;
+}
+
+function j(n) {
+  return !!n && n.$$typeof === g;
+}
+
+function z(n) {
+  return !!n.__k && ((0, _preact.render)(null, n), !0);
+}
+
+var M = {
+  configurable: !0,
+  get: function () {
+    return this.class;
+  }
+};
+
+function P(n, t) {
+  for (var r in n) if (!(r in t)) return !0;
+
+  for (var e in t) if (n[e] !== t[e]) return !0;
+
+  return !1;
+}
+
+function U(n) {
+  return n && (n.base || 1 === n.nodeType && n) || null;
+}
+
+var W = function (n) {
+  function t(t) {
+    n.call(this, t), this.isPureReactComponent = !0;
+  }
+
+  return n && (t.__proto__ = n), (t.prototype = Object.create(n && n.prototype)).constructor = t, t.prototype.shouldComponentUpdate = function (n, t) {
+    return P(this.props, n) || P(this.state, t);
+  }, t;
+}(_preact.Component);
+
+exports.PureComponent = W;
+
+function Z(n, t) {
+  function r(n) {
+    var r = this.props.ref,
+        e = r == n.ref;
+    return !e && r && (r.call ? r(null) : r.current = null), (t ? !t(this.props, n) : P(this.props, n)) || !e;
+  }
+
+  function e(t) {
+    return this.shouldComponentUpdate = r, (0, _preact.h)(n, d({}, t));
+  }
+
+  return e.prototype.isReactComponent = !0, e.displayName = "Memo(" + (n.displayName || n.name) + ")", e.o = !0, e;
+}
+
+function D(n, t) {
+  Object.defineProperty(n.prototype, "UNSAFE_" + t, {
+    configurable: !0,
+    get: function () {
+      return this[t];
+    },
+    set: function (n) {
+      this[t] = n;
+    }
+  });
+}
+
+function L(n) {
+  function t(t) {
+    var r = t.ref;
+    return delete t.ref, n(t, r);
+  }
+
+  return t.prototype.isReactComponent = !0, t.o = !0, t.displayName = "ForwardRef(" + (n.displayName || n.name) + ")", t;
+}
+
+_preact.Component.prototype.isReactComponent = {}, D(_preact.Component, "componentWillMount"), D(_preact.Component, "componentWillReceiveProps"), D(_preact.Component, "componentWillUpdate");
+var T = _preact.options.vnode;
+
+_preact.options.vnode = function (n) {
+  n.$$typeof = g, function (t) {
+    var r = n.type,
+        e = n.props;
+
+    if (e && "string" == typeof r) {
+      var o = {};
+
+      for (var i in e) /^on(Ani|Tra)/.test(i) && (e[i.toLowerCase()] = e[i], delete e[i]), o[i.toLowerCase()] = i;
+
+      if (o.ondoubleclick && (e.ondblclick = e[o.ondoubleclick], delete e[o.ondoubleclick]), o.onbeforeinput && (e.onbeforeinput = e[o.onbeforeinput], delete e[o.onbeforeinput]), o.onchange && ("textarea" === r || "input" === r.toLowerCase() && !/^fil|che|ra/i.test(e.type))) {
+        var u = o.oninput || "oninput";
+        e[u] || (e[u] = e[o.onchange], delete e[o.onchange]);
+      }
+    }
+  }();
+  var t = n.type;
+  t && t.o && n.ref && (n.props.ref = n.ref, n.ref = null), T && T(n);
+};
+
+var V = function (n, t) {
+  return n(t);
+};
+
+exports.unstable_batchedUpdates = V;
+
+var _default = d({
+  version: "16.8.0",
+  Children: R,
+  render: k,
+  hydrate: k,
+  unmountComponentAtNode: z,
+  createPortal: F,
+  createElement: S,
+  createContext: _preact.createContext,
+  createFactory: w,
+  cloneElement: _,
+  createRef: _preact.createRef,
+  Fragment: _preact.Fragment,
+  isValidElement: j,
+  findDOMNode: U,
+  Component: _preact.Component,
+  PureComponent: W,
+  memo: Z,
+  forwardRef: L,
+  unstable_batchedUpdates: V,
+  Suspense: m,
+  lazy: y
+}, n);
+
+exports.default = _default;
+},{"preact/hooks":"node_modules/preact/hooks/dist/hooks.module.js","preact":"node_modules/preact/dist/preact.module.js"}],"node_modules/nanoevents/index.js":[function(require,module,exports) {
 (
 /**
  * Interface for event subscription.
@@ -4946,7 +5095,7 @@ module.exports = function NanoEvents() {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.emit = exports.on = exports.EVENTS = exports.EV_CONVOSTART = void 0;
+exports.emit = exports.on = exports.EVENTS = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOSTART = void 0;
 
 var _nanoevents = _interopRequireDefault(require("nanoevents"));
 
@@ -4956,7 +5105,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var emitter = new _nanoevents.default();
 var EV_CONVOSTART = 'ev.convoStart';
 exports.EV_CONVOSTART = EV_CONVOSTART;
-var EVENTS = [EV_CONVOSTART];
+var EV_CONVONEXT = 'ev.convoNext';
+exports.EV_CONVONEXT = EV_CONVONEXT;
+var EV_CONVOCHOICE = 'ev.convoChoice';
+exports.EV_CONVOCHOICE = EV_CONVOCHOICE;
+var EVENTS = [EV_CONVOSTART, EV_CONVONEXT, EV_CONVOCHOICE];
 exports.EVENTS = EVENTS;
 
 var hasEvent = function hasEvent(e) {
@@ -4987,32 +5140,194 @@ exports.default = void 0;
 
 var _preact = require("preact");
 
+var _compat = require("preact/compat");
+
 var _events = require("./events");
 
-var App = function App() {
-  var onConvoStarted = function onConvoStarted(data) {
-    console.log("Conversation started:");
-    console.log(data);
+function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
+
+function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+var typeWriter = function typeWriter(_ref) {
+  var text = _ref.text,
+      _ref$speed = _ref.speed,
+      speed = _ref$speed === void 0 ? 100 : _ref$speed,
+      _ref$onNext = _ref.onNext,
+      onNext = _ref$onNext === void 0 ? function () {} : _ref$onNext,
+      _ref$onComplete = _ref.onComplete,
+      onComplete = _ref$onComplete === void 0 ? function () {} : _ref$onComplete;
+
+  var nextText = function nextText() {
+    var i = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+    var str = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+
+    if (i < text.length) {
+      str = str + text.charAt(i);
+      i++;
+      onNext(str);
+      setTimeout(function () {
+        nextText(i, str);
+      }, speed);
+    } else {
+      onComplete();
+    }
   };
 
-  (0, _preact.useEffect)(function () {
-    (0, _events.on)(_events.EV_CONVOSTART, function () {
-      return onConvoStarted;
-    });
-  }, []);
-  return (0, _preact.h)("div", null, (0, _preact.h)("p", null, "Game"));
-};
-
-var _default = function _default() {
   return {
     start: function start() {
-      (0, _preact.render)(App, document.getElementById("ui"));
+      return nextText();
+    }
+  };
+};
+
+var DialogueBox = function DialogueBox(_ref2) {
+  var title = _ref2.title,
+      text = _ref2.text,
+      children = _ref2.children,
+      _ref2$onTextStarted = _ref2.onTextStarted,
+      onTextStarted = _ref2$onTextStarted === void 0 ? function () {} : _ref2$onTextStarted,
+      _ref2$onTextComplete = _ref2.onTextComplete,
+      onTextComplete = _ref2$onTextComplete === void 0 ? function () {} : _ref2$onTextComplete;
+
+  var _useState = (0, _compat.useState)(""),
+      _useState2 = _slicedToArray(_useState, 2),
+      textStep = _useState2[0],
+      setTextStep = _useState2[1];
+
+  (0, _compat.useEffect)(function () {
+    onTextStarted();
+    typeWriter({
+      speed: 50,
+      text: text,
+      onNext: function onNext(text) {
+        return setTextStep(text);
+      },
+      onComplete: function onComplete() {
+        return onTextComplete();
+      }
+    }).start();
+  }, []);
+  return (0, _preact.h)("div", {
+    class: "dialogueBoxOuter"
+  }, (0, _preact.h)("div", {
+    class: "dialogue"
+  }, (0, _preact.h)("p", null, title, ":"), (0, _preact.h)("p", null, textStep), (0, _preact.h)("div", {
+    class: "arrow"
+  }), (0, _preact.h)("div", {
+    class: "children"
+  }, children)));
+};
+
+var ChoiceWindow = function ChoiceWindow(_ref3) {
+  var _ref3$choices = _ref3.choices,
+      choices = _ref3$choices === void 0 ? [] : _ref3$choices,
+      _ref3$onChoiceSelecte = _ref3.onChoiceSelected,
+      onChoiceSelected = _ref3$onChoiceSelecte === void 0 ? function () {} : _ref3$onChoiceSelecte;
+  return (0, _preact.h)("div", {
+    class: "choiceWindow"
+  }, choices.map(function (choice) {
+    return (0, _preact.h)("div", {
+      class: "choiceBox",
+      onClick: function onClick() {
+        onChoiceSelected(choice);
+      }
+    }, choice.text);
+  }));
+};
+
+var DebugWindow = function DebugWindow(_ref4) {
+  var props = Object.assign({}, _ref4);
+  return (0, _preact.h)("div", {
+    class: "debugWindow"
+  }, (0, _preact.h)("p", null, "Game Debug:"), (0, _preact.h)("div", null, "..."));
+};
+
+var Shell = function Shell(_ref5) {
+  var convoIterator = _ref5.convoIterator;
+
+  var _useState3 = (0, _compat.useState)({}),
+      _useState4 = _slicedToArray(_useState3, 1),
+      debugData = _useState4[0];
+
+  var _useState5 = (0, _compat.useState)(null),
+      _useState6 = _slicedToArray(_useState5, 2),
+      currentDialogue = _useState6[0],
+      setCurrentDialogue = _useState6[1];
+
+  var _useState7 = (0, _compat.useState)(null),
+      _useState8 = _slicedToArray(_useState7, 2),
+      currentChoices = _useState8[0],
+      setCurrentChoices = _useState8[1];
+
+  var _useState9 = (0, _compat.useState)(true),
+      _useState10 = _slicedToArray(_useState9, 2),
+      canProceed = _useState10[0],
+      setCanProceed = _useState10[1];
+
+  var onConvoStarted = function onConvoStarted(data) {
+    if (!canProceed) return;
+    console.log("Conversation started:");
+    console.log(data.conversationProps);
+    setCanProceed(false);
+    setCurrentDialogue({
+      title: data.actorProps.name,
+      text: data.conversationProps.actor ? "\"".concat(data.conversationProps.text, "\"") : data.conversationProps.text
+    });
+    setCurrentChoices(data.conversationProps.choices);
+  };
+
+  var onConvoNext = function onConvoNext(data) {
+    if (canProceed && !currentChoices) {
+      console.log("Conversation next:");
+      setCurrentDialogue(data); // convoIterator.goToExact(choice.to); ????
+    }
+  };
+
+  var onChoiceSelected = function onChoiceSelected(choice) {
+    console.log(choice);
+    setCurrentChoices(null);
+    convoIterator.goToExact(choice.to);
+  };
+
+  var onTextStarted = function onTextStarted() {
+    return setCanProceed(false);
+  };
+
+  var onTextComplete = function onTextComplete() {
+    return setCanProceed(true);
+  };
+
+  (0, _compat.useEffect)(function () {
+    (0, _events.on)(_events.EV_CONVOSTART, onConvoStarted);
+    (0, _events.on)(_events.EV_CONVONEXT, onConvoNext);
+  }, []);
+  return (0, _preact.h)("div", {
+    class: "uiShell"
+  }, debugData && (0, _preact.h)(DebugWindow, debugData), currentDialogue && (0, _preact.h)(DialogueBox, _extends({}, currentDialogue, {
+    onTextStarted: onTextStarted,
+    onTextComplete: onTextComplete
+  }), currentChoices && canProceed && (0, _preact.h)(ChoiceWindow, {
+    choices: currentChoices,
+    onChoiceSelected: onChoiceSelected
+  })));
+};
+
+var _default = function _default(props) {
+  return {
+    start: function start() {
+      (0, _preact.render)((0, _preact.h)(Shell, props), document.getElementById("ui"));
     }
   };
 };
 
 exports.default = _default;
-},{"preact":"node_modules/preact/dist/preact.umd.js","./events":"src/events.js"}],"src/cache.js":[function(require,module,exports) {
+},{"preact":"node_modules/preact/dist/preact.module.js","preact/compat":"node_modules/preact/compat/dist/compat.module.js","./events":"src/events.js"}],"src/cache.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -5225,72 +5540,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","./helpers":"src/helpers.js"}],"src/fsm.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _default = function _default(_ref) {
-  var _ref$states = _ref.states,
-      states = _ref$states === void 0 ? [] : _ref$states,
-      _ref$startIndex = _ref.startIndex,
-      startIndex = _ref$startIndex === void 0 ? 0 : _ref$startIndex;
-  var currentState = states[startIndex];
-  return {
-    setState: function setState(stateId) {
-      var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      if (currentState.id === stateId) return;
-      currentState = states.find(function (st) {
-        return st.id === stateId;
-      });
-      currentState.enter(props);
-    },
-    update: function update() {
-      currentState.update();
-
-      if (currentState.isComplete) {
-        currentState.exit();
-        currentState = states[0];
-      }
-    }
-  };
-};
-
-exports.default = _default;
-},{}],"src/states/blankState.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      cache = _ref.cache,
-      _ref$onEntry = _ref.onEntry,
-      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
-      _ref$onExit = _ref.onExit,
-      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
-  var isComplete = false;
-  return {
-    id: id,
-    isComplete: isComplete,
-    enter: function enter(props) {
-      onEntry();
-    },
-    update: function update() {},
-    exit: function exit() {
-      onExit();
-    }
-  };
-};
-
-exports.default = _default;
-},{}],"src/conversationIterator.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./helpers":"src/helpers.js"}],"src/conversationIterator.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -5362,12 +5612,15 @@ var _default = function _default(_ref) {
       var _currentNode = currentNode(),
           id = _currentNode.id,
           to = _currentNode.to,
-          actions = _currentNode.actions; // TODO: Consts please.
+          choices = _currentNode.choices,
+          actions = _currentNode.actions; // Wait if choices are presented.
 
+
+      if (choices.length) return; // TODO: Consts please.
 
       if (actions.some(function (action) {
         return action === "endConversation";
-      }) || !to) {
+      }) || choices.length === 0 && !to) {
         if (actions.some(function (action) {
           return action === "save";
         })) {
@@ -5398,58 +5651,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"./helpers":"src/helpers.js"}],"src/data.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.mainFlow = void 0;
-var mainFlow = [{
-  id: "m1",
-  from: null,
-  to: null,
-  text: "This is the first message",
-  choices: [{
-    id: "m1a",
-    from: "m1",
-    to: "m2",
-    text: "I will select A.",
-    choices: [],
-    actions: []
-  }, {
-    id: "m1b",
-    from: "m1",
-    to: "m3",
-    text: "I will select B.",
-    choices: [],
-    actions: []
-  }],
-  actions: []
-}, {
-  id: "m2",
-  from: "m1a",
-  to: "m4",
-  text: "This is if you select A.",
-  choices: [],
-  actions: []
-}, {
-  id: "m3",
-  from: "m1b",
-  to: null,
-  text: "This is if you select B.",
-  choices: [],
-  actions: ["cancel"]
-}, {
-  id: "m4",
-  from: "m2",
-  to: null,
-  text: "This should be the last in the chain for A.",
-  choices: [],
-  actions: ["endConversation", "save"]
-}];
-exports.mainFlow = mainFlow;
-},{}],"src/states/startConvo.js":[function(require,module,exports) {
+},{"./helpers":"src/helpers.js"}],"src/fsm.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -5457,19 +5659,40 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _conversationIterator = _interopRequireDefault(require("../conversationIterator"));
+var _default = function _default(_ref) {
+  var _ref$states = _ref.states,
+      states = _ref$states === void 0 ? [] : _ref$states,
+      _ref$startIndex = _ref.startIndex,
+      startIndex = _ref$startIndex === void 0 ? 0 : _ref$startIndex;
+  var currentState = states[startIndex];
+  return {
+    setState: function setState(stateId) {
+      var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+      if (currentState.id === stateId) return;
+      currentState = states.find(function (st) {
+        return st.id === stateId;
+      });
+      currentState.enter(props);
+    },
+    update: function update() {
+      currentState.update();
 
-var _data = require("../data");
+      if (currentState.isComplete) {
+        currentState.exit();
+        currentState = states[0];
+      }
+    }
+  };
+};
 
-var _events = require("../events");
+exports.default = _default;
+},{}],"src/states/blankState.js":[function(require,module,exports) {
+"use strict";
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
 
 var _default = function _default(_ref) {
   var id = _ref.id,
@@ -5483,29 +5706,9 @@ var _default = function _default(_ref) {
     id: id,
     isComplete: isComplete,
     enter: function enter(props) {
-      console.log("Player entered a conversational state:");
-      console.log(props);
-      var convoIterator = (0, _conversationIterator.default)({
-        collection: _data.mainFlow,
-        onChatComplete: function onChatComplete(lastPositionSaved) {
-          console.log("Exited:", lastPositionSaved);
-        },
-        onChainProgress: function onChainProgress(lastNodeId) {
-          cache.set("progress", {
-            storyProgress: lastNodeId
-          });
-        }
-      }); // Example starter convo
-
-      var val = convoIterator.goToExact("m1");
-      console.log(val);
-      (0, _events.emit)(_events.ES_CONVOSTART, _objectSpread({}, props, {
-        val: val
-      }));
-      onEntry(props);
+      onEntry();
     },
-    update: function update() {//...
-    },
+    update: function update() {},
     exit: function exit() {
       onExit();
     }
@@ -5513,7 +5716,117 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"../conversationIterator":"src/conversationIterator.js","../data":"src/data.js","../events":"src/events.js"}],"src/index.js":[function(require,module,exports) {
+},{}],"src/states/startConvo.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _events = require("../events");
+
+var _kontra = require("kontra");
+
+var _default = function _default(_ref) {
+  var id = _ref.id,
+      convoIterator = _ref.convoIterator,
+      _ref$onEntry = _ref.onEntry,
+      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
+      _ref$onExit = _ref.onExit,
+      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
+  var currentActors = [];
+  var isComplete = false;
+  return {
+    id: id,
+    isComplete: isComplete,
+    enter: function enter(props) {
+      currentActors.push(props);
+      console.log("Player entered a conversational state:");
+      console.log(props); // Example starter convo (I'd put the convo id somewhere else)
+
+      var val = convoIterator.goToExact("m1");
+      console.log("FIRE EVENT ==>", _events.EV_CONVOSTART);
+      (0, _events.emit)(_events.EV_CONVOSTART, {
+        actorProps: currentActors[0],
+        conversationProps: val
+      });
+      onEntry(props);
+    },
+    update: function update() {
+      if ((0, _kontra.keyPressed)("e")) {
+        console.log("FIRE EVENT ==>", _events.EV_CONVONEXT);
+        (0, _events.emit)(_events.EV_CONVONEXT, {
+          actorProps: currentActors[0],
+          conversationProps: convoIterator.goToNext()
+        });
+      }
+    },
+    exit: function exit() {
+      return onExit();
+    }
+  };
+};
+
+exports.default = _default;
+},{"../events":"src/events.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/data.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.mainFlow = void 0;
+var mainFlow = [{
+  id: "m1",
+  actor: "daryl",
+  from: null,
+  to: null,
+  text: "This is the first message, what will you choose?",
+  choices: [{
+    id: "m1a",
+    actor: "player",
+    from: "m1",
+    to: "m2",
+    text: "I will select A.",
+    choices: [],
+    actions: []
+  }, {
+    id: "m1b",
+    actor: "player",
+    from: "m1",
+    to: "m3",
+    text: "I will select B.",
+    choices: [],
+    actions: []
+  }],
+  actions: []
+}, {
+  id: "m2",
+  actor: "daryl",
+  from: "m1a",
+  to: "m4",
+  text: "This is if you select A.",
+  choices: [],
+  actions: []
+}, {
+  id: "m3",
+  actor: "daryl",
+  from: "m1b",
+  to: null,
+  text: "This is if you select B.",
+  choices: [],
+  actions: ["cancel"]
+}, {
+  id: "m4",
+  actor: "daryl",
+  from: "m2",
+  to: null,
+  text: "This should be the last in the chain for A.",
+  choices: [],
+  actions: ["endConversation", "save"]
+}];
+exports.mainFlow = mainFlow;
+},{}],"src/index.js":[function(require,module,exports) {
 "use strict";
 
 var _kontra = require("kontra");
@@ -5526,11 +5839,15 @@ var _helpers = require("./helpers");
 
 var _entity = _interopRequireDefault(require("./entity"));
 
+var _conversationIterator = _interopRequireDefault(require("./conversationIterator"));
+
 var _fsm = _interopRequireDefault(require("./fsm"));
 
 var _blankState = _interopRequireDefault(require("./states/blankState"));
 
 var _startConvo = _interopRequireDefault(require("./states/startConvo"));
+
+var _data = require("./data");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -5556,25 +5873,20 @@ ctx.mozImageSmoothingEnabled = false;
 ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 ctx.scale(3, 3);
+var convoIterator = (0, _conversationIterator.default)({
+  collection: _data.mainFlow,
+  onChatComplete: function onChatComplete(lastPositionSaved) {
+    console.log("Exited:", lastPositionSaved);
+  },
+  onChainProgress: function onChainProgress(lastNodeId) {
+    gameCache.set("progress", {
+      storyProgress: lastNodeId
+    });
+  }
+});
 
 var Scene = function Scene() {
   (0, _kontra.initKeys)();
-  var appMode = 0;
-  var sceneStateMachine = (0, _fsm.default)({
-    states: [(0, _blankState.default)({
-      id: "field",
-      cache: gameCache,
-      onEntry: function onEntry() {
-        return appMode = 0;
-      }
-    }), (0, _startConvo.default)({
-      id: "conversation",
-      cache: gameCache,
-      onEntry: function onEntry() {
-        return appMode = 1;
-      }
-    })]
-  });
   var mapKey = "assets/tiledata/test";
   var map = _kontra.dataAssets[mapKey];
   var tileEngine = (0, _kontra.TileEngine)(map);
@@ -5594,6 +5906,23 @@ var Scene = function Scene() {
     sheet: "assets/entityimages/little_orc.png"
   });
   var sprites = [player, npc];
+  var appMode = 0;
+  var sceneStateMachine = (0, _fsm.default)({
+    states: [(0, _blankState.default)({
+      id: "field",
+      cache: gameCache,
+      onEntry: function onEntry() {
+        return appMode = 0;
+      }
+    }), (0, _startConvo.default)({
+      id: "conversation",
+      sprites: sprites,
+      convoIterator: convoIterator,
+      onEntry: function onEntry() {
+        return appMode = 1;
+      }
+    })]
+  });
   return (0, _kontra.GameLoop)({
     update: function update() {
       sceneStateMachine.update();
@@ -5709,9 +6038,11 @@ var Scene = function Scene() {
 
 (0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png").then(function (assets) {
   Scene().start();
-  (0, _ui.default)().start();
+  (0, _ui.default)({
+    convoIterator: convoIterator
+  }).start();
 });
-},{"kontra":"node_modules/kontra/kontra.mjs","./ui":"src/ui.js","./cache":"src/cache.js","./helpers":"src/helpers.js","./entity":"src/entity.js","./fsm":"src/fsm.js","./states/blankState":"src/states/blankState.js","./states/startConvo":"src/states/startConvo.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./ui":"src/ui.js","./cache":"src/cache.js","./helpers":"src/helpers.js","./entity":"src/entity.js","./conversationIterator":"src/conversationIterator.js","./fsm":"src/fsm.js","./states/blankState":"src/states/blankState.js","./states/startConvo":"src/states/startConvo.js","./data":"src/data.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -5739,7 +6070,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57609" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62539" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
