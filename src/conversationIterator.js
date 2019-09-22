@@ -2,6 +2,8 @@ import { useState } from "./helpers";
 
 export default ({
   collection,
+  onChatStarted = () => {},
+  onChatNext = node => {},
   onChatComplete = lastPositionSaved => {},
   onChainProgress = lastNodeId => {}
 }) => {
@@ -50,6 +52,9 @@ export default ({
 
       // Wait if choices are presented.
       if (choices.length) return;
+
+      // Fires regardless of validity
+      onChatNext(currentNode());
 
       // TODO: Consts please.
       if (

@@ -5,8 +5,8 @@ import { on, EV_CONVOSTART, EV_CONVONEXT } from "./events";
 const typeWriter = ({
   text,
   speed = 100,
-  onNext = () => {},
-  onComplete = () => {}
+  onNext = () => { },
+  onComplete = () => { }
 }) => {
   const nextText = (i = 0, str = "") => {
     if (i < text.length) {
@@ -30,8 +30,8 @@ const DialogueBox = ({
   title,
   text,
   children,
-  onTextStarted = () => {},
-  onTextComplete = () => {}
+  onTextStarted = () => { },
+  onTextComplete = () => { }
 }) => {
   const [textStep, setTextStep] = useState("");
 
@@ -64,7 +64,7 @@ const DialogueBox = ({
   );
 };
 
-const ChoiceWindow = ({ choices = [], onChoiceSelected = () => {} }) => {
+const ChoiceWindow = ({ choices = [], onChoiceSelected = () => { } }) => {
   return (
     <div class="choiceWindow">
       {choices.map(choice => {
@@ -92,7 +92,7 @@ const DebugWindow = ({ ...props }) => {
   );
 };
 
-const Shell = ({ convoIterator }) => {
+const Shell = ({ onConversationChoice = () => { } }) => {
   const [debugData] = useState({});
   const [currentDialogue, setCurrentDialogue] = useState(null);
   const [currentChoices, setCurrentChoices] = useState(null);
@@ -120,14 +120,13 @@ const Shell = ({ convoIterator }) => {
     if (canProceed && !currentChoices) {
       console.log("Conversation next:");
       setCurrentDialogue(data);
-      // convoIterator.goToExact(choice.to); ????
     }
   };
 
   const onChoiceSelected = choice => {
     console.log(choice);
     setCurrentChoices(null);
-    convoIterator.goToExact(choice.to);
+    onConversationChoice(choice);
   };
 
   const onTextStarted = () => setCanProceed(false);

@@ -20,6 +20,7 @@ import ConversationIterator from "./conversationIterator";
 import StateMachine from "./fsm";
 import blankState from "./states/blankState";
 import startConvo from "./states/startConvo";
+import { emit, EV_CONVONEXT } from './events';
 
 import { mainFlow } from "./data";
 
@@ -40,6 +41,9 @@ ctx.scale(3, 3);
 
 const convoIterator = ConversationIterator({
   collection: mainFlow,
+  onChatNext: node => {
+    emit(EV_CONVONEXT, node);
+  },
   onChatComplete: lastPositionSaved => {
     console.log("Exited:", lastPositionSaved);
   },
@@ -52,6 +56,13 @@ const convoIterator = ConversationIterator({
 
 const Scene = () => {
   initKeys();
+
+  const ui = UI({
+    onConversationChoice: choice => {
+      // convoIterator.goToExact(choice.to);
+      // emit here
+    }
+  }).start();
 
   const mapKey = "assets/tiledata/test";
   const map = dataAssets[mapKey];
@@ -89,7 +100,13 @@ const Scene = () => {
         id: "conversation",
         sprites,
         convoIterator,
-        onEntry: () => (appMode = 1)
+        onNext: props => {
+          
+        },
+        onEntry: props => {
+          appMode = 1;
+          convoIterator.goToExact('m1');
+        }
       })
     ]
   });
@@ -126,9 +143,9 @@ const Scene = () => {
         /* To move later on */
         const dir = sprite.controlledByUser
           ? {
-              x: keyPressed("a") ? -1 : keyPressed("d") ? 1 : 0,
-              y: keyPressed("w") ? -1 : keyPressed("s") ? 1 : 0
-            }
+            x: keyPressed("a") ? -1 : keyPressed("d") ? 1 : 0,
+            y: keyPressed("w") ? -1 : keyPressed("s") ? 1 : 0
+          }
           : { x: 0, y: 0 }; // AI
 
         /* Normalise so you don't go super fast diagonally */
@@ -219,5 +236,4 @@ load(
   "assets/entityimages/little_orc.png"
 ).then(assets => {
   Scene().start();
-  UI({ convoIterator }).start();
 });

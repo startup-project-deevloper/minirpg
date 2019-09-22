@@ -5249,7 +5249,8 @@ var DebugWindow = function DebugWindow(_ref4) {
 };
 
 var Shell = function Shell(_ref5) {
-  var convoIterator = _ref5.convoIterator;
+  var _ref5$onConversationC = _ref5.onConversationChoice,
+      onConversationChoice = _ref5$onConversationC === void 0 ? function () {} : _ref5$onConversationC;
 
   var _useState3 = (0, _compat.useState)({}),
       _useState4 = _slicedToArray(_useState3, 1),
@@ -5285,14 +5286,14 @@ var Shell = function Shell(_ref5) {
   var onConvoNext = function onConvoNext(data) {
     if (canProceed && !currentChoices) {
       console.log("Conversation next:");
-      setCurrentDialogue(data); // convoIterator.goToExact(choice.to); ????
+      setCurrentDialogue(data);
     }
   };
 
   var onChoiceSelected = function onChoiceSelected(choice) {
     console.log(choice);
     setCurrentChoices(null);
-    convoIterator.goToExact(choice.to);
+    onConversationChoice(choice);
   };
 
   var onTextStarted = function onTextStarted() {
@@ -5560,6 +5561,10 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
 var _default = function _default(_ref) {
   var collection = _ref.collection,
+      _ref$onChatStarted = _ref.onChatStarted,
+      onChatStarted = _ref$onChatStarted === void 0 ? function () {} : _ref$onChatStarted,
+      _ref$onChatNext = _ref.onChatNext,
+      onChatNext = _ref$onChatNext === void 0 ? function (node) {} : _ref$onChatNext,
       _ref$onChatComplete = _ref.onChatComplete,
       onChatComplete = _ref$onChatComplete === void 0 ? function (lastPositionSaved) {} : _ref$onChatComplete,
       _ref$onChainProgress = _ref.onChainProgress,
@@ -5616,7 +5621,9 @@ var _default = function _default(_ref) {
           actions = _currentNode.actions; // Wait if choices are presented.
 
 
-      if (choices.length) return; // TODO: Consts please.
+      if (choices.length) return; // Fires regardless of validity
+
+      onChatNext(currentNode()); // TODO: Consts please.
 
       if (actions.some(function (action) {
         return action === "endConversation";
@@ -5724,8 +5731,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _events = require("../events");
-
 var _kontra = require("kontra");
 
 var _default = function _default(_ref) {
@@ -5734,7 +5739,9 @@ var _default = function _default(_ref) {
       _ref$onEntry = _ref.onEntry,
       onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
       _ref$onExit = _ref.onExit,
-      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
+      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit,
+      _ref$onNext = _ref.onNext,
+      onNext = _ref$onNext === void 0 ? function () {} : _ref$onNext;
   var currentActors = [];
   var isComplete = false;
   return {
@@ -5743,20 +5750,15 @@ var _default = function _default(_ref) {
     enter: function enter(props) {
       currentActors.push(props);
       console.log("Player entered a conversational state:");
-      console.log(props); // Example starter convo (I'd put the convo id somewhere else)
-
-      var val = convoIterator.goToExact("m1");
-      console.log("FIRE EVENT ==>", _events.EV_CONVOSTART);
-      (0, _events.emit)(_events.EV_CONVOSTART, {
+      console.log(props);
+      onEntry({
         actorProps: currentActors[0],
-        conversationProps: val
+        conversationProps: convoIterator.goToExact("m1")
       });
-      onEntry(props);
     },
     update: function update() {
       if ((0, _kontra.keyPressed)("e")) {
-        console.log("FIRE EVENT ==>", _events.EV_CONVONEXT);
-        (0, _events.emit)(_events.EV_CONVONEXT, {
+        onNext({
           actorProps: currentActors[0],
           conversationProps: convoIterator.goToNext()
         });
@@ -5769,7 +5771,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"../events":"src/events.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/data.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/data.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -5847,6 +5849,8 @@ var _blankState = _interopRequireDefault(require("./states/blankState"));
 
 var _startConvo = _interopRequireDefault(require("./states/startConvo"));
 
+var _events = require("./events");
+
 var _data = require("./data");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -5875,6 +5879,9 @@ ctx.oImageSmoothingEnabled = false;
 ctx.scale(3, 3);
 var convoIterator = (0, _conversationIterator.default)({
   collection: _data.mainFlow,
+  onChatNext: function onChatNext(node) {
+    (0, _events.emit)(_events.EV_CONVONEXT, node);
+  },
   onChatComplete: function onChatComplete(lastPositionSaved) {
     console.log("Exited:", lastPositionSaved);
   },
@@ -5887,6 +5894,11 @@ var convoIterator = (0, _conversationIterator.default)({
 
 var Scene = function Scene() {
   (0, _kontra.initKeys)();
+  var ui = (0, _ui.default)({
+    onConversationChoice: function onConversationChoice(choice) {// convoIterator.goToExact(choice.to);
+      // emit here
+    }
+  }).start();
   var mapKey = "assets/tiledata/test";
   var map = _kontra.dataAssets[mapKey];
   var tileEngine = (0, _kontra.TileEngine)(map);
@@ -5918,8 +5930,10 @@ var Scene = function Scene() {
       id: "conversation",
       sprites: sprites,
       convoIterator: convoIterator,
-      onEntry: function onEntry() {
-        return appMode = 1;
+      onNext: function onNext(props) {},
+      onEntry: function onEntry(props) {
+        appMode = 1;
+        convoIterator.goToExact('m1');
       }
     })]
   });
@@ -6038,11 +6052,8 @@ var Scene = function Scene() {
 
 (0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png").then(function (assets) {
   Scene().start();
-  (0, _ui.default)({
-    convoIterator: convoIterator
-  }).start();
 });
-},{"kontra":"node_modules/kontra/kontra.mjs","./ui":"src/ui.js","./cache":"src/cache.js","./helpers":"src/helpers.js","./entity":"src/entity.js","./conversationIterator":"src/conversationIterator.js","./fsm":"src/fsm.js","./states/blankState":"src/states/blankState.js","./states/startConvo":"src/states/startConvo.js","./data":"src/data.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./ui":"src/ui.js","./cache":"src/cache.js","./helpers":"src/helpers.js","./entity":"src/entity.js","./conversationIterator":"src/conversationIterator.js","./fsm":"src/fsm.js","./states/blankState":"src/states/blankState.js","./states/startConvo":"src/states/startConvo.js","./events":"src/events.js","./data":"src/data.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -6070,7 +6081,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62539" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64183" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
