@@ -5146,8 +5146,6 @@ var _compat = require("preact/compat");
 
 var _events = require("./events");
 
-function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
-
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
@@ -5156,70 +5154,28 @@ function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) ||
 
 function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
-var TypeWriter = function TypeWriter(_ref) {
-  var text = _ref.text,
-      _ref$onTextStarted = _ref.onTextStarted,
-      onTextStarted = _ref$onTextStarted === void 0 ? function () {} : _ref$onTextStarted,
-      _ref$onTextComplete = _ref.onTextComplete,
-      onTextComplete = _ref$onTextComplete === void 0 ? function () {} : _ref$onTextComplete;
-
-  var _useState = (0, _compat.useState)(''),
-      _useState2 = _slicedToArray(_useState, 2),
-      str = _useState2[0],
-      setString = _useState2[1];
-
-  var t = function t(s, i) {
-    if (i > text.length) {
-      onTextComplete();
-      return;
-    }
-
-    ;
-    var nextString = s + text.charAt(i);
-    setString(nextString);
-    i += 1;
-    setTimeout(function () {
-      t(nextString, i);
-    }, 50);
-  };
-
-  (0, _compat.useEffect)(function () {
-    onTextStarted();
-    t('', 0);
-  }, [text]);
-  return (0, _preact.h)("span", null, str);
-};
-
-var DialogueBox = function DialogueBox(_ref2) {
-  var title = _ref2.title,
-      text = _ref2.text,
-      _ref2$canProceed = _ref2.canProceed,
-      canProceed = _ref2$canProceed === void 0 ? false : _ref2$canProceed,
-      children = _ref2.children,
-      _ref2$onTextStarted = _ref2.onTextStarted,
-      onTextStarted = _ref2$onTextStarted === void 0 ? function () {} : _ref2$onTextStarted,
-      _ref2$onTextComplete = _ref2.onTextComplete,
-      onTextComplete = _ref2$onTextComplete === void 0 ? function () {} : _ref2$onTextComplete;
+var DialogueBox = function DialogueBox(_ref) {
+  var title = _ref.title,
+      text = _ref.text,
+      _ref$canProceed = _ref.canProceed,
+      canProceed = _ref$canProceed === void 0 ? false : _ref$canProceed,
+      children = _ref.children;
   return (0, _preact.h)("div", {
     class: "dialogueBoxOuter"
   }, (0, _preact.h)("div", {
     class: "dialogue"
-  }, (0, _preact.h)("p", null, title, ":"), (0, _preact.h)(TypeWriter, {
-    text: text,
-    onTextStarted: onTextStarted,
-    onTextComplete: onTextComplete
-  }), canProceed && (0, _preact.h)("div", {
+  }, (0, _preact.h)("p", null, title, ":"), text, canProceed && (0, _preact.h)("div", {
     class: "arrow"
   }), (0, _preact.h)("div", {
     class: "children"
   }, children)));
 };
 
-var ChoiceWindow = function ChoiceWindow(_ref3) {
-  var _ref3$choices = _ref3.choices,
-      choices = _ref3$choices === void 0 ? [] : _ref3$choices,
-      _ref3$onChoiceSelecte = _ref3.onChoiceSelected,
-      onChoiceSelected = _ref3$onChoiceSelecte === void 0 ? function () {} : _ref3$onChoiceSelecte;
+var ChoiceWindow = function ChoiceWindow(_ref2) {
+  var _ref2$choices = _ref2.choices,
+      choices = _ref2$choices === void 0 ? [] : _ref2$choices,
+      _ref2$onChoiceSelecte = _ref2.onChoiceSelected,
+      onChoiceSelected = _ref2$onChoiceSelecte === void 0 ? function () {} : _ref2$onChoiceSelecte;
   return (0, _preact.h)("div", {
     class: "choiceWindow"
   }, choices.map(function (choice) {
@@ -5232,40 +5188,45 @@ var ChoiceWindow = function ChoiceWindow(_ref3) {
   }));
 };
 
-var DebugWindow = function DebugWindow(_ref4) {
-  var props = Object.assign({}, _ref4);
+var DebugWindow = function DebugWindow(_ref3) {
+  var props = Object.assign({}, _ref3);
   return (0, _preact.h)("div", {
     class: "debugWindow"
   }, (0, _preact.h)("p", null, "Game Debug:"), (0, _preact.h)("div", null, "..."));
 };
 
-var Shell = function Shell(_ref5) {
-  var _ref5$onConversationC = _ref5.onConversationChoice,
-      onConversationChoice = _ref5$onConversationC === void 0 ? function () {} : _ref5$onConversationC;
+var Shell = function Shell(_ref4) {
+  var _ref4$onConversationC = _ref4.onConversationChoice,
+      onConversationChoice = _ref4$onConversationC === void 0 ? function () {} : _ref4$onConversationC;
 
-  var _useState3 = (0, _compat.useState)({}),
-      _useState4 = _slicedToArray(_useState3, 1),
-      debugData = _useState4[0];
+  var _useState = (0, _compat.useState)({}),
+      _useState2 = _slicedToArray(_useState, 1),
+      debugData = _useState2[0];
 
-  var _useState5 = (0, _compat.useState)(null),
+  var _useState3 = (0, _compat.useState)(null),
+      _useState4 = _slicedToArray(_useState3, 2),
+      currentDialogue = _useState4[0],
+      setCurrentDialogue = _useState4[1];
+
+  var _useState5 = (0, _compat.useState)([]),
       _useState6 = _slicedToArray(_useState5, 2),
-      currentDialogue = _useState6[0],
-      setCurrentDialogue = _useState6[1];
+      currentChoices = _useState6[0],
+      setCurrentChoices = _useState6[1];
 
-  var _useState7 = (0, _compat.useState)([]),
+  var _useState7 = (0, _compat.useState)(true),
       _useState8 = _slicedToArray(_useState7, 2),
-      currentChoices = _useState8[0],
-      setCurrentChoices = _useState8[1];
+      canProceed = _useState8[0],
+      setCanProceed = _useState8[1];
 
-  var _useState9 = (0, _compat.useState)(true),
+  var _useState9 = (0, _compat.useState)(false),
       _useState10 = _slicedToArray(_useState9, 2),
-      canProceed = _useState10[0],
-      setCanProceed = _useState10[1];
+      typingInProgress = _useState10[0],
+      setTypingInProgress = _useState10[1];
 
-  var onConvoStarted = function onConvoStarted(_ref6) {
-    var node = _ref6.node,
-        _ref6$passedProps = _ref6.passedProps,
-        passedProps = _ref6$passedProps === void 0 ? {} : _ref6$passedProps;
+  var onConvoStarted = function onConvoStarted(_ref5) {
+    var node = _ref5.node,
+        _ref5$passedProps = _ref5.passedProps,
+        passedProps = _ref5$passedProps === void 0 ? {} : _ref5$passedProps;
     var speakingActor = passedProps.currentActors.find(function (actor) {
       return actor.id === node.actor;
     });
@@ -5278,14 +5239,13 @@ var Shell = function Shell(_ref5) {
     setCurrentChoices(node.choices);
   };
 
-  var onConvoNext = function onConvoNext(_ref7) {
-    var node = _ref7.node,
-        _ref7$passedProps = _ref7.passedProps,
-        passedProps = _ref7$passedProps === void 0 ? {} : _ref7$passedProps;
-    // It seems you can proceed way before you're supposed to...
-    console.log("Next call:", canProceed);
+  var onConvoNext = function onConvoNext(_ref6) {
+    var node = _ref6.node,
+        _ref6$passedProps = _ref6.passedProps,
+        passedProps = _ref6$passedProps === void 0 ? {} : _ref6$passedProps;
 
-    if (canProceed && currentChoices.length === 0) {
+    // It seems you can proceed way before you're supposed to...
+    if (!typingInProgress && currentChoices.length === 0) {
       console.log("Conversation next:", node, passedProps);
       var speakingActor = passedProps.currentActors.find(function (actor) {
         return actor.id === node.actor;
@@ -5300,6 +5260,7 @@ var Shell = function Shell(_ref5) {
   };
 
   var onConvoEnd = function onConvoEnd() {
+    setCanProceed(true);
     setCurrentDialogue(null);
     setCurrentChoices([]);
   };
@@ -5307,13 +5268,36 @@ var Shell = function Shell(_ref5) {
   var onChoiceSelected = function onChoiceSelected(choice) {
     setCurrentChoices([]);
     onConversationChoice(choice);
-  }; // TODO: This runs in to trouble as different callbacks start to overlap, it needs to be more linear.
-
-
-  var onTextComplete = function onTextComplete() {
-    console.log('Text complete'); //setCanProceed(true);
   };
 
+  var _useState11 = (0, _compat.useState)(''),
+      _useState12 = _slicedToArray(_useState11, 2),
+      str = _useState12[0],
+      setString = _useState12[1];
+
+  var t = function t(s) {
+    var i = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+
+    if (i > currentDialogue.text.length) {
+      setTypingInProgress(false);
+      return;
+    }
+
+    ;
+    var nextString = s + currentDialogue.text.charAt(i);
+    setString(nextString);
+    i += 1;
+    setTimeout(function () {
+      t(nextString, i);
+    }, 50);
+  };
+
+  (0, _compat.useEffect)(function () {
+    if (currentDialogue && !typingInProgress) {
+      setTypingInProgress(true);
+      t('');
+    }
+  }, [currentDialogue]);
   (0, _compat.useEffect)(function () {
     // TODO: Make sure these are only binding once! If things do reload, unbind and rebind.
     (0, _events.on)(_events.EV_CONVOSTART, onConvoStarted);
@@ -5322,10 +5306,11 @@ var Shell = function Shell(_ref5) {
   }, []);
   return (0, _preact.h)("div", {
     class: "uiShell"
-  }, debugData && (0, _preact.h)(DebugWindow, debugData), currentDialogue && (0, _preact.h)(DialogueBox, _extends({}, currentDialogue, {
-    canProceed: canProceed,
-    onTextComplete: onTextComplete
-  }), currentChoices && canProceed && (0, _preact.h)(ChoiceWindow, {
+  }, debugData && (0, _preact.h)(DebugWindow, debugData), currentDialogue && (0, _preact.h)(DialogueBox, {
+    title: currentDialogue.title,
+    text: str,
+    canProceed: canProceed
+  }, currentChoices && !typingInProgress && (0, _preact.h)(ChoiceWindow, {
     choices: currentChoices,
     onChoiceSelected: onChoiceSelected
   })));
@@ -6191,7 +6176,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51022" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56973" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
