@@ -9,8 +9,7 @@
   },
   "dependencies": {
     "kontra": "^6.6.0",
-    "nanoevents": "^2.0.0",
-    "preact": "^10.0.0-rc.3"
+    "nanoevents": "^2.0.0"
   },
   "devDependencies": {
     "@babel/core": "7.2.0",
