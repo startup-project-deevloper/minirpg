@@ -6327,7 +6327,79 @@ var emit = function emit(e) {
 };
 
 exports.emit = emit;
-},{"nanoevents":"node_modules/nanoevents/index.js"}],"src/ui.js":[function(require,module,exports) {
+},{"nanoevents":"node_modules/nanoevents/index.js"}],"src/helpers.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.circleCollision = exports.vmulti = exports.between = exports.useState = exports.uniqueId = void 0;
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+var uniqueId = function uniqueId() {
+  var pre = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+  return "".concat(pre).concat(pre.length ? "_" : "") + (Number(String(Math.random()).slice(2)) + Date.now() + Math.round(performance.now())).toString(36);
+};
+
+exports.uniqueId = uniqueId;
+
+var useState = function useState(state) {
+  var setter = function setter(modifiedState) {
+    return state = modifiedState;
+  };
+
+  var getter = function getter() {
+    return state;
+  };
+
+  return [getter, setter];
+};
+
+exports.useState = useState;
+
+var between = function between(v, a, b) {
+  return v > a && v < b;
+};
+
+exports.between = between;
+
+var vmulti = function vmulti(vec, v) {
+  var x = 0;
+  var y = 0;
+
+  if (_typeof(v) === "object") {
+    x = vec.x * v.x;
+    y = vec.y * v.y;
+  } else {
+    x = vec.x * v;
+    y = vec.y * v;
+  }
+
+  return Vector(x, y);
+};
+
+exports.vmulti = vmulti;
+
+var circleCollision = function circleCollision(collider, targets) {
+  if (!collider.radius) {
+    console.error("Cannot detect collisions without radious property.");
+  }
+
+  return targets.filter(function (target) {
+    var dx = target.x - collider.x;
+    var dy = target.y - collider.y;
+
+    if (Math.sqrt(dx * dx + dy * dy) < target.radius + collider.width) {
+      target.ttl = 0;
+      collider.ttl = 0;
+      return target;
+    }
+  });
+};
+
+exports.circleCollision = circleCollision;
+},{}],"src/ui.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6339,7 +6411,17 @@ var _mithril = _interopRequireDefault(require("mithril"));
 
 var _events = require("./events");
 
+var _helpers = require("./helpers");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
+
+function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
 var typeWriter = function typeWriter(_ref) {
   var text = _ref.text,
@@ -6347,48 +6429,78 @@ var typeWriter = function typeWriter(_ref) {
       onTyped = _ref$onTyped === void 0 ? function (str) {} : _ref$onTyped,
       _ref$onFinished = _ref.onFinished,
       onFinished = _ref$onFinished === void 0 ? function () {} : _ref$onFinished;
-  var animId = '';
-  var str = '';
+
+  var _useState = (0, _helpers.useState)(''),
+      _useState2 = _slicedToArray(_useState, 2),
+      animId = _useState2[0],
+      setAnimId = _useState2[1];
+
+  var _useState3 = (0, _helpers.useState)(''),
+      _useState4 = _slicedToArray(_useState3, 2),
+      str = _useState4[0],
+      setStr = _useState4[1];
 
   var t = function t() {
     var s = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
     var i = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
     if (i > text.length) {
-      console.log('done');
-      cancelAnimationFrame(animId);
+      cancelAnimationFrame(animId());
       onFinished();
       return;
     }
 
     ;
-    str = s + text.charAt(i);
+    var nextStr = s + text.charAt(i);
+    setStr(nextStr);
     i += 1;
-    onTyped(str);
+    onTyped(str());
     requestAnimationFrame(function () {
-      return t(str, i);
+      return t(str(), i);
     });
   };
 
   return {
     start: function start() {
-      return animId = requestAnimationFrame(t);
+      return setAnimId(requestAnimationFrame(function () {
+        return t();
+      }));
     }
   };
 };
 
 var Shell = function Shell(_ref2) {
   var attrs = _ref2.attrs;
-  var isTyping = false;
-  var text = '';
-  var choices = [];
+
+  var _useState5 = (0, _helpers.useState)(false),
+      _useState6 = _slicedToArray(_useState5, 2),
+      isTyping = _useState6[0],
+      setIsTyping = _useState6[1];
+
+  var _useState7 = (0, _helpers.useState)(''),
+      _useState8 = _slicedToArray(_useState7, 2),
+      name = _useState8[0],
+      setName = _useState8[1];
+
+  var _useState9 = (0, _helpers.useState)(''),
+      _useState10 = _slicedToArray(_useState9, 2),
+      text = _useState10[0],
+      setText = _useState10[1];
+
+  var _useState11 = (0, _helpers.useState)([]),
+      _useState12 = _slicedToArray(_useState11, 2),
+      choices = _useState12[0],
+      setChoices = _useState12[1];
 
   var onConvoNext = function onConvoNext(props) {
-    if (isTyping) return;
-    isTyping = true;
-    console.log(props);
-    text = '';
-    choices = []; // Apparently this needs to be forced (will double check)
+    if (isTyping()) return;
+    setIsTyping(true);
+    var actorName = props.node.actor ? props.passedProps.currentActors.find(function (x) {
+      return props.node.actor === x.id;
+    }).name : null;
+    setName(actorName);
+    setText('');
+    setChoices([]); // Apparently this needs to be forced (will double check)
 
     _mithril.default.redraw(); // Start typewriter effect
 
@@ -6396,13 +6508,13 @@ var Shell = function Shell(_ref2) {
     typeWriter({
       text: props.node.text,
       onTyped: function onTyped(str) {
-        text = str;
+        setText(str);
 
         _mithril.default.redraw();
       },
       onFinished: function onFinished() {
-        isTyping = false;
-        choices = props.node.choices.length ? props.node.choices : [];
+        setIsTyping(false);
+        setChoices(props.node.choices.length ? props.node.choices : []);
 
         _mithril.default.redraw();
       }
@@ -6410,13 +6522,14 @@ var Shell = function Shell(_ref2) {
   };
 
   var onChoiceSelected = function onChoiceSelected(choice) {
-    choices = [];
+    setChoices([]);
     attrs.onConversationChoice(choice);
   };
 
   var onConvoEnd = function onConvoEnd() {
-    text = '';
-    choices = [];
+    setName('');
+    setText('');
+    setChoices([]);
 
     _mithril.default.redraw();
   };
@@ -6431,13 +6544,22 @@ var Shell = function Shell(_ref2) {
     view: function view() {
       return (0, _mithril.default)("div", {
         class: "uiShell"
-      }, [(0, _mithril.default)("div", text), (0, _mithril.default)("div", choices.map(function (choice) {
+      }, [text() && (0, _mithril.default)("div", {
+        class: 'dialogueBoxOuter'
+      }, [(0, _mithril.default)("div", {
+        class: 'dialogue'
+      }, [(0, _mithril.default)("span", name() ? "".concat(name(), ":") : ''), (0, _mithril.default)("span", name() ? "\"".concat(text(), "\"") : text()), (0, _mithril.default)("div", {
+        class: 'choiceWindow'
+      }, choices().map(function (choice) {
         return (0, _mithril.default)("button", {
+          class: "choiceBox",
           onclick: function onclick() {
             return onChoiceSelected(choice);
           }
         }, choice.text);
-      }))]);
+      })), isTyping() ? '' : (0, _mithril.default)("span", {
+        class: 'arrow'
+      })])])]);
     }
   };
 };
@@ -6458,7 +6580,7 @@ var _default = function _default() {
 };
 
 exports.default = _default;
-},{"mithril":"node_modules/mithril/index.js","./events":"src/events.js"}],"src/cache.js":[function(require,module,exports) {
+},{"mithril":"node_modules/mithril/index.js","./events":"src/events.js","./helpers":"src/helpers.js"}],"src/cache.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6548,78 +6670,6 @@ var _default = {
   }
 };
 exports.default = _default;
-},{}],"src/helpers.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.circleCollision = exports.vmulti = exports.between = exports.useState = exports.uniqueId = void 0;
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-var uniqueId = function uniqueId() {
-  var pre = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-  return "".concat(pre).concat(pre.length ? "_" : "") + (Number(String(Math.random()).slice(2)) + Date.now() + Math.round(performance.now())).toString(36);
-};
-
-exports.uniqueId = uniqueId;
-
-var useState = function useState(state) {
-  var setter = function setter(modifiedState) {
-    return state = modifiedState;
-  };
-
-  var getter = function getter() {
-    return state;
-  };
-
-  return [getter, setter];
-};
-
-exports.useState = useState;
-
-var between = function between(v, a, b) {
-  return v > a && v < b;
-};
-
-exports.between = between;
-
-var vmulti = function vmulti(vec, v) {
-  var x = 0;
-  var y = 0;
-
-  if (_typeof(v) === "object") {
-    x = vec.x * v.x;
-    y = vec.y * v.y;
-  } else {
-    x = vec.x * v;
-    y = vec.y * v;
-  }
-
-  return Vector(x, y);
-};
-
-exports.vmulti = vmulti;
-
-var circleCollision = function circleCollision(collider, targets) {
-  if (!collider.radius) {
-    console.error("Cannot detect collisions without radious property.");
-  }
-
-  return targets.filter(function (target) {
-    var dx = target.x - collider.x;
-    var dy = target.y - collider.y;
-
-    if (Math.sqrt(dx * dx + dy * dy) < target.radius + collider.width) {
-      target.ttl = 0;
-      collider.ttl = 0;
-      return target;
-    }
-  });
-};
-
-exports.circleCollision = circleCollision;
 },{}],"src/entity.js":[function(require,module,exports) {
 "use strict";
 
@@ -6949,7 +6999,7 @@ var mainFlow = [{
   actor: "daryl",
   from: "m1a",
   to: "m4",
-  text: "You have selected the A button.",
+  text: "You have selected the A button.You have selected the A button.You have selected the A button.You have selected the A button.You have selected the A button.",
   choices: [],
   actions: []
 }, {
@@ -6957,7 +7007,7 @@ var mainFlow = [{
   actor: "daryl",
   from: "m1b",
   to: null,
-  text: "You have selected the B button.",
+  text: "You have selected the B button.You have selected the B button.You have selected the B button.You have selected the B button.You have selected the B button.",
   choices: [],
   actions: ["cancel"]
 }, {
@@ -7148,10 +7198,7 @@ var convoIterator = (0, _conversationIterator.default)({
       passedProps: passedProps
     });
   },
-  onChatComplete: function onChatComplete(exitId) {
-    (0, _events.emit)(_events.EV_CONVOEND, {
-      exitId: exitId
-    });
+  onChatComplete: function onChatComplete(exitId) {// emit(EV_CONVOEND, { exitId });
   },
   onChainProgress: function onChainProgress(lastNodeId) {
     gameCache.update("progress", {
@@ -7309,7 +7356,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49424" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "65499" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

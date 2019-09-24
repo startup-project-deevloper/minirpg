@@ -1,5 +1,6 @@
 import m from 'mithril'
 import { on, EV_CONVOSTART, EV_CONVONEXT, EV_CONVOEND } from "./events";
+import { useState } from './helpers';
 
 const typeWriter = ({
   text,
@@ -7,43 +8,45 @@ const typeWriter = ({
   onFinished = () => { }
 }) => {
 
-  let animId = '';
-  let str = ''
+  const [animId, setAnimId] = useState('');
+  const [str, setStr] = useState('');
   const t = (s = '', i = 0) => {
 
     if (i > text.length) {
-      console.log('done')
-      cancelAnimationFrame(animId);
+      cancelAnimationFrame(animId());
       onFinished();
       return;
     };
 
-    str = s + text.charAt(i);
+    const nextStr = s + text.charAt(i);
+    setStr(nextStr);
+
     i += 1;
+    onTyped(str());
 
-    onTyped(str);
-
-    requestAnimationFrame(() => t(str, i))
+    requestAnimationFrame(() => t(str(), i))
   }
 
   return {
-    start: () => animId = requestAnimationFrame(t)
+    start: () => setAnimId(requestAnimationFrame(() => t()))
   }
 }
 
 const Shell = ({ attrs }) => {
 
-  let isTyping = false;
-  let text = '';
-  let choices = [];
+  const [isTyping, setIsTyping] = useState(false);
+  const [name, setName] = useState('');
+  const [text, setText] = useState('');
+  const [choices, setChoices] = useState([]);
 
   const onConvoNext = props => {
-    if (isTyping) return;
-    isTyping = true;
+    if (isTyping()) return;
+    setIsTyping(true);
 
-    console.log(props);
-    text = '';
-    choices = [];
+    const actorName = props.node.actor ? props.passedProps.currentActors.find(x => props.node.actor === x.id).name : null;
+    setName(actorName);
+    setText('');
+    setChoices([]);
 
     // Apparently this needs to be forced (will double check)
     m.redraw();
@@ -52,25 +55,26 @@ const Shell = ({ attrs }) => {
     typeWriter({
       text: props.node.text,
       onTyped: str => {
-        text = str;
+        setText(str);
         m.redraw();
       },
       onFinished: () => {
-        isTyping = false;
-        choices = props.node.choices.length ? props.node.choices : [];
+        setIsTyping(false);
+        setChoices(props.node.choices.length ? props.node.choices : []);
         m.redraw();
       }
     }).start()
   }
 
   const onChoiceSelected = choice => {
-    choices = [];
+    setChoices([]);
     attrs.onConversationChoice(choice);
   };
 
   const onConvoEnd = () => {
-    text = '';
-    choices = [];
+    setName('');
+    setText('');
+    setChoices([]);
     m.redraw();
   }
 
@@ -83,12 +87,19 @@ const Shell = ({ attrs }) => {
     // Remember: Don't make fat components.
     view: () => {
       return m("div", { class: "uiShell" }, [
-        m("div", text),
-        m("div", choices.map(choice => {
-          return m("button", {
-            onclick: () => onChoiceSelected(choice)
-          }, choice.text)
-        }))
+        text() && m("div", { class: 'dialogueBoxOuter' }, [
+          m("div", { class: 'dialogue' }, [
+            m("span", name() ? `${name()}:` : ''),
+            m("span", name() ? `"${text()}"` : text()),
+            m("div", { class: 'choiceWindow' }, choices().map(choice => {
+              return m("button", {
+                class: "choiceBox",
+                onclick: () => onChoiceSelected(choice)
+              }, choice.text)
+            })),
+            isTyping() ? '' : m("span", { class: 'arrow' })
+          ]),
+        ]),
       ])
     }
   }

@@ -160,7 +160,11 @@ p {
     text-align: center;
     background: #3c3c3c;
     cursor: pointer;
+    color: #f5eac8;
     transition: all .2s;
+    border: 3px solid #f5eac8;
+    text-transform: uppercase;
+    font-weight: bold;
 }
 
 .choiceBox:hover {

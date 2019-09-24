@@ -47,6 +47,7 @@ const convoIterator = ConversationIterator({
     emit(EV_CONVONEXT, { node, passedProps });
   },
   onChatComplete: exitId => {
+    console.log("Firing chat complete causes problems, we exit before typing done. Fix needed.");
     emit(EV_CONVOEND, { exitId });
   },
   onChainProgress: lastNodeId => {
