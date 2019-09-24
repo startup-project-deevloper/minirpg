@@ -40,16 +40,9 @@ ctx.scale(3, 3);
 
 const convoIterator = ConversationIterator({
   collection: mainFlow,
-  onChatStarted: (node, passedProps = {}) => {
-    emit(EV_CONVOSTART, { node, passedProps });
-  },
-  onChatNext: (node, passedProps = {}) => {
-    emit(EV_CONVONEXT, { node, passedProps });
-  },
-  onChatComplete: exitId => {
-    console.log("Firing chat complete causes problems, we exit before typing done. Fix needed.");
-    emit(EV_CONVOEND, { exitId });
-  },
+  onChatStarted: (node, passedProps = {}) => emit(EV_CONVOSTART, { node, passedProps }),
+  onChatNext: (node, passedProps = {}) => emit(EV_CONVONEXT, { node, passedProps }),
+  onChatComplete: exitId => emit(EV_CONVOEND, { exitId }),
   onChainProgress: lastNodeId => {
     gameCache.update("progress", {
       storyProgress: lastNodeId
@@ -91,6 +84,7 @@ const Scene = () => {
   const map = dataAssets[mapKey];
   const tileEngine = TileEngine(map);
 
+  // You could move a lot if not all of these properties out
   const player = Entity({
     x: 120,
     y: 120,
@@ -134,7 +128,9 @@ const Scene = () => {
   // Experimental
   const reactionRegister = {
     [ENTITY_TYPE.PICKUP]: (firstAvailable, sprites) => {
+      firstAvailable.ttl = 0;
       console.log("Pick me up:", firstAvailable);
+      console.log(firstAvailable.isAlive())
     },
     [ENTITY_TYPE.NPC]: (firstAvailable, sprites) => {
       sceneStateMachine.push(
@@ -187,6 +183,10 @@ const Scene = () => {
 
       let collisions = [];
 
+      /* Check for anything dead (GC does the rest) */
+      sprites = sprites.filter(spr => spr.isAlive());
+
+      /* Add a flag to sprite to enable/disable collision checks */
       sprites.map(sprite => {
         const collidingWith = circleCollision(
           sprite,

@@ -6382,6 +6382,8 @@ var vmulti = function vmulti(vec, v) {
 exports.vmulti = vmulti;
 
 var circleCollision = function circleCollision(collider, targets) {
+  var destroyOnHit = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
   if (!collider.radius) {
     console.error("Cannot detect collisions without radious property.");
   }
@@ -6391,8 +6393,7 @@ var circleCollision = function circleCollision(collider, targets) {
     var dy = target.y - collider.y;
 
     if (Math.sqrt(dx * dx + dy * dy) < target.radius + collider.width) {
-      target.ttl = 0;
-      collider.ttl = 0;
+      target.ttl = destroyOnHit ? 0 : target.ttl;
       return target;
     }
   });
@@ -7233,21 +7234,20 @@ var convoIterator = (0, _conversationIterator.default)({
   collection: _data.mainFlow,
   onChatStarted: function onChatStarted(node) {
     var passedProps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-    (0, _events.emit)(_events.EV_CONVOSTART, {
+    return (0, _events.emit)(_events.EV_CONVOSTART, {
       node: node,
       passedProps: passedProps
     });
   },
   onChatNext: function onChatNext(node) {
     var passedProps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-    (0, _events.emit)(_events.EV_CONVONEXT, {
+    return (0, _events.emit)(_events.EV_CONVONEXT, {
       node: node,
       passedProps: passedProps
     });
   },
   onChatComplete: function onChatComplete(exitId) {
-    console.log("Firing chat complete causes problems, we exit before typing done. Fix needed.");
-    (0, _events.emit)(_events.EV_CONVOEND, {
+    return (0, _events.emit)(_events.EV_CONVOEND, {
       exitId: exitId
     });
   },
@@ -7295,7 +7295,8 @@ var Scene = function Scene() {
   (0, _kontra.initKeys)();
   var mapKey = "assets/tiledata/test";
   var map = _kontra.dataAssets[mapKey];
-  var tileEngine = (0, _kontra.TileEngine)(map);
+  var tileEngine = (0, _kontra.TileEngine)(map); // You could move a lot if not all of these properties out
+
   var player = (0, _entity.default)({
     x: 120,
     y: 120,
@@ -7330,7 +7331,9 @@ var Scene = function Scene() {
   })); // Experimental
 
   var reactionRegister = (_reactionRegister = {}, _defineProperty(_reactionRegister, _data.ENTITY_TYPE.PICKUP, function (firstAvailable, sprites) {
+    firstAvailable.ttl = 0;
     console.log("Pick me up:", firstAvailable);
+    console.log(firstAvailable.isAlive());
   }), _defineProperty(_reactionRegister, _data.ENTITY_TYPE.NPC, function (firstAvailable, sprites) {
     sceneStateMachine.push(createConversationState({
       sprites: sprites
@@ -7378,6 +7381,13 @@ var Scene = function Scene() {
     update: function update() {
       sceneStateMachine.update();
       var collisions = [];
+      /* Check for anything dead (GC does the rest) */
+
+      sprites = sprites.filter(function (spr) {
+        return spr.isAlive();
+      });
+      /* Add a flag to sprite to enable/disable collision checks */
+
       sprites.map(function (sprite) {
         var collidingWith = (0, _helpers.circleCollision)(sprite, sprites.filter(function (s) {
           return s.id !== sprite.id;
@@ -7436,7 +7446,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54085" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61146" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

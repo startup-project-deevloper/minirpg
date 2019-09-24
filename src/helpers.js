@@ -25,17 +25,16 @@ export const vmulti = (vec, v) => {
   return Vector(x, y);
 };
 
-export const circleCollision = (collider, targets) => {
+export const circleCollision = (collider, targets, destroyOnHit = false) => {
   if (!collider.radius) {
     console.error("Cannot detect collisions without radious property.");
   }
 
-  return targets.filter(target => {
+  return targets.filter((target) => {
     let dx = target.x - collider.x;
     let dy = target.y - collider.y;
     if (Math.sqrt(dx * dx + dy * dy) < target.radius + collider.width) {
-      target.ttl = 0;
-      collider.ttl = 0;
+      target.ttl = destroyOnHit ? 0 : target.ttl;
       return target;
     }
   });
