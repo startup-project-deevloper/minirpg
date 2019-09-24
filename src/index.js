@@ -20,7 +20,7 @@ import StateMachine from "./fsm";
 import startConvo from "./states/startConvo";
 import { emit, on, EV_CONVONEXT, EV_CONVOSTART, EV_CONVOEND } from "./events";
 import { circleCollision } from "./helpers";
-import { mainFlow } from "./data";
+import { mainFlow, ENTITY_TYPE } from "./data";
 import fieldState from "./states/fieldState";
 
 const gameCache = Cache.create("gameCache");
@@ -67,6 +67,7 @@ const createFieldState = ({ sprites, canvas, tileEngine }) => {
 };
 
 const createConversationState = ({ sprites }) => {
+  // Shouldn't really pass sprites just to play their anims, they should be self-managed.
   return startConvo({
     id: "conversation",
     sprites,
@@ -96,6 +97,7 @@ const Scene = () => {
     sheet: "assets/entityimages/little_devil.png",
     name: "Player",
     id: "player",
+    assetId: "player",
     controlledByUser: true
   });
 
@@ -104,10 +106,20 @@ const Scene = () => {
     y: 160,
     name: "Daryl",
     id: "daryl",
+    assetId: "standard_npc",
     sheet: "assets/entityimages/little_orc.png"
   });
 
-  let sprites = [player, npc];
+  const potion = Entity({
+    x: 156,
+    y: 72,
+    name: "Potion",
+    id: "potion",
+    assetId: "standard_potion",
+    sheet: "assets/tileimages/test.png"
+  })
+
+  let sprites = [player, npc, potion];
 
   const sceneStateMachine = StateMachine();
 
@@ -120,21 +132,31 @@ const Scene = () => {
   );
 
   // Experimental
+  const reactionRegister = {
+    [ENTITY_TYPE.PICKUP]: (firstAvailable, sprites) => {
+      console.log("Pick me up:", firstAvailable);
+    },
+    [ENTITY_TYPE.NPC]: (firstAvailable, sprites) => {
+      sceneStateMachine.push(
+        createConversationState({
+          sprites
+        }),
+        {
+          currentActors: sprites.find(spr => spr.id === firstAvailable.id)
+        }
+      );
+    }
+  }
+
   let pushed = false;
-  let justTalked = false;
-  const onCollisionDetected = (origin, colliders) => {
-    if (origin.controlledByUser && keyPressed("e") && !pushed) {
-      if (!justTalked) {
-        sceneStateMachine.push(
-          createConversationState({
-            sprites
-          }),
-          {
-            currentActors: sprites
-          }
-        );
+  let justTriggered = false;
+  const onCollisionDetected = (origin, colliders = []) => {
+    if (colliders.length && origin.controlledByUser && keyPressed("e") && !pushed) {
+      if (!justTriggered) {
+        const firstAvailable = colliders[0];
+        reactionRegister[firstAvailable.type](firstAvailable, sprites);
       } else {
-        justTalked = false;
+        justTriggered = false;
       }
 
       pushed = true;
@@ -147,7 +169,7 @@ const Scene = () => {
   // Experimental
   on(EV_CONVOEND, () => {
     sceneStateMachine.pop();
-    justTalked = true;
+    justTriggered = true;
   });
   //
 
@@ -163,6 +185,8 @@ const Scene = () => {
     update: () => {
       sceneStateMachine.update();
 
+      let collisions = [];
+
       sprites.map(sprite => {
         const collidingWith = circleCollision(
           sprite,
@@ -172,9 +196,14 @@ const Scene = () => {
         sprite.isColliding = collidingWith.length > 0;
 
         if (sprite.isColliding) {
-          onCollisionDetected(sprite, collidingWith);
+          collisions.push(sprite);
         }
       });
+
+      /* This would be a great place to sort by distance also. */
+      onCollisionDetected(player, collisions
+        .filter(c => c.id !== player.id)
+      );
     },
     render: () => {
       tileEngine.render();

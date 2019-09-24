@@ -1,20 +1,13 @@
 import {
-  init,
-  GameLoop,
   Sprite,
-  load,
-  TileEngine,
-  dataAssets,
   imageAssets,
-  keyPressed,
-  initKeys,
   SpriteSheet
 } from "kontra";
-
-import { uniqueId } from "./helpers";
+import { entityData } from './data';
 
 export default ({
-  id = uniqueId("ent_"),
+  id,
+  assetId,
   x,
   y,
   sheet,
@@ -22,23 +15,21 @@ export default ({
   controlledByUser = false,
   collidesWithTiles = true
 }) => {
+  if (!id || !assetId) {
+    throw new Error("Entity is fairly useless without an id, you should add one.");
+  }
+
+  const { animations, type } = entityData.find(ent => ent.id === assetId);
+
   let spriteSheet = SpriteSheet({
     image: imageAssets[sheet],
     frameWidth: 16,
     frameHeight: 16,
-    animations: {
-      idle: {
-        frames: [0, 1, 2, 3],
-        frameRate: 8
-      },
-      walk: {
-        frames: [3, 4, 5, 6, 7],
-        frameRate: 16
-      }
-    }
+    animations
   });
 
   return Sprite({
+    type,
     id,
     name,
     x,

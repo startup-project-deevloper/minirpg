@@ -6670,6 +6670,110 @@ var _default = {
   }
 };
 exports.default = _default;
+},{}],"src/data.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.entityData = exports.ENTITY_TYPE = exports.mainFlow = void 0;
+var mainFlow = [{
+  id: "m1",
+  actor: "daryl",
+  from: null,
+  to: null,
+  text: "This is the first message, what will you choose?",
+  choices: [{
+    id: "m1a",
+    actor: "player",
+    from: "m1",
+    to: "m2",
+    text: "I will select A.",
+    choices: [],
+    actions: []
+  }, {
+    id: "m1b",
+    actor: "player",
+    from: "m1",
+    to: "m3",
+    text: "I will select B.",
+    choices: [],
+    actions: []
+  }],
+  actions: []
+}, {
+  id: "m2",
+  actor: "daryl",
+  from: "m1a",
+  to: "m4",
+  text: "You have selected the A button.You have selected the A button.You have selected the A button.You have selected the A button.You have selected the A button.",
+  choices: [],
+  actions: []
+}, {
+  id: "m3",
+  actor: "daryl",
+  from: "m1b",
+  to: null,
+  text: "You have selected the B button.You have selected the B button.You have selected the B button.You have selected the B button.You have selected the B button.",
+  choices: [],
+  actions: ["cancel"]
+}, {
+  id: "m4",
+  actor: "daryl",
+  from: "m2",
+  to: null,
+  text: "This should be the last in the chain for A.",
+  choices: [],
+  actions: ["endConversation", "save"]
+}];
+exports.mainFlow = mainFlow;
+var ENTITY_TYPE = {
+  PICKUP: 0,
+  NPC: 1,
+  ENEMY: 2,
+  SWITCH: 3,
+  DOOR: 4,
+  CONTAINER: 5,
+  PLAYER: 99
+};
+exports.ENTITY_TYPE = ENTITY_TYPE;
+var entityData = [{
+  id: "player",
+  type: ENTITY_TYPE.PLAYER,
+  animations: {
+    idle: {
+      frames: [0, 1, 2, 3],
+      frameRate: 8
+    },
+    walk: {
+      frames: [3, 4, 5, 6, 7],
+      frameRate: 16
+    }
+  }
+}, {
+  id: "standard_npc",
+  type: ENTITY_TYPE.NPC,
+  animations: {
+    idle: {
+      frames: [0, 1, 2, 3],
+      frameRate: 8
+    },
+    walk: {
+      frames: [3, 4, 5, 6, 7],
+      frameRate: 16
+    }
+  }
+}, {
+  id: "standard_potion",
+  type: ENTITY_TYPE.PICKUP,
+  animations: {
+    idle: {
+      frames: [89],
+      frameRate: 1
+    }
+  }
+}];
+exports.entityData = entityData;
 },{}],"src/entity.js":[function(require,module,exports) {
 "use strict";
 
@@ -6680,11 +6784,11 @@ exports.default = void 0;
 
 var _kontra = require("kontra");
 
-var _helpers = require("./helpers");
+var _data = require("./data");
 
 var _default = function _default(_ref) {
-  var _ref$id = _ref.id,
-      id = _ref$id === void 0 ? (0, _helpers.uniqueId)("ent_") : _ref$id,
+  var id = _ref.id,
+      assetId = _ref.assetId,
       x = _ref.x,
       y = _ref.y,
       sheet = _ref.sheet,
@@ -6693,22 +6797,25 @@ var _default = function _default(_ref) {
       controlledByUser = _ref$controlledByUser === void 0 ? false : _ref$controlledByUser,
       _ref$collidesWithTile = _ref.collidesWithTiles,
       collidesWithTiles = _ref$collidesWithTile === void 0 ? true : _ref$collidesWithTile;
+
+  if (!id || !assetId) {
+    throw new Error("Entity is fairly useless without an id, you should add one.");
+  }
+
+  var _entityData$find = _data.entityData.find(function (ent) {
+    return ent.id === assetId;
+  }),
+      animations = _entityData$find.animations,
+      type = _entityData$find.type;
+
   var spriteSheet = (0, _kontra.SpriteSheet)({
     image: _kontra.imageAssets[sheet],
     frameWidth: 16,
     frameHeight: 16,
-    animations: {
-      idle: {
-        frames: [0, 1, 2, 3],
-        frameRate: 8
-      },
-      walk: {
-        frames: [3, 4, 5, 6, 7],
-        frameRate: 16
-      }
-    }
+    animations: animations
   });
   return (0, _kontra.Sprite)({
+    type: type,
     id: id,
     name: name,
     x: x,
@@ -6721,7 +6828,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","./helpers":"src/helpers.js"}],"src/conversationIterator.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./data":"src/data.js"}],"src/conversationIterator.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6963,64 +7070,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/data.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.mainFlow = void 0;
-var mainFlow = [{
-  id: "m1",
-  actor: "daryl",
-  from: null,
-  to: null,
-  text: "This is the first message, what will you choose?",
-  choices: [{
-    id: "m1a",
-    actor: "player",
-    from: "m1",
-    to: "m2",
-    text: "I will select A.",
-    choices: [],
-    actions: []
-  }, {
-    id: "m1b",
-    actor: "player",
-    from: "m1",
-    to: "m3",
-    text: "I will select B.",
-    choices: [],
-    actions: []
-  }],
-  actions: []
-}, {
-  id: "m2",
-  actor: "daryl",
-  from: "m1a",
-  to: "m4",
-  text: "You have selected the A button.You have selected the A button.You have selected the A button.You have selected the A button.You have selected the A button.",
-  choices: [],
-  actions: []
-}, {
-  id: "m3",
-  actor: "daryl",
-  from: "m1b",
-  to: null,
-  text: "You have selected the B button.You have selected the B button.You have selected the B button.You have selected the B button.You have selected the B button.",
-  choices: [],
-  actions: ["cancel"]
-}, {
-  id: "m4",
-  actor: "daryl",
-  from: "m2",
-  to: null,
-  text: "This should be the last in the chain for A.",
-  choices: [],
-  actions: ["endConversation", "save"]
-}];
-exports.mainFlow = mainFlow;
-},{}],"src/states/fieldState.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/states/fieldState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7161,11 +7211,8 @@ var _fieldState = _interopRequireDefault(require("./states/fieldState"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/* Credits
-* Asset Pack:
-* https://pixel-poem.itch.io/dungeon-assetpuck
-* https://0x72.itch.io/dungeontileset-ii
-*/
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 var gameCache = _cache.default.create("gameCache");
 
 gameCache.add("progress", {
@@ -7198,7 +7245,11 @@ var convoIterator = (0, _conversationIterator.default)({
       passedProps: passedProps
     });
   },
-  onChatComplete: function onChatComplete(exitId) {// emit(EV_CONVOEND, { exitId });
+  onChatComplete: function onChatComplete(exitId) {
+    console.log("Firing chat complete causes problems, we exit before typing done. Fix needed.");
+    (0, _events.emit)(_events.EV_CONVOEND, {
+      exitId: exitId
+    });
   },
   onChainProgress: function onChainProgress(lastNodeId) {
     gameCache.update("progress", {
@@ -7221,6 +7272,7 @@ var createFieldState = function createFieldState(_ref) {
 
 var createConversationState = function createConversationState(_ref2) {
   var sprites = _ref2.sprites;
+  // Shouldn't really pass sprites just to play their anims, they should be self-managed.
   return (0, _startConvo.default)({
     id: "conversation",
     sprites: sprites,
@@ -7238,6 +7290,8 @@ var createConversationState = function createConversationState(_ref2) {
 };
 
 var Scene = function Scene() {
+  var _reactionRegister;
+
   (0, _kontra.initKeys)();
   var mapKey = "assets/tiledata/test";
   var map = _kontra.dataAssets[mapKey];
@@ -7248,6 +7302,7 @@ var Scene = function Scene() {
     sheet: "assets/entityimages/little_devil.png",
     name: "Player",
     id: "player",
+    assetId: "player",
     controlledByUser: true
   });
   var npc = (0, _entity.default)({
@@ -7255,9 +7310,18 @@ var Scene = function Scene() {
     y: 160,
     name: "Daryl",
     id: "daryl",
+    assetId: "standard_npc",
     sheet: "assets/entityimages/little_orc.png"
   });
-  var sprites = [player, npc];
+  var potion = (0, _entity.default)({
+    x: 156,
+    y: 72,
+    name: "Potion",
+    id: "potion",
+    assetId: "standard_potion",
+    sheet: "assets/tileimages/test.png"
+  });
+  var sprites = [player, npc, potion];
   var sceneStateMachine = (0, _fsm.default)();
   sceneStateMachine.push(createFieldState({
     sprites: sprites,
@@ -7265,19 +7329,29 @@ var Scene = function Scene() {
     tileEngine: tileEngine
   })); // Experimental
 
+  var reactionRegister = (_reactionRegister = {}, _defineProperty(_reactionRegister, _data.ENTITY_TYPE.PICKUP, function (firstAvailable, sprites) {
+    console.log("Pick me up:", firstAvailable);
+  }), _defineProperty(_reactionRegister, _data.ENTITY_TYPE.NPC, function (firstAvailable, sprites) {
+    sceneStateMachine.push(createConversationState({
+      sprites: sprites
+    }), {
+      currentActors: sprites.find(function (spr) {
+        return spr.id === firstAvailable.id;
+      })
+    });
+  }), _reactionRegister);
   var pushed = false;
-  var justTalked = false;
+  var justTriggered = false;
 
-  var onCollisionDetected = function onCollisionDetected(origin, colliders) {
-    if (origin.controlledByUser && (0, _kontra.keyPressed)("e") && !pushed) {
-      if (!justTalked) {
-        sceneStateMachine.push(createConversationState({
-          sprites: sprites
-        }), {
-          currentActors: sprites
-        });
+  var onCollisionDetected = function onCollisionDetected(origin) {
+    var colliders = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+
+    if (colliders.length && origin.controlledByUser && (0, _kontra.keyPressed)("e") && !pushed) {
+      if (!justTriggered) {
+        var firstAvailable = colliders[0];
+        reactionRegister[firstAvailable.type](firstAvailable, sprites);
       } else {
-        justTalked = false;
+        justTriggered = false;
       }
 
       pushed = true;
@@ -7290,7 +7364,7 @@ var Scene = function Scene() {
 
   (0, _events.on)(_events.EV_CONVOEND, function () {
     sceneStateMachine.pop();
-    justTalked = true;
+    justTriggered = true;
   }); //
 
   (0, _ui.default)({
@@ -7303,6 +7377,7 @@ var Scene = function Scene() {
   return (0, _kontra.GameLoop)({
     update: function update() {
       sceneStateMachine.update();
+      var collisions = [];
       sprites.map(function (sprite) {
         var collidingWith = (0, _helpers.circleCollision)(sprite, sprites.filter(function (s) {
           return s.id !== sprite.id;
@@ -7310,9 +7385,14 @@ var Scene = function Scene() {
         sprite.isColliding = collidingWith.length > 0;
 
         if (sprite.isColliding) {
-          onCollisionDetected(sprite, collidingWith);
+          collisions.push(sprite);
         }
       });
+      /* This would be a great place to sort by distance also. */
+
+      onCollisionDetected(player, collisions.filter(function (c) {
+        return c.id !== player.id;
+      }));
     },
     render: function render() {
       tileEngine.render();
@@ -7356,7 +7436,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "65499" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54085" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

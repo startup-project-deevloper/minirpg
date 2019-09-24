@@ -55,3 +55,54 @@ export const mainFlow = [
     actions: ["endConversation", "save"]
   }
 ];
+
+export const ENTITY_TYPE = {
+  PICKUP: 0,
+  NPC: 1,
+  ENEMY: 2,
+  SWITCH: 3,
+  DOOR: 4,
+  CONTAINER: 5,
+  PLAYER: 99
+}
+
+export const entityData = [
+  {
+    id: "player",
+    type: ENTITY_TYPE.PLAYER,
+    animations: {
+      idle: {
+        frames: [0, 1, 2, 3],
+        frameRate: 8
+      },
+      walk: {
+        frames: [3, 4, 5, 6, 7],
+        frameRate: 16
+      }
+    }
+  },
+  {
+    id: "standard_npc",
+    type: ENTITY_TYPE.NPC,
+    animations: {
+      idle: {
+        frames: [0, 1, 2, 3],
+        frameRate: 8
+      },
+      walk: {
+        frames: [3, 4, 5, 6, 7],
+        frameRate: 16
+      }
+    }
+  },
+  {
+    id: "standard_potion",
+    type: ENTITY_TYPE.PICKUP,
+    animations: {
+      idle: {
+        frames: [89],
+        frameRate: 1
+      }
+    }
+  }
+]
