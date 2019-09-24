@@ -6194,97 +6194,7 @@ m.PromisePolyfill = require("./promise/polyfill")
 
 module.exports = m
 
-},{"./hyperscript":"node_modules/mithril/hyperscript.js","./request":"node_modules/mithril/request.js","./mount-redraw":"node_modules/mithril/mount-redraw.js","./route":"node_modules/mithril/route.js","./render":"node_modules/mithril/render.js","./querystring/parse":"node_modules/mithril/querystring/parse.js","./querystring/build":"node_modules/mithril/querystring/build.js","./pathname/parse":"node_modules/mithril/pathname/parse.js","./pathname/build":"node_modules/mithril/pathname/build.js","./render/vnode":"node_modules/mithril/render/vnode.js","./promise/polyfill":"node_modules/mithril/promise/polyfill.js"}],"node_modules/nanoevents/index.js":[function(require,module,exports) {
-(
-/**
- * Interface for event subscription.
- *
- * @example
- * var NanoEvents = require('nanoevents')
- *
- * class Ticker {
- *   constructor() {
- *     this.emitter = new NanoEvents()
- *   }
- *   on() {
- *     return this.emitter.on.apply(this.events, arguments)
- *   }
- *   tick() {
- *     this.emitter.emit('tick')
- *   }
- * }
- *
- * @alias NanoEvents
- * @class
- */
-module.exports = function NanoEvents() {
-  /**
-   * Event names in keys and arrays with listeners in values.
-   * @type {object}
-   *
-   * @example
-   * Object.keys(ee.events)
-   *
-   * @alias NanoEvents#events
-   */
-  this.events = {};
-}).prototype = {
-  /**
-   * Calls each of the listeners registered for a given event.
-   *
-   * @param {string} event The event name.
-   * @param {...*} arguments The arguments for listeners.
-   *
-   * @return {undefined}
-   *
-   * @example
-   * ee.emit('tick', tickType, tickDuration)
-   *
-   * @alias NanoEvents#emit
-   * @method
-   */
-  emit: function emit(event) {
-    var args = [].slice.call(arguments, 1) // Array.prototype.call() returns empty array if context is not array-like
-    ;
-    [].slice.call(this.events[event] || []).filter(function (i) {
-      i.apply(null, args);
-    });
-  },
-
-  /**
-   * Add a listener for a given event.
-   *
-   * @param {string} event The event name.
-   * @param {function} cb The listener function.
-   *
-   * @return {function} Unbind listener from event.
-   *
-   * @example
-   * const unbind = ee.on('tick', (tickType, tickDuration) => {
-   *   count += 1
-   * })
-   *
-   * disable () {
-   *   unbind()
-   * }
-   *
-   * @alias NanoEvents#on
-   * @method
-   */
-  on: function on(event, cb) {
-    if ("development" !== 'production' && typeof cb !== 'function') {
-      throw new Error('Listener must be a function');
-    }
-
-    (this.events[event] = this.events[event] || []).push(cb);
-    return function () {
-      this.events[event] = this.events[event].filter(function (i) {
-        return i !== cb;
-      });
-    }.bind(this);
-  }
-};
-},{}],"src/events.js":[function(require,module,exports) {
+},{"./hyperscript":"node_modules/mithril/hyperscript.js","./request":"node_modules/mithril/request.js","./mount-redraw":"node_modules/mithril/mount-redraw.js","./route":"node_modules/mithril/route.js","./render":"node_modules/mithril/render.js","./querystring/parse":"node_modules/mithril/querystring/parse.js","./querystring/build":"node_modules/mithril/querystring/build.js","./pathname/parse":"node_modules/mithril/pathname/parse.js","./pathname/build":"node_modules/mithril/pathname/build.js","./render/vnode":"node_modules/mithril/render/vnode.js","./promise/polyfill":"node_modules/mithril/promise/polyfill.js"}],"src/events.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6292,19 +6202,15 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.emit = exports.on = exports.EVENTS = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
 
-var _nanoevents = _interopRequireDefault(require("nanoevents"));
+var _kontra = require("kontra");
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// https://github.com/ai/nanoevents
-var emitter = new _nanoevents.default();
-var EV_CONVOSTART = 'ev.convoStart';
+var EV_CONVOSTART = "ev.convoStart";
 exports.EV_CONVOSTART = EV_CONVOSTART;
-var EV_CONVOEND = 'ev.convoEnd';
+var EV_CONVOEND = "ev.convoEnd";
 exports.EV_CONVOEND = EV_CONVOEND;
-var EV_CONVONEXT = 'ev.convoNext';
+var EV_CONVONEXT = "ev.convoNext";
 exports.EV_CONVONEXT = EV_CONVONEXT;
-var EV_CONVOCHOICE = 'ev.convoChoice';
+var EV_CONVOCHOICE = "ev.convoChoice";
 exports.EV_CONVOCHOICE = EV_CONVOCHOICE;
 var EVENTS = [EV_CONVOSTART, EV_CONVOEND, EV_CONVONEXT, EV_CONVOCHOICE];
 exports.EVENTS = EVENTS;
@@ -6316,18 +6222,18 @@ var hasEvent = function hasEvent(e) {
 };
 
 var on = function on(e, fn) {
-  return hasEvent(e) && emitter.on(e, fn);
+  return hasEvent(e) && (0, _kontra.on)(e, fn);
 };
 
 exports.on = on;
 
 var emit = function emit(e) {
   var args = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-  return hasEvent(e) && emitter.emit(e, args);
+  return hasEvent(e) && (0, _kontra.emit)(e, args);
 };
 
 exports.emit = emit;
-},{"nanoevents":"node_modules/nanoevents/index.js"}],"src/helpers.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/helpers.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6581,97 +6487,7 @@ var _default = function _default() {
 };
 
 exports.default = _default;
-},{"mithril":"node_modules/mithril/index.js","./events":"src/events.js","./helpers":"src/helpers.js"}],"src/cache.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var _default = {
-  create: function create() {
-    var e = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : (Number(String(Math.random()).slice(2)) + Date.now() + Math.round(performance.now())).toString(36);
-    var a = [];
-
-    var t = function t() {
-      return a.map(function (e) {
-        return e;
-      });
-    },
-        r = function r() {
-      return a.map(function (_ref) {
-        var e = _ref.value;
-        return e;
-      });
-    };
-
-    return {
-      id: e,
-      items: t,
-      keys: function keys() {
-        return a.map(function (_ref2) {
-          var e = _ref2.key;
-          return e;
-        });
-      },
-      values: r,
-      get: function get(e) {
-        return function (e) {
-          return void 0 !== e ? _objectSpread({}, e) : null;
-        }(a.filter(function (a) {
-          return a.key === e;
-        })[0]);
-      },
-      query: function query() {
-        var e = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-        return e.map(function (e) {
-          return e(r());
-        });
-      },
-      add: function add(e, t) {
-        return !a.some(function (a) {
-          return a.key === e;
-        }) && a.push({
-          key: e,
-          value: t
-        });
-      },
-      remove: function remove(e) {
-        return a = a.filter(function (_ref3) {
-          var a = _ref3.key;
-          return e !== a;
-        });
-      },
-      flush: function flush() {
-        return a.splice(0, a.length);
-      },
-      update: function update(e, t, r) {
-        a = a.map(function (a) {
-          return a.key === e ? _objectSpread({}, a, {
-            value: _objectSpread({}, a.value, _defineProperty({}, t, r))
-          }) : _objectSpread({}, a);
-        });
-      },
-      export: function _export() {
-        return JSON.stringify(t());
-      },
-      import: function _import(e) {
-        return a = JSON.parse(e).map(function (e) {
-          return e;
-        });
-      }
-    };
-  }
-};
-exports.default = _default;
-},{}],"src/data.js":[function(require,module,exports) {
+},{"mithril":"node_modules/mithril/index.js","./events":"src/events.js","./helpers":"src/helpers.js"}],"src/data.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7192,8 +7008,6 @@ var _kontra = require("kontra");
 
 var _ui = _interopRequireDefault(require("./ui"));
 
-var _cache = _interopRequireDefault(require("./cache"));
-
 var _entity = _interopRequireDefault(require("./entity"));
 
 var _conversationIterator = _interopRequireDefault(require("./conversationIterator"));
@@ -7213,12 +7027,6 @@ var _fieldState = _interopRequireDefault(require("./states/fieldState"));
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var gameCache = _cache.default.create("gameCache");
-
-gameCache.add("progress", {
-  storyProgress: null
-});
 
 var _init = (0, _kontra.init)(),
     canvas = _init.canvas;
@@ -7252,7 +7060,7 @@ var convoIterator = (0, _conversationIterator.default)({
     });
   },
   onChainProgress: function onChainProgress(lastNodeId) {
-    gameCache.update("progress", {
+    (0, _kontra.setStoreItem)("progress", {
       storyProgress: lastNodeId
     });
   }
@@ -7418,7 +7226,7 @@ var Scene = function Scene() {
 (0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png").then(function (assets) {
   Scene().start();
 });
-},{"kontra":"node_modules/kontra/kontra.mjs","./ui":"src/ui.js","./cache":"src/cache.js","./entity":"src/entity.js","./conversationIterator":"src/conversationIterator.js","./fsm":"src/fsm.js","./states/startConvo":"src/states/startConvo.js","./events":"src/events.js","./helpers":"src/helpers.js","./data":"src/data.js","./states/fieldState":"src/states/fieldState.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./ui":"src/ui.js","./entity":"src/entity.js","./conversationIterator":"src/conversationIterator.js","./fsm":"src/fsm.js","./states/startConvo":"src/states/startConvo.js","./events":"src/events.js","./helpers":"src/helpers.js","./data":"src/data.js","./states/fieldState":"src/states/fieldState.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -7446,7 +7254,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61146" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50571" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -10,10 +10,10 @@ import {
   TileEngine,
   dataAssets,
   initKeys,
-  keyPressed
+  keyPressed,
+  setStoreItem
 } from "kontra";
 import UI from "./ui";
-import Cache from "./cache";
 import Entity from "./entity";
 import ConversationIterator from "./conversationIterator";
 import StateMachine from "./fsm";
@@ -22,11 +22,6 @@ import { emit, on, EV_CONVONEXT, EV_CONVOSTART, EV_CONVOEND } from "./events";
 import { circleCollision } from "./helpers";
 import { mainFlow, ENTITY_TYPE } from "./data";
 import fieldState from "./states/fieldState";
-
-const gameCache = Cache.create("gameCache");
-gameCache.add("progress", {
-  storyProgress: null
-});
 
 const { canvas } = init();
 
@@ -40,11 +35,13 @@ ctx.scale(3, 3);
 
 const convoIterator = ConversationIterator({
   collection: mainFlow,
-  onChatStarted: (node, passedProps = {}) => emit(EV_CONVOSTART, { node, passedProps }),
-  onChatNext: (node, passedProps = {}) => emit(EV_CONVONEXT, { node, passedProps }),
+  onChatStarted: (node, passedProps = {}) =>
+    emit(EV_CONVOSTART, { node, passedProps }),
+  onChatNext: (node, passedProps = {}) =>
+    emit(EV_CONVONEXT, { node, passedProps }),
   onChatComplete: exitId => emit(EV_CONVOEND, { exitId }),
   onChainProgress: lastNodeId => {
-    gameCache.update("progress", {
+    setStoreItem("progress", {
       storyProgress: lastNodeId
     });
   }
@@ -111,7 +108,7 @@ const Scene = () => {
     id: "potion",
     assetId: "standard_potion",
     sheet: "assets/tileimages/test.png"
-  })
+  });
 
   let sprites = [player, npc, potion];
 
@@ -130,7 +127,7 @@ const Scene = () => {
     [ENTITY_TYPE.PICKUP]: (firstAvailable, sprites) => {
       firstAvailable.ttl = 0;
       console.log("Pick me up:", firstAvailable);
-      console.log(firstAvailable.isAlive())
+      console.log(firstAvailable.isAlive());
     },
     [ENTITY_TYPE.NPC]: (firstAvailable, sprites) => {
       sceneStateMachine.push(
@@ -142,12 +139,17 @@ const Scene = () => {
         }
       );
     }
-  }
+  };
 
   let pushed = false;
   let justTriggered = false;
   const onCollisionDetected = (origin, colliders = []) => {
-    if (colliders.length && origin.controlledByUser && keyPressed("e") && !pushed) {
+    if (
+      colliders.length &&
+      origin.controlledByUser &&
+      keyPressed("e") &&
+      !pushed
+    ) {
       if (!justTriggered) {
         const firstAvailable = colliders[0];
         reactionRegister[firstAvailable.type](firstAvailable, sprites);
@@ -201,9 +203,7 @@ const Scene = () => {
       });
 
       /* This would be a great place to sort by distance also. */
-      onCollisionDetected(player, collisions
-        .filter(c => c.id !== player.id)
-      );
+      onCollisionDetected(player, collisions.filter(c => c.id !== player.id));
     },
     render: () => {
       tileEngine.render();
