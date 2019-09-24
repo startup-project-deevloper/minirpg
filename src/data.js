@@ -32,7 +32,7 @@ export const mainFlow = [
     actor: "daryl",
     from: "m1a",
     to: "m4",
-    text: "This is if you select A.",
+    text: "You have selected the A button.",
     choices: [],
     actions: []
   },
@@ -41,7 +41,7 @@ export const mainFlow = [
     actor: "daryl",
     from: "m1b",
     to: null,
-    text: "This is if you select B.",
+    text: "You have selected the B button.",
     choices: [],
     actions: ["cancel"]
   },

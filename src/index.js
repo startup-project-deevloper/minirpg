@@ -12,7 +12,7 @@ import {
   initKeys,
   keyPressed
 } from "kontra";
-// import UI from "./ui";
+import UI from "./ui";
 import Cache from "./cache";
 import Entity from "./entity";
 import ConversationIterator from "./conversationIterator";
@@ -150,13 +150,13 @@ const Scene = () => {
   });
   //
 
-  // UI({
-  //   onConversationChoice: choice => {
-  //     convoIterator.goToExact(choice.to, {
-  //       currentActors: sprites
-  //     });
-  //   }
-  // }).start();
+  UI({
+    onConversationChoice: choice => {
+      convoIterator.goToExact(choice.to, {
+        currentActors: sprites
+      });
+    }
+  }).start();
 
   return GameLoop({
     update: () => {
