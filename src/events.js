@@ -18,4 +18,6 @@ const hasEvent = e => EVENTS.some(s => s === e);
 
 export const on = (e, fn) => hasEvent(e) && kontraOn(e, fn);
 
+export const off = (e, fn) => kontraOff(e, fn);
+
 export const emit = (e, args = null) => hasEvent(e) && kontraEmit(e, args);

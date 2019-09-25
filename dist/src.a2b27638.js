@@ -6200,7 +6200,7 @@ module.exports = m
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.emit = exports.on = exports.EVENTS = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
+exports.emit = exports.off = exports.on = exports.EVENTS = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
 
 var _kontra = require("kontra");
 
@@ -6228,6 +6228,12 @@ var on = function on(e, fn) {
 };
 
 exports.on = on;
+
+var off = function off(e, fn) {
+  return (0, _kontra.off)(e, fn);
+};
+
+exports.off = off;
 
 var emit = function emit(e) {
   var args = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
@@ -6495,7 +6501,7 @@ exports.default = _default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.entityData = exports.ENTITY_TYPE = exports.mainFlow = void 0;
+exports.worldData = exports.entityData = exports.ENTITY_TYPE = exports.mainFlow = void 0;
 var mainFlow = [{
   id: "m1",
   actor: "daryl",
@@ -6634,6 +6640,55 @@ var entityData = [{
   }
 }];
 exports.entityData = entityData;
+var worldData = [{
+  id: "area1",
+  mapKey: "assets/tiledata/test",
+  entities: [{
+    x: 120,
+    y: 160,
+    name: "Daryl",
+    id: "daryl",
+    assetId: "standard_npc",
+    customProperties: {}
+  }, {
+    x: 156,
+    y: 72,
+    name: "Potion",
+    id: "potion",
+    assetId: "standard_potion",
+    customProperties: {}
+  }, {
+    x: 112,
+    y: 48,
+    name: "Door",
+    id: "door",
+    assetId: "standard_door",
+    customProperties: {
+      goesTo: "area2"
+    }
+  }, {
+    x: 128,
+    y: 192,
+    z: 10,
+    name: "Entrance",
+    id: "entranceMarker",
+    assetId: "standard_entrance",
+    customProperties: {}
+  }]
+}, {
+  id: "area2",
+  mapKey: "assets/tiledata/test",
+  entities: [{
+    x: 128,
+    y: 128,
+    z: 10,
+    name: "Entrance",
+    id: "entranceMarker",
+    assetId: "standard_entrance",
+    customProperties: {}
+  }]
+}];
+exports.worldData = worldData;
 },{}],"src/entity.js":[function(require,module,exports) {
 "use strict";
 
@@ -6657,7 +6712,9 @@ var _default = function _default(_ref) {
       _ref$controlledByUser = _ref.controlledByUser,
       controlledByUser = _ref$controlledByUser === void 0 ? false : _ref$controlledByUser,
       _ref$collidesWithTile = _ref.collidesWithTiles,
-      collidesWithTiles = _ref$collidesWithTile === void 0 ? true : _ref$collidesWithTile;
+      collidesWithTiles = _ref$collidesWithTile === void 0 ? true : _ref$collidesWithTile,
+      _ref$customProperties = _ref.customProperties,
+      customProperties = _ref$customProperties === void 0 ? {} : _ref$customProperties;
 
   if (!id || !assetId) {
     throw new Error("Entity is fairly useless without an id, you should add one.");
@@ -6687,6 +6744,7 @@ var _default = function _default(_ref) {
     x: x,
     y: y,
     z: z,
+    customProperties: customProperties,
     radius: 1,
     animations: spriteSheet.animations,
     collidesWithTiles: collidesWithTiles,
@@ -7127,6 +7185,18 @@ var _curtainState = _interopRequireDefault(require("./states/curtainState"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 var _init = (0, _kontra.init)(),
@@ -7192,6 +7262,7 @@ var createConversationState = function createConversationState(_ref2) {
     },
     onEntry: function onEntry(props) {
       convoIterator.start("m1", {
+        // This needs plugging in
         currentActors: sprites
       });
     }
@@ -7210,52 +7281,61 @@ var createCurtainState = function createCurtainState(_ref3) {
   });
 };
 
-var Scene = function Scene() {
+var createWorld = function createWorld(_ref4) {
+  var areaId = _ref4.areaId,
+      worldData = _ref4.worldData;
+
+  var _worldData$find = worldData.find(function (x) {
+    return x.id === areaId;
+  }),
+      entities = _worldData$find.entities,
+      mapKey = _worldData$find.mapKey;
+
+  return {
+    mapKey: mapKey,
+    loadedEntities: entities.map(function (entity) {
+      return (0, _entity.default)(_objectSpread({}, entity));
+    })
+  };
+};
+
+var Scene = function Scene(_ref5) {
   var _reactionRegister;
 
+  var areaId = _ref5.areaId,
+      _ref5$onError = _ref5.onError,
+      onError = _ref5$onError === void 0 ? function () {} : _ref5$onError;
+
+  if (!areaId) {
+    /* Use error code const */
+    onError(0);
+    return;
+  }
+
   (0, _kontra.initKeys)();
-  var mapKey = "assets/tiledata/test";
+
+  var _createWorld = createWorld({
+    areaId: areaId,
+    worldData: _data.worldData
+  }),
+      loadedEntities = _createWorld.loadedEntities,
+      mapKey = _createWorld.mapKey;
+
   var map = _kontra.dataAssets[mapKey];
-  var tileEngine = (0, _kontra.TileEngine)(map); // You could move a lot if not all of these properties out
+  var tileEngine = (0, _kontra.TileEngine)(map);
+  /* All but the player are generated here */
 
   var player = (0, _entity.default)({
-    x: 120,
-    y: 120,
+    x: 0,
+    y: 0,
     name: "Player",
     id: "player",
     assetId: "player",
     controlledByUser: true
   });
-  var npc = (0, _entity.default)({
-    x: 120,
-    y: 160,
-    name: "Daryl",
-    id: "daryl",
-    assetId: "standard_npc"
-  });
-  var potion = (0, _entity.default)({
-    x: 156,
-    y: 72,
-    name: "Potion",
-    id: "potion",
-    assetId: "standard_potion"
-  });
-  var doorway = (0, _entity.default)({
-    x: 112,
-    y: 48,
-    name: "Door",
-    id: "door",
-    assetId: "standard_door"
-  });
-  var entranceMarker = (0, _entity.default)({
-    x: 112,
-    y: 192,
-    z: 10,
-    name: "Entrance",
-    id: "entranceMarker",
-    assetId: "standard_entrance"
-  });
-  var sprites = [player, npc, potion, doorway, entranceMarker];
+  /* TODO: make immutable */
+
+  var sprites = [player].concat(_toConsumableArray(loadedEntities));
   var sceneStateMachine = (0, _fsm.default)();
   var screenEffectsStateMachine = (0, _fsm.default)();
   sceneStateMachine.push(createFieldState({
@@ -7275,15 +7355,12 @@ var Scene = function Scene() {
       direction: -1,
       onFadeComplete: function onFadeComplete() {
         (0, _events.emit)(_events.EV_SCENECHANGE, {
-          sceneId: "someSceneId"
+          areaId: firstAvailable.customProperties.goesTo
         });
       }
     }));
-    console.log(firstAvailable);
   }), _defineProperty(_reactionRegister, _data.ENTITY_TYPE.PICKUP, function (firstAvailable, sprites) {
     firstAvailable.ttl = 0;
-    console.log("Pick me up:", firstAvailable);
-    console.log(firstAvailable.isAlive());
   }), _defineProperty(_reactionRegister, _data.ENTITY_TYPE.NPC, function (firstAvailable, sprites) {
     sceneStateMachine.push(createConversationState({
       sprites: sprites
@@ -7316,8 +7393,16 @@ var Scene = function Scene() {
     } else if (pushed && !(0, _kontra.keyPressed)("e")) {
       pushed = false;
     }
-  }; //
-  // Experimental
+  };
+
+  var entranceMarker = sprites.find(function (x) {
+    return x.id === "entranceMarker";
+  });
+
+  if (entranceMarker) {
+    player.x = entranceMarker.x;
+    player.y = entranceMarker.y;
+  } // Experimental
 
 
   (0, _events.on)(_events.EV_CONVOEND, function () {
@@ -7331,15 +7416,11 @@ var Scene = function Scene() {
         currentActors: sprites
       });
     }
-  }).start(); // Experimental
-
-  if (entranceMarker) {
-    player.x = entranceMarker.x;
-    player.y = entranceMarker.y;
-  }
-
+  }).start();
+  var t = new Date();
   return (0, _kontra.GameLoop)({
     update: function update() {
+      console.log("Loop instance:", t);
       sceneStateMachine.update();
       screenEffectsStateMachine.update();
       var collisions = [];
@@ -7382,13 +7463,28 @@ var Scene = function Scene() {
 
 
 (0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png").then(function (assets) {
-  Scene().start();
-  (0, _events.on)(_events.EV_SCENECHANGE, function (props) {
+  var handleOnErrored = function handleOnErrored(code) {
+    if (code === 0) {
+      throw new Error("Critical: Cannot load an area without an id!");
+    }
+  };
+
+  var loadScene = function loadScene(props) {
     /* TODO: Don't forget to unbind everything! */
     console.info("==> Next Scene:", props); // Curtain effects here (perhaps just use css?)
 
-    Scene().start();
-  });
+    Scene(_objectSpread({}, props, {
+      onError: function onError(c) {
+        (0, _events.off)(_events.EV_SCENECHANGE, loadScene);
+        handleOnErrored(c);
+      }
+    })).start();
+  };
+
+  (0, _events.on)(_events.EV_SCENECHANGE, loadScene);
+  Scene({
+    areaId: "area1"
+  }).start();
 });
 },{"kontra":"node_modules/kontra/kontra.mjs","./ui":"src/ui.js","./entity":"src/entity.js","./conversationIterator":"src/conversationIterator.js","./fsm":"src/fsm.js","./states/startConvo":"src/states/startConvo.js","./events":"src/events.js","./helpers":"src/helpers.js","./data":"src/data.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
@@ -7418,7 +7514,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50417" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57046" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

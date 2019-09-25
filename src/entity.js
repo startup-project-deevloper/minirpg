@@ -9,7 +9,8 @@ export default ({
   z = 1,
   name,
   controlledByUser = false,
-  collidesWithTiles = true
+  collidesWithTiles = true,
+  customProperties = {}
 }) => {
   if (!id || !assetId) {
     throw new Error(
@@ -40,6 +41,7 @@ export default ({
     x,
     y,
     z,
+    customProperties,
     radius: 1,
     animations: spriteSheet.animations,
     collidesWithTiles,

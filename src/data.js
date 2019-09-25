@@ -149,5 +149,64 @@ export const entityData = [
         frameRate: 1
       }
     }
+  }
+];
+
+export const worldData = [
+  {
+    id: "area1",
+    mapKey: "assets/tiledata/test",
+    entities: [
+      {
+        x: 120,
+        y: 160,
+        name: "Daryl",
+        id: "daryl",
+        assetId: "standard_npc",
+        customProperties: {}
+      },
+      {
+        x: 156,
+        y: 72,
+        name: "Potion",
+        id: "potion",
+        assetId: "standard_potion",
+        customProperties: {}
+      },
+      {
+        x: 112,
+        y: 48,
+        name: "Door",
+        id: "door",
+        assetId: "standard_door",
+        customProperties: {
+          goesTo: "area2"
+        }
+      },
+      {
+        x: 128,
+        y: 192,
+        z: 10,
+        name: "Entrance",
+        id: "entranceMarker",
+        assetId: "standard_entrance",
+        customProperties: {}
+      }
+    ]
   },
+  {
+    id: "area2",
+    mapKey: "assets/tiledata/test",
+    entities: [
+      {
+        x: 128,
+        y: 128,
+        z: 10,
+        name: "Entrance",
+        id: "entranceMarker",
+        assetId: "standard_entrance",
+        customProperties: {}
+      }
+    ]
+  }
 ];

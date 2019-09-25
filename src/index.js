@@ -21,13 +21,14 @@ import startConvo from "./states/startConvo";
 import {
   emit,
   on,
+  off,
   EV_CONVONEXT,
   EV_CONVOSTART,
   EV_CONVOEND,
   EV_SCENECHANGE
 } from "./events";
 import { circleCollision } from "./helpers";
-import { mainFlow, ENTITY_TYPE } from "./data";
+import { mainFlow, ENTITY_TYPE, worldData } from "./data";
 import fieldState from "./states/fieldState";
 import curtainState from "./states/curtainState";
 
@@ -76,6 +77,7 @@ const createConversationState = ({ sprites }) => {
     },
     onEntry: props => {
       convoIterator.start("m1", {
+        // This needs plugging in
         currentActors: sprites
       });
     }
@@ -91,57 +93,40 @@ const createCurtainState = ({ ctx, direction, onFadeComplete }) => {
   });
 };
 
-const Scene = () => {
+const createWorld = ({ areaId, worldData }) => {
+  const { entities, mapKey } = worldData.find(x => x.id === areaId);
+
+  return {
+    mapKey,
+    loadedEntities: entities.map(entity => Entity({ ...entity }))
+  };
+};
+
+const Scene = ({ areaId, onError = () => {} }) => {
+  if (!areaId) {
+    /* Use error code const */
+    onError(0);
+    return;
+  }
+
   initKeys();
 
-  const mapKey = "assets/tiledata/test";
+  const { loadedEntities, mapKey } = createWorld({ areaId, worldData });
   const map = dataAssets[mapKey];
   const tileEngine = TileEngine(map);
 
-  // You could move a lot if not all of these properties out
+  /* All but the player are generated here */
   const player = Entity({
-    x: 120,
-    y: 120,
+    x: 0,
+    y: 0,
     name: "Player",
     id: "player",
     assetId: "player",
     controlledByUser: true
   });
 
-  const npc = Entity({
-    x: 120,
-    y: 160,
-    name: "Daryl",
-    id: "daryl",
-    assetId: "standard_npc"
-  });
-
-  const potion = Entity({
-    x: 156,
-    y: 72,
-    name: "Potion",
-    id: "potion",
-    assetId: "standard_potion"
-  });
-
-  const doorway = Entity({
-    x: 112,
-    y: 48,
-    name: "Door",
-    id: "door",
-    assetId: "standard_door"
-  });
-
-  const entranceMarker = Entity({
-    x: 112,
-    y: 192,
-    z: 10,
-    name: "Entrance",
-    id: "entranceMarker",
-    assetId: "standard_entrance"
-  });
-
-  let sprites = [player, npc, potion, doorway, entranceMarker];
+  /* TODO: make immutable */
+  let sprites = [player, ...loadedEntities];
 
   const sceneStateMachine = StateMachine();
   const screenEffectsStateMachine = StateMachine();
@@ -172,17 +157,14 @@ const Scene = () => {
           direction: -1,
           onFadeComplete: () => {
             emit(EV_SCENECHANGE, {
-              sceneId: "someSceneId"
+              areaId: firstAvailable.customProperties.goesTo
             });
           }
         })
       );
-      console.log(firstAvailable);
     },
     [ENTITY_TYPE.PICKUP]: (firstAvailable, sprites) => {
       firstAvailable.ttl = 0;
-      console.log("Pick me up:", firstAvailable);
-      console.log(firstAvailable.isAlive());
     },
     [ENTITY_TYPE.NPC]: (firstAvailable, sprites) => {
       sceneStateMachine.push(
@@ -222,7 +204,13 @@ const Scene = () => {
       pushed = false;
     }
   };
-  //
+
+  const entranceMarker = sprites.find(x => x.id === "entranceMarker");
+
+  if (entranceMarker) {
+    player.x = entranceMarker.x;
+    player.y = entranceMarker.y;
+  }
 
   // Experimental
   on(EV_CONVOEND, () => {
@@ -239,14 +227,12 @@ const Scene = () => {
     }
   }).start();
 
-  // Experimental
-  if (entranceMarker) {
-    player.x = entranceMarker.x;
-    player.y = entranceMarker.y;
-  }
+  let t = new Date();
 
   return GameLoop({
     update: () => {
+      console.log("Loop instance:", t);
+
       sceneStateMachine.update();
       screenEffectsStateMachine.update();
 
@@ -290,13 +276,27 @@ load(
   "assets/entityimages/little_devil.png",
   "assets/entityimages/little_orc.png"
 ).then(assets => {
-  Scene().start();
+  const handleOnErrored = code => {
+    if (code === 0) {
+      throw new Error("Critical: Cannot load an area without an id!");
+    }
+  };
 
-  on(EV_SCENECHANGE, props => {
+  const loadScene = props => {
     /* TODO: Don't forget to unbind everything! */
     console.info("==> Next Scene:", props);
 
     // Curtain effects here (perhaps just use css?)
-    Scene().start();
-  });
+    Scene({
+      ...props,
+      onError: c => {
+        off(EV_SCENECHANGE, loadScene);
+        handleOnErrored(c);
+      }
+    }).start();
+  };
+
+  on(EV_SCENECHANGE, loadScene);
+
+  Scene({ areaId: "area1" }).start();
 });
