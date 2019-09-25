@@ -7420,7 +7420,7 @@ var Scene = function Scene(_ref5) {
   var t = new Date();
   return (0, _kontra.GameLoop)({
     update: function update() {
-      console.log("Loop instance:", t);
+      console.log("Scene instance:", t);
       sceneStateMachine.update();
       screenEffectsStateMachine.update();
       var collisions = [];
@@ -7482,9 +7482,9 @@ var Scene = function Scene(_ref5) {
   };
 
   (0, _events.on)(_events.EV_SCENECHANGE, loadScene);
-  Scene({
+  loadScene({
     areaId: "area1"
-  }).start();
+  });
 });
 },{"kontra":"node_modules/kontra/kontra.mjs","./ui":"src/ui.js","./entity":"src/entity.js","./conversationIterator":"src/conversationIterator.js","./fsm":"src/fsm.js","./states/startConvo":"src/states/startConvo.js","./events":"src/events.js","./helpers":"src/helpers.js","./data":"src/data.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
@@ -7514,7 +7514,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57046" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59627" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

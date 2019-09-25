@@ -231,7 +231,7 @@ const Scene = ({ areaId, onError = () => {} }) => {
 
   return GameLoop({
     update: () => {
-      console.log("Loop instance:", t);
+      console.log("Scene instance:", t);
 
       sceneStateMachine.update();
       screenEffectsStateMachine.update();
@@ -298,5 +298,5 @@ load(
 
   on(EV_SCENECHANGE, loadScene);
 
-  Scene({ areaId: "area1" }).start();
+  loadScene({ areaId: "area1" });
 });
