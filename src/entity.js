@@ -6,6 +6,7 @@ export default ({
   assetId,
   x,
   y,
+  z = 1,
   name,
   controlledByUser = false,
   collidesWithTiles = true
@@ -38,6 +39,7 @@ export default ({
     name,
     x,
     y,
+    z,
     radius: 1,
     animations: spriteSheet.animations,
     collidesWithTiles,

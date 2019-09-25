@@ -11,6 +11,8 @@ export default () => {
     },
     update: () => {
       const currentState = top(states);
+      if (!currentState) return;
+
       currentState.update();
 
       // Attempts an auto-complete if internal isComplete has been set somehow.

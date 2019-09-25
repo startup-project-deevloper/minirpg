@@ -6651,6 +6651,8 @@ var _default = function _default(_ref) {
       assetId = _ref.assetId,
       x = _ref.x,
       y = _ref.y,
+      _ref$z = _ref.z,
+      z = _ref$z === void 0 ? 1 : _ref$z,
       name = _ref.name,
       _ref$controlledByUser = _ref.controlledByUser,
       controlledByUser = _ref$controlledByUser === void 0 ? false : _ref$controlledByUser,
@@ -6684,6 +6686,7 @@ var _default = function _default(_ref) {
     name: name,
     x: x,
     y: y,
+    z: z,
     radius: 1,
     animations: spriteSheet.animations,
     collidesWithTiles: collidesWithTiles,
@@ -6867,6 +6870,7 @@ var _default = function _default() {
     },
     update: function update() {
       var currentState = top(states);
+      if (!currentState) return;
       currentState.update(); // Attempts an auto-complete if internal isComplete has been set somehow.
 
       if (currentState.isComplete()) {
@@ -7056,7 +7060,47 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/index.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/states/curtainState.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _default = function _default(_ref) {
+  var id = _ref.id,
+      ctx = _ref.ctx,
+      _ref$direction = _ref.direction,
+      direction = _ref$direction === void 0 ? 1 : _ref$direction,
+      _ref$onFadeComplete = _ref.onFadeComplete,
+      onFadeComplete = _ref$onFadeComplete === void 0 ? function () {} : _ref$onFadeComplete;
+  // https://stackoverflow.com/questions/19258169/fadein-fadeout-in-html5-canvas
+  var _isComplete = false;
+  var alpha = direction < 0 ? 1 : 0,
+      delta = 0.05;
+  ctx.globalAlpha = direction < 0 ? 1 : 0;
+  return {
+    id: id,
+    isComplete: function isComplete() {
+      return _isComplete;
+    },
+    enter: function enter(props) {},
+    update: function update() {
+      _isComplete = direction > 0 && alpha >= 1 || direction < 0 && alpha <= -1;
+      alpha = direction < 0 ? alpha - delta : alpha + delta;
+      ctx.clearRect(0, 0, ctx.width, ctx.height);
+      ctx.globalAlpha = _isComplete ? Math.round(alpha) : alpha;
+    },
+    exit: function exit() {
+      ctx.globalAlpha = direction < 0 ? 0 : 1;
+      onFadeComplete();
+    }
+  };
+};
+
+exports.default = _default;
+},{}],"src/index.js":[function(require,module,exports) {
 "use strict";
 
 var _kontra = require("kontra");
@@ -7078,6 +7122,8 @@ var _helpers = require("./helpers");
 var _data = require("./data");
 
 var _fieldState = _interopRequireDefault(require("./states/fieldState"));
+
+var _curtainState = _interopRequireDefault(require("./states/curtainState"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -7152,6 +7198,18 @@ var createConversationState = function createConversationState(_ref2) {
   });
 };
 
+var createCurtainState = function createCurtainState(_ref3) {
+  var ctx = _ref3.ctx,
+      direction = _ref3.direction,
+      onFadeComplete = _ref3.onFadeComplete;
+  return (0, _curtainState.default)({
+    id: "curtain",
+    ctx: ctx,
+    direction: direction,
+    onFadeComplete: onFadeComplete
+  });
+};
+
 var Scene = function Scene() {
   var _reactionRegister;
 
@@ -7192,23 +7250,35 @@ var Scene = function Scene() {
   var entranceMarker = (0, _entity.default)({
     x: 112,
     y: 192,
+    z: 10,
     name: "Entrance",
     id: "entranceMarker",
     assetId: "standard_entrance"
   });
   var sprites = [player, npc, potion, doorway, entranceMarker];
   var sceneStateMachine = (0, _fsm.default)();
+  var screenEffectsStateMachine = (0, _fsm.default)();
   sceneStateMachine.push(createFieldState({
     sprites: sprites,
     canvas: canvas,
     tileEngine: tileEngine
+  }));
+  screenEffectsStateMachine.push(createCurtainState({
+    ctx: ctx,
+    direction: 1
   })); // Experimental
 
   var reactionRegister = (_reactionRegister = {}, _defineProperty(_reactionRegister, _data.ENTITY_TYPE.DOOR, function (firstAvailable, sprites) {
     firstAvailable.playAnimation("open");
-    (0, _events.emit)(_events.EV_SCENECHANGE, {
-      sceneId: "someSceneId"
-    });
+    screenEffectsStateMachine.push(createCurtainState({
+      ctx: ctx,
+      direction: -1,
+      onFadeComplete: function onFadeComplete() {
+        (0, _events.emit)(_events.EV_SCENECHANGE, {
+          sceneId: "someSceneId"
+        });
+      }
+    }));
     console.log(firstAvailable);
   }), _defineProperty(_reactionRegister, _data.ENTITY_TYPE.PICKUP, function (firstAvailable, sprites) {
     firstAvailable.ttl = 0;
@@ -7271,6 +7341,7 @@ var Scene = function Scene() {
   return (0, _kontra.GameLoop)({
     update: function update() {
       sceneStateMachine.update();
+      screenEffectsStateMachine.update();
       var collisions = [];
       /* Check for anything dead (GC does the rest) */
 
@@ -7297,7 +7368,11 @@ var Scene = function Scene() {
     },
     render: function render() {
       tileEngine.render();
-      sprites.map(function (sprite) {
+      /* Edit z-order based on 'y' then change render order */
+
+      sprites.sort(function (a, b) {
+        return Math.round(a.y - a.z) - Math.round(b.y - b.z);
+      }).forEach(function (sprite) {
         return sprite.render();
       });
     }
@@ -7315,7 +7390,7 @@ var Scene = function Scene() {
     Scene().start();
   });
 });
-},{"kontra":"node_modules/kontra/kontra.mjs","./ui":"src/ui.js","./entity":"src/entity.js","./conversationIterator":"src/conversationIterator.js","./fsm":"src/fsm.js","./states/startConvo":"src/states/startConvo.js","./events":"src/events.js","./helpers":"src/helpers.js","./data":"src/data.js","./states/fieldState":"src/states/fieldState.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./ui":"src/ui.js","./entity":"src/entity.js","./conversationIterator":"src/conversationIterator.js","./fsm":"src/fsm.js","./states/startConvo":"src/states/startConvo.js","./events":"src/events.js","./helpers":"src/helpers.js","./data":"src/data.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -7343,7 +7418,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51328" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50417" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -29,6 +29,7 @@ import {
 import { circleCollision } from "./helpers";
 import { mainFlow, ENTITY_TYPE } from "./data";
 import fieldState from "./states/fieldState";
+import curtainState from "./states/curtainState";
 
 const { canvas } = init();
 
@@ -81,6 +82,15 @@ const createConversationState = ({ sprites }) => {
   });
 };
 
+const createCurtainState = ({ ctx, direction, onFadeComplete }) => {
+  return curtainState({
+    id: "curtain",
+    ctx,
+    direction,
+    onFadeComplete
+  });
+};
+
 const Scene = () => {
   initKeys();
 
@@ -125,6 +135,7 @@ const Scene = () => {
   const entranceMarker = Entity({
     x: 112,
     y: 192,
+    z: 10,
     name: "Entrance",
     id: "entranceMarker",
     assetId: "standard_entrance"
@@ -133,6 +144,7 @@ const Scene = () => {
   let sprites = [player, npc, potion, doorway, entranceMarker];
 
   const sceneStateMachine = StateMachine();
+  const screenEffectsStateMachine = StateMachine();
 
   sceneStateMachine.push(
     createFieldState({
@@ -142,13 +154,29 @@ const Scene = () => {
     })
   );
 
+  screenEffectsStateMachine.push(
+    createCurtainState({
+      ctx,
+      direction: 1
+    })
+  );
+
   // Experimental
   const reactionRegister = {
     [ENTITY_TYPE.DOOR]: (firstAvailable, sprites) => {
       firstAvailable.playAnimation("open");
-      emit(EV_SCENECHANGE, {
-        sceneId: "someSceneId"
-      });
+
+      screenEffectsStateMachine.push(
+        createCurtainState({
+          ctx,
+          direction: -1,
+          onFadeComplete: () => {
+            emit(EV_SCENECHANGE, {
+              sceneId: "someSceneId"
+            });
+          }
+        })
+      );
       console.log(firstAvailable);
     },
     [ENTITY_TYPE.PICKUP]: (firstAvailable, sprites) => {
@@ -220,6 +248,7 @@ const Scene = () => {
   return GameLoop({
     update: () => {
       sceneStateMachine.update();
+      screenEffectsStateMachine.update();
 
       let collisions = [];
 
@@ -245,7 +274,11 @@ const Scene = () => {
     },
     render: () => {
       tileEngine.render();
-      sprites.map(sprite => sprite.render());
+
+      /* Edit z-order based on 'y' then change render order */
+      sprites
+        .sort((a, b) => Math.round(a.y - a.z) - Math.round(b.y - b.z))
+        .forEach(sprite => sprite.render());
     }
   });
 };
