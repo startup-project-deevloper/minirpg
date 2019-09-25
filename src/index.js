@@ -18,7 +18,14 @@ import Entity from "./entity";
 import ConversationIterator from "./conversationIterator";
 import StateMachine from "./fsm";
 import startConvo from "./states/startConvo";
-import { emit, on, EV_CONVONEXT, EV_CONVOSTART, EV_CONVOEND } from "./events";
+import {
+  emit,
+  on,
+  EV_CONVONEXT,
+  EV_CONVOSTART,
+  EV_CONVOEND,
+  EV_SCENECHANGE
+} from "./events";
 import { circleCollision } from "./helpers";
 import { mainFlow, ENTITY_TYPE } from "./data";
 import fieldState from "./states/fieldState";
@@ -85,7 +92,6 @@ const Scene = () => {
   const player = Entity({
     x: 120,
     y: 120,
-    sheet: "assets/entityimages/little_devil.png",
     name: "Player",
     id: "player",
     assetId: "player",
@@ -97,8 +103,7 @@ const Scene = () => {
     y: 160,
     name: "Daryl",
     id: "daryl",
-    assetId: "standard_npc",
-    sheet: "assets/entityimages/little_orc.png"
+    assetId: "standard_npc"
   });
 
   const potion = Entity({
@@ -106,11 +111,26 @@ const Scene = () => {
     y: 72,
     name: "Potion",
     id: "potion",
-    assetId: "standard_potion",
-    sheet: "assets/tileimages/test.png"
+    assetId: "standard_potion"
   });
 
-  let sprites = [player, npc, potion];
+  const doorway = Entity({
+    x: 112,
+    y: 48,
+    name: "Door",
+    id: "door",
+    assetId: "standard_door"
+  });
+
+  const entranceMarker = Entity({
+    x: 112,
+    y: 192,
+    name: "Entrance",
+    id: "entranceMarker",
+    assetId: "standard_entrance"
+  });
+
+  let sprites = [player, npc, potion, doorway, entranceMarker];
 
   const sceneStateMachine = StateMachine();
 
@@ -124,6 +144,13 @@ const Scene = () => {
 
   // Experimental
   const reactionRegister = {
+    [ENTITY_TYPE.DOOR]: (firstAvailable, sprites) => {
+      firstAvailable.playAnimation("open");
+      emit(EV_SCENECHANGE, {
+        sceneId: "someSceneId"
+      });
+      console.log(firstAvailable);
+    },
     [ENTITY_TYPE.PICKUP]: (firstAvailable, sprites) => {
       firstAvailable.ttl = 0;
       console.log("Pick me up:", firstAvailable);
@@ -152,7 +179,12 @@ const Scene = () => {
     ) {
       if (!justTriggered) {
         const firstAvailable = colliders[0];
-        reactionRegister[firstAvailable.type](firstAvailable, sprites);
+        const reaction = reactionRegister[firstAvailable.type];
+
+        /* Not all things will have a reaction set */
+        if (reaction) {
+          reaction(firstAvailable, sprites);
+        }
       } else {
         justTriggered = false;
       }
@@ -178,6 +210,12 @@ const Scene = () => {
       });
     }
   }).start();
+
+  // Experimental
+  if (entranceMarker) {
+    player.x = entranceMarker.x;
+    player.y = entranceMarker.y;
+  }
 
   return GameLoop({
     update: () => {
@@ -220,4 +258,12 @@ load(
   "assets/entityimages/little_orc.png"
 ).then(assets => {
   Scene().start();
+
+  on(EV_SCENECHANGE, props => {
+    /* TODO: Don't forget to unbind everything! */
+    console.info("==> Next Scene:", props);
+
+    // Curtain effects here (perhaps just use css?)
+    Scene().start();
+  });
 });

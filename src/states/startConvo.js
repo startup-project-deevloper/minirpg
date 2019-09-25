@@ -20,7 +20,9 @@ export default ({
     },
     update: () => {
       sprites.map(sprite => {
-        sprite.playAnimation("idle");
+        if (!sprite.manualAnimation) {
+          sprite.playAnimation("idle");
+        }
         sprite.update();
       });
 

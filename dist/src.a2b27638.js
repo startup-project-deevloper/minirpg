@@ -6200,7 +6200,7 @@ module.exports = m
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.emit = exports.on = exports.EVENTS = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
+exports.emit = exports.on = exports.EVENTS = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
 
 var _kontra = require("kontra");
 
@@ -6212,7 +6212,9 @@ var EV_CONVONEXT = "ev.convoNext";
 exports.EV_CONVONEXT = EV_CONVONEXT;
 var EV_CONVOCHOICE = "ev.convoChoice";
 exports.EV_CONVOCHOICE = EV_CONVOCHOICE;
-var EVENTS = [EV_CONVOSTART, EV_CONVOEND, EV_CONVONEXT, EV_CONVOCHOICE];
+var EV_SCENECHANGE = "ev.sceneChange";
+exports.EV_SCENECHANGE = EV_SCENECHANGE;
+var EVENTS = [EV_CONVOSTART, EV_CONVOEND, EV_CONVONEXT, EV_CONVOCHOICE, EV_SCENECHANGE];
 exports.EVENTS = EVENTS;
 
 var hasEvent = function hasEvent(e) {
@@ -6551,12 +6553,16 @@ var ENTITY_TYPE = {
   SWITCH: 3,
   DOOR: 4,
   CONTAINER: 5,
+  ENTRANCE: 6,
   PLAYER: 99
 };
 exports.ENTITY_TYPE = ENTITY_TYPE;
 var entityData = [{
   id: "player",
   type: ENTITY_TYPE.PLAYER,
+  sheet: "assets/entityimages/little_devil.png",
+  frameWidth: 16,
+  frameHeight: 16,
   animations: {
     idle: {
       frames: [0, 1, 2, 3],
@@ -6570,6 +6576,9 @@ var entityData = [{
 }, {
   id: "standard_npc",
   type: ENTITY_TYPE.NPC,
+  sheet: "assets/entityimages/little_orc.png",
+  frameWidth: 16,
+  frameHeight: 16,
   animations: {
     idle: {
       frames: [0, 1, 2, 3],
@@ -6583,9 +6592,43 @@ var entityData = [{
 }, {
   id: "standard_potion",
   type: ENTITY_TYPE.PICKUP,
+  sheet: "assets/tileimages/test.png",
+  frameWidth: 16,
+  frameHeight: 16,
   animations: {
     idle: {
       frames: [89],
+      frameRate: 1
+    }
+  }
+}, {
+  id: "standard_door",
+  type: ENTITY_TYPE.DOOR,
+  sheet: "assets/tileimages/test.png",
+  frameWidth: 32,
+  frameHeight: 16,
+  manualAnimation: true,
+  animations: {
+    idle: {
+      frames: [33],
+      frameRate: 1,
+      loop: false
+    },
+    open: {
+      frames: [99],
+      frameRate: 1,
+      loop: false
+    }
+  }
+}, {
+  id: "standard_entrance",
+  type: ENTITY_TYPE.ENTRANCE,
+  sheet: "assets/tileimages/test.png",
+  frameWidth: 16,
+  frameHeight: 16,
+  animations: {
+    idle: {
+      frames: [86],
       frameRate: 1
     }
   }
@@ -6608,7 +6651,6 @@ var _default = function _default(_ref) {
       assetId = _ref.assetId,
       x = _ref.x,
       y = _ref.y,
-      sheet = _ref.sheet,
       name = _ref.name,
       _ref$controlledByUser = _ref.controlledByUser,
       controlledByUser = _ref$controlledByUser === void 0 ? false : _ref$controlledByUser,
@@ -6623,12 +6665,17 @@ var _default = function _default(_ref) {
     return ent.id === assetId;
   }),
       animations = _entityData$find.animations,
-      type = _entityData$find.type;
+      type = _entityData$find.type,
+      frameWidth = _entityData$find.frameWidth,
+      frameHeight = _entityData$find.frameHeight,
+      sheet = _entityData$find.sheet,
+      _entityData$find$manu = _entityData$find.manualAnimation,
+      manualAnimation = _entityData$find$manu === void 0 ? false : _entityData$find$manu;
 
   var spriteSheet = (0, _kontra.SpriteSheet)({
     image: _kontra.imageAssets[sheet],
-    frameWidth: 16,
-    frameHeight: 16,
+    frameWidth: frameWidth,
+    frameHeight: frameHeight,
     animations: animations
   });
   return (0, _kontra.Sprite)({
@@ -6640,7 +6687,8 @@ var _default = function _default(_ref) {
     radius: 1,
     animations: spriteSheet.animations,
     collidesWithTiles: collidesWithTiles,
-    controlledByUser: controlledByUser
+    controlledByUser: controlledByUser,
+    manualAnimation: manualAnimation
   });
 };
 
@@ -6869,7 +6917,10 @@ var _default = function _default(_ref) {
     },
     update: function update() {
       sprites.map(function (sprite) {
-        sprite.playAnimation("idle");
+        if (!sprite.manualAnimation) {
+          sprite.playAnimation("idle");
+        }
+
         sprite.update();
       });
 
@@ -6989,7 +7040,11 @@ var _default = function _default(_ref) {
 
 
         var isMoving = dirNormal.x !== 0 || dirNormal.y !== 0;
-        sprite.playAnimation(isMoving ? "walk" : "idle"); // Don't update until you've calcs positions
+
+        if (!sprite.manualAnimation) {
+          sprite.playAnimation(isMoving ? "walk" : "idle");
+        } // Don't update until you've calcs positions
+
 
         sprite.update();
       });
@@ -7108,7 +7163,6 @@ var Scene = function Scene() {
   var player = (0, _entity.default)({
     x: 120,
     y: 120,
-    sheet: "assets/entityimages/little_devil.png",
     name: "Player",
     id: "player",
     assetId: "player",
@@ -7119,18 +7173,30 @@ var Scene = function Scene() {
     y: 160,
     name: "Daryl",
     id: "daryl",
-    assetId: "standard_npc",
-    sheet: "assets/entityimages/little_orc.png"
+    assetId: "standard_npc"
   });
   var potion = (0, _entity.default)({
     x: 156,
     y: 72,
     name: "Potion",
     id: "potion",
-    assetId: "standard_potion",
-    sheet: "assets/tileimages/test.png"
+    assetId: "standard_potion"
   });
-  var sprites = [player, npc, potion];
+  var doorway = (0, _entity.default)({
+    x: 112,
+    y: 48,
+    name: "Door",
+    id: "door",
+    assetId: "standard_door"
+  });
+  var entranceMarker = (0, _entity.default)({
+    x: 112,
+    y: 192,
+    name: "Entrance",
+    id: "entranceMarker",
+    assetId: "standard_entrance"
+  });
+  var sprites = [player, npc, potion, doorway, entranceMarker];
   var sceneStateMachine = (0, _fsm.default)();
   sceneStateMachine.push(createFieldState({
     sprites: sprites,
@@ -7138,7 +7204,13 @@ var Scene = function Scene() {
     tileEngine: tileEngine
   })); // Experimental
 
-  var reactionRegister = (_reactionRegister = {}, _defineProperty(_reactionRegister, _data.ENTITY_TYPE.PICKUP, function (firstAvailable, sprites) {
+  var reactionRegister = (_reactionRegister = {}, _defineProperty(_reactionRegister, _data.ENTITY_TYPE.DOOR, function (firstAvailable, sprites) {
+    firstAvailable.playAnimation("open");
+    (0, _events.emit)(_events.EV_SCENECHANGE, {
+      sceneId: "someSceneId"
+    });
+    console.log(firstAvailable);
+  }), _defineProperty(_reactionRegister, _data.ENTITY_TYPE.PICKUP, function (firstAvailable, sprites) {
     firstAvailable.ttl = 0;
     console.log("Pick me up:", firstAvailable);
     console.log(firstAvailable.isAlive());
@@ -7160,7 +7232,12 @@ var Scene = function Scene() {
     if (colliders.length && origin.controlledByUser && (0, _kontra.keyPressed)("e") && !pushed) {
       if (!justTriggered) {
         var firstAvailable = colliders[0];
-        reactionRegister[firstAvailable.type](firstAvailable, sprites);
+        var reaction = reactionRegister[firstAvailable.type];
+        /* Not all things will have a reaction set */
+
+        if (reaction) {
+          reaction(firstAvailable, sprites);
+        }
       } else {
         justTriggered = false;
       }
@@ -7184,7 +7261,13 @@ var Scene = function Scene() {
         currentActors: sprites
       });
     }
-  }).start();
+  }).start(); // Experimental
+
+  if (entranceMarker) {
+    player.x = entranceMarker.x;
+    player.y = entranceMarker.y;
+  }
+
   return (0, _kontra.GameLoop)({
     update: function update() {
       sceneStateMachine.update();
@@ -7225,6 +7308,12 @@ var Scene = function Scene() {
 
 (0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png").then(function (assets) {
   Scene().start();
+  (0, _events.on)(_events.EV_SCENECHANGE, function (props) {
+    /* TODO: Don't forget to unbind everything! */
+    console.info("==> Next Scene:", props); // Curtain effects here (perhaps just use css?)
+
+    Scene().start();
+  });
 });
 },{"kontra":"node_modules/kontra/kontra.mjs","./ui":"src/ui.js","./entity":"src/entity.js","./conversationIterator":"src/conversationIterator.js","./fsm":"src/fsm.js","./states/startConvo":"src/states/startConvo.js","./events":"src/events.js","./helpers":"src/helpers.js","./data":"src/data.js","./states/fieldState":"src/states/fieldState.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
@@ -7254,7 +7343,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50571" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51328" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

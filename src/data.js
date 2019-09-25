@@ -32,7 +32,8 @@ export const mainFlow = [
     actor: "daryl",
     from: "m1a",
     to: "m4",
-    text: "You have selected the A button.You have selected the A button.You have selected the A button.You have selected the A button.You have selected the A button.",
+    text:
+      "You have selected the A button.You have selected the A button.You have selected the A button.You have selected the A button.You have selected the A button.",
     choices: [],
     actions: []
   },
@@ -41,7 +42,8 @@ export const mainFlow = [
     actor: "daryl",
     from: "m1b",
     to: null,
-    text: "You have selected the B button.You have selected the B button.You have selected the B button.You have selected the B button.You have selected the B button.",
+    text:
+      "You have selected the B button.You have selected the B button.You have selected the B button.You have selected the B button.You have selected the B button.",
     choices: [],
     actions: ["cancel"]
   },
@@ -63,13 +65,17 @@ export const ENTITY_TYPE = {
   SWITCH: 3,
   DOOR: 4,
   CONTAINER: 5,
+  ENTRANCE: 6,
   PLAYER: 99
-}
+};
 
 export const entityData = [
   {
     id: "player",
     type: ENTITY_TYPE.PLAYER,
+    sheet: "assets/entityimages/little_devil.png",
+    frameWidth: 16,
+    frameHeight: 16,
     animations: {
       idle: {
         frames: [0, 1, 2, 3],
@@ -84,6 +90,9 @@ export const entityData = [
   {
     id: "standard_npc",
     type: ENTITY_TYPE.NPC,
+    sheet: "assets/entityimages/little_orc.png",
+    frameWidth: 16,
+    frameHeight: 16,
     animations: {
       idle: {
         frames: [0, 1, 2, 3],
@@ -98,11 +107,47 @@ export const entityData = [
   {
     id: "standard_potion",
     type: ENTITY_TYPE.PICKUP,
+    sheet: "assets/tileimages/test.png",
+    frameWidth: 16,
+    frameHeight: 16,
     animations: {
       idle: {
         frames: [89],
         frameRate: 1
       }
     }
-  }
-]
+  },
+  {
+    id: "standard_door",
+    type: ENTITY_TYPE.DOOR,
+    sheet: "assets/tileimages/test.png",
+    frameWidth: 32,
+    frameHeight: 16,
+    manualAnimation: true,
+    animations: {
+      idle: {
+        frames: [33],
+        frameRate: 1,
+        loop: false
+      },
+      open: {
+        frames: [99],
+        frameRate: 1,
+        loop: false
+      }
+    }
+  },
+  {
+    id: "standard_entrance",
+    type: ENTITY_TYPE.ENTRANCE,
+    sheet: "assets/tileimages/test.png",
+    frameWidth: 16,
+    frameHeight: 16,
+    animations: {
+      idle: {
+        frames: [86],
+        frameRate: 1
+      }
+    }
+  },
+];

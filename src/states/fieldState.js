@@ -92,7 +92,9 @@ export default ({
 
         // Do some animations
         const isMoving = dirNormal.x !== 0 || dirNormal.y !== 0;
-        sprite.playAnimation(isMoving ? "walk" : "idle");
+        if (!sprite.manualAnimation) {
+          sprite.playAnimation(isMoving ? "walk" : "idle");
+        }
 
         // Don't update until you've calcs positions
         sprite.update();
