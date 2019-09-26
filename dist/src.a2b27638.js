@@ -6679,6 +6679,15 @@ var worldData = [{
   id: "area2",
   mapKey: "assets/tiledata/test",
   entities: [{
+    x: 112,
+    y: 48,
+    name: "Door",
+    id: "door",
+    assetId: "standard_door",
+    customProperties: {
+      goesTo: "area1"
+    }
+  }, {
     x: 128,
     y: 128,
     z: 10,
@@ -7209,102 +7218,13 @@ ctx.mozImageSmoothingEnabled = false;
 ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 ctx.scale(3, 3);
-var convoIterator = (0, _conversationIterator.default)({
-  collection: _data.mainFlow,
-  onChatStarted: function onChatStarted(node) {
-    var passedProps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-    return (0, _events.emit)(_events.EV_CONVOSTART, {
-      node: node,
-      passedProps: passedProps
-    });
-  },
-  onChatNext: function onChatNext(node) {
-    var passedProps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-    return (0, _events.emit)(_events.EV_CONVONEXT, {
-      node: node,
-      passedProps: passedProps
-    });
-  },
-  onChatComplete: function onChatComplete(exitId) {
-    return (0, _events.emit)(_events.EV_CONVOEND, {
-      exitId: exitId
-    });
-  },
-  onChainProgress: function onChainProgress(lastNodeId) {
-    (0, _kontra.setStoreItem)("progress", {
-      storyProgress: lastNodeId
-    });
-  }
-});
 
-var createFieldState = function createFieldState(_ref) {
-  var sprites = _ref.sprites,
-      canvas = _ref.canvas,
-      tileEngine = _ref.tileEngine;
-  return (0, _fieldState.default)({
-    id: "field",
-    sprites: sprites,
-    canvas: canvas,
-    tileEngine: tileEngine
-  });
-};
-
-var createConversationState = function createConversationState(_ref2) {
-  var sprites = _ref2.sprites;
-  // Shouldn't really pass sprites just to play their anims, they should be self-managed.
-  return (0, _startConvo.default)({
-    id: "conversation",
-    sprites: sprites,
-    onNext: function onNext(props) {
-      convoIterator.goToNext({
-        currentActors: sprites
-      });
-    },
-    onEntry: function onEntry(props) {
-      convoIterator.start("m1", {
-        // This needs plugging in
-        currentActors: sprites
-      });
-    }
-  });
-};
-
-var createCurtainState = function createCurtainState(_ref3) {
-  var ctx = _ref3.ctx,
-      direction = _ref3.direction,
-      onFadeComplete = _ref3.onFadeComplete;
-  return (0, _curtainState.default)({
-    id: "curtain",
-    ctx: ctx,
-    direction: direction,
-    onFadeComplete: onFadeComplete
-  });
-};
-
-var createWorld = function createWorld(_ref4) {
-  var areaId = _ref4.areaId,
-      worldData = _ref4.worldData;
-
-  var _worldData$find = worldData.find(function (x) {
-    return x.id === areaId;
-  }),
-      entities = _worldData$find.entities,
-      mapKey = _worldData$find.mapKey;
-
-  return {
-    mapKey: mapKey,
-    loadedEntities: entities.map(function (entity) {
-      return (0, _entity.default)(_objectSpread({}, entity));
-    })
-  };
-};
-
-var Scene = function Scene(_ref5) {
+var Scene = function Scene(_ref) {
   var _reactionRegister;
 
-  var areaId = _ref5.areaId,
-      _ref5$onError = _ref5.onError,
-      onError = _ref5$onError === void 0 ? function () {} : _ref5$onError;
+  var areaId = _ref.areaId,
+      _ref$onError = _ref.onError,
+      onError = _ref$onError === void 0 ? function () {} : _ref$onError;
 
   if (!areaId) {
     /* Use error code const */
@@ -7312,7 +7232,95 @@ var Scene = function Scene(_ref5) {
     return;
   }
 
-  (0, _kontra.initKeys)();
+  var convoIterator = (0, _conversationIterator.default)({
+    collection: _data.mainFlow,
+    onChatStarted: function onChatStarted(node) {
+      var passedProps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+      return (0, _events.emit)(_events.EV_CONVOSTART, {
+        node: node,
+        passedProps: passedProps
+      });
+    },
+    onChatNext: function onChatNext(node) {
+      var passedProps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+      return (0, _events.emit)(_events.EV_CONVONEXT, {
+        node: node,
+        passedProps: passedProps
+      });
+    },
+    onChatComplete: function onChatComplete(exitId) {
+      return (0, _events.emit)(_events.EV_CONVOEND, {
+        exitId: exitId
+      });
+    },
+    onChainProgress: function onChainProgress(lastNodeId) {
+      (0, _kontra.setStoreItem)("progress", {
+        storyProgress: lastNodeId
+      });
+    }
+  });
+
+  var createFieldState = function createFieldState(_ref2) {
+    var sprites = _ref2.sprites,
+        canvas = _ref2.canvas,
+        tileEngine = _ref2.tileEngine;
+    return (0, _fieldState.default)({
+      id: "field",
+      sprites: sprites,
+      canvas: canvas,
+      tileEngine: tileEngine
+    });
+  };
+
+  var createConversationState = function createConversationState(_ref3) {
+    var sprites = _ref3.sprites;
+    // Shouldn't really pass sprites just to play their anims, they should be self-managed.
+    return (0, _startConvo.default)({
+      id: "conversation",
+      sprites: sprites,
+      onNext: function onNext(props) {
+        convoIterator.goToNext({
+          currentActors: sprites
+        });
+      },
+      onEntry: function onEntry(props) {
+        convoIterator.start("m1", {
+          // This needs plugging in
+          currentActors: sprites
+        });
+      }
+    });
+  };
+
+  var createCurtainState = function createCurtainState(_ref4) {
+    var ctx = _ref4.ctx,
+        direction = _ref4.direction,
+        onFadeComplete = _ref4.onFadeComplete;
+    return (0, _curtainState.default)({
+      id: "curtain",
+      ctx: ctx,
+      direction: direction,
+      onFadeComplete: onFadeComplete
+    });
+  };
+
+  var createWorld = function createWorld(_ref5) {
+    var areaId = _ref5.areaId,
+        worldData = _ref5.worldData;
+
+    var _worldData$find = worldData.find(function (x) {
+      return x.id === areaId;
+    }),
+        entities = _worldData$find.entities,
+        mapKey = _worldData$find.mapKey;
+
+    return {
+      mapKey: mapKey,
+      loadedEntities: entities.map(function (entity) {
+        return (0, _entity.default)(_objectSpread({}, entity));
+      })
+    };
+  };
 
   var _createWorld = createWorld({
     areaId: areaId,
@@ -7408,19 +7416,15 @@ var Scene = function Scene(_ref5) {
   (0, _events.on)(_events.EV_CONVOEND, function () {
     sceneStateMachine.pop();
     justTriggered = true;
+  });
+  (0, _events.on)(_events.EV_CONVOCHOICE, function (choice) {
+    return convoIterator.goToExact(choice.to, {
+      currentActors: sprites
+    });
   }); //
 
-  (0, _ui.default)({
-    onConversationChoice: function onConversationChoice(choice) {
-      convoIterator.goToExact(choice.to, {
-        currentActors: sprites
-      });
-    }
-  }).start();
-  var t = new Date();
   return (0, _kontra.GameLoop)({
     update: function update() {
-      console.log("Scene instance:", t);
       sceneStateMachine.update();
       screenEffectsStateMachine.update();
       var collisions = [];
@@ -7482,6 +7486,12 @@ var Scene = function Scene(_ref5) {
   };
 
   (0, _events.on)(_events.EV_SCENECHANGE, loadScene);
+  (0, _kontra.initKeys)();
+  (0, _ui.default)({
+    onConversationChoice: function onConversationChoice(choice) {
+      return (0, _events.emit)(_events.EV_CONVOCHOICE, choice);
+    }
+  }).start();
   loadScene({
     areaId: "area1"
   });
@@ -7514,7 +7524,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59627" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59326" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

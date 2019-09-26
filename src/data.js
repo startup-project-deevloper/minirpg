@@ -199,6 +199,16 @@ export const worldData = [
     mapKey: "assets/tiledata/test",
     entities: [
       {
+        x: 112,
+        y: 48,
+        name: "Door",
+        id: "door",
+        assetId: "standard_door",
+        customProperties: {
+          goesTo: "area1"
+        }
+      },
+      {
         x: 128,
         y: 128,
         z: 10,

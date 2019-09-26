@@ -25,7 +25,8 @@ import {
   EV_CONVONEXT,
   EV_CONVOSTART,
   EV_CONVOEND,
-  EV_SCENECHANGE
+  EV_SCENECHANGE,
+  EV_CONVOCHOICE
 } from "./events";
 import { circleCollision } from "./helpers";
 import { mainFlow, ENTITY_TYPE, worldData } from "./data";
@@ -42,66 +43,6 @@ ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 ctx.scale(3, 3);
 
-const convoIterator = ConversationIterator({
-  collection: mainFlow,
-  onChatStarted: (node, passedProps = {}) =>
-    emit(EV_CONVOSTART, { node, passedProps }),
-  onChatNext: (node, passedProps = {}) =>
-    emit(EV_CONVONEXT, { node, passedProps }),
-  onChatComplete: exitId => emit(EV_CONVOEND, { exitId }),
-  onChainProgress: lastNodeId => {
-    setStoreItem("progress", {
-      storyProgress: lastNodeId
-    });
-  }
-});
-
-const createFieldState = ({ sprites, canvas, tileEngine }) => {
-  return fieldState({
-    id: "field",
-    sprites,
-    canvas,
-    tileEngine
-  });
-};
-
-const createConversationState = ({ sprites }) => {
-  // Shouldn't really pass sprites just to play their anims, they should be self-managed.
-  return startConvo({
-    id: "conversation",
-    sprites,
-    onNext: props => {
-      convoIterator.goToNext({
-        currentActors: sprites
-      });
-    },
-    onEntry: props => {
-      convoIterator.start("m1", {
-        // This needs plugging in
-        currentActors: sprites
-      });
-    }
-  });
-};
-
-const createCurtainState = ({ ctx, direction, onFadeComplete }) => {
-  return curtainState({
-    id: "curtain",
-    ctx,
-    direction,
-    onFadeComplete
-  });
-};
-
-const createWorld = ({ areaId, worldData }) => {
-  const { entities, mapKey } = worldData.find(x => x.id === areaId);
-
-  return {
-    mapKey,
-    loadedEntities: entities.map(entity => Entity({ ...entity }))
-  };
-};
-
 const Scene = ({ areaId, onError = () => {} }) => {
   if (!areaId) {
     /* Use error code const */
@@ -109,7 +50,65 @@ const Scene = ({ areaId, onError = () => {} }) => {
     return;
   }
 
-  initKeys();
+  const convoIterator = ConversationIterator({
+    collection: mainFlow,
+    onChatStarted: (node, passedProps = {}) =>
+      emit(EV_CONVOSTART, { node, passedProps }),
+    onChatNext: (node, passedProps = {}) =>
+      emit(EV_CONVONEXT, { node, passedProps }),
+    onChatComplete: exitId => emit(EV_CONVOEND, { exitId }),
+    onChainProgress: lastNodeId => {
+      setStoreItem("progress", {
+        storyProgress: lastNodeId
+      });
+    }
+  });
+
+  const createFieldState = ({ sprites, canvas, tileEngine }) => {
+    return fieldState({
+      id: "field",
+      sprites,
+      canvas,
+      tileEngine
+    });
+  };
+
+  const createConversationState = ({ sprites }) => {
+    // Shouldn't really pass sprites just to play their anims, they should be self-managed.
+    return startConvo({
+      id: "conversation",
+      sprites,
+      onNext: props => {
+        convoIterator.goToNext({
+          currentActors: sprites
+        });
+      },
+      onEntry: props => {
+        convoIterator.start("m1", {
+          // This needs plugging in
+          currentActors: sprites
+        });
+      }
+    });
+  };
+
+  const createCurtainState = ({ ctx, direction, onFadeComplete }) => {
+    return curtainState({
+      id: "curtain",
+      ctx,
+      direction,
+      onFadeComplete
+    });
+  };
+
+  const createWorld = ({ areaId, worldData }) => {
+    const { entities, mapKey } = worldData.find(x => x.id === areaId);
+
+    return {
+      mapKey,
+      loadedEntities: entities.map(entity => Entity({ ...entity }))
+    };
+  };
 
   const { loadedEntities, mapKey } = createWorld({ areaId, worldData });
   const map = dataAssets[mapKey];
@@ -217,22 +216,16 @@ const Scene = ({ areaId, onError = () => {} }) => {
     sceneStateMachine.pop();
     justTriggered = true;
   });
+
+  on(EV_CONVOCHOICE, choice =>
+    convoIterator.goToExact(choice.to, {
+      currentActors: sprites
+    })
+  );
   //
-
-  UI({
-    onConversationChoice: choice => {
-      convoIterator.goToExact(choice.to, {
-        currentActors: sprites
-      });
-    }
-  }).start();
-
-  let t = new Date();
 
   return GameLoop({
     update: () => {
-      console.log("Scene instance:", t);
-
       sceneStateMachine.update();
       screenEffectsStateMachine.update();
 
@@ -297,6 +290,12 @@ load(
   };
 
   on(EV_SCENECHANGE, loadScene);
+
+  initKeys();
+
+  UI({
+    onConversationChoice: choice => emit(EV_CONVOCHOICE, choice)
+  }).start();
 
   loadScene({ areaId: "area1" });
 });
