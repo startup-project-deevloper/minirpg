@@ -1,4 +1,4 @@
-import { keyPressed } from "kontra";
+import onPush from "../input/onPush";
 
 export default ({
   id,
@@ -8,7 +8,7 @@ export default ({
   onNext = () => {}
 }) => {
   let isComplete = false;
-  let pushed = false;
+  const onInteractionPushed = onPush("e", () => onNext());
 
   return {
     id,
@@ -19,19 +19,14 @@ export default ({
       onEntry();
     },
     update: () => {
+      onInteractionPushed();
+
       sprites.map(sprite => {
         if (!sprite.manualAnimation) {
           sprite.playAnimation("idle");
         }
         sprite.update();
       });
-
-      if (keyPressed("e") && !pushed) {
-        onNext();
-        pushed = true;
-      } else if (pushed && !keyPressed("e")) {
-        pushed = false;
-      }
     },
     exit: () => onExit()
   };

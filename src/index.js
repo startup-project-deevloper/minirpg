@@ -3,29 +3,38 @@
 * https://pixel-poem.itch.io/dungeon-assetpuck
 * https://0x72.itch.io/dungeontileset-ii
 */
-import { init, GameLoop, load, initKeys, keyPressed } from "kontra";
-import UI from "./ui";
-import Entity from "./entity";
-import StateMachine from "./fsm";
-import startConvo from "./states/startConvo";
+
+/* Overarching libs */
+import { init, GameLoop, load, initKeys } from "kontra";
+import UI from "./ui/ui";
+
+/* Common utils, objects and events */
+import Entity from "./objects/entity";
+import { circleCollision } from "./common/helpers";
+import { ENTITY_TYPE } from "./common/consts";
 import {
-  emit,
   on,
-  EV_CONVOEND,
+  emit,
   EV_SCENECHANGE,
-  EV_CONVOCHOICE
-} from "./events";
-import { circleCollision } from "./helpers";
-import { ENTITY_TYPE } from "./consts";
+  EV_CONVOSTART,
+  EV_CONVONEXT,
+  EV_CONVOEND
+} from "./common/events";
+
+/* States for global use */
+import startConvo from "./states/startConvo";
 import fieldState from "./states/fieldState";
 import curtainState from "./states/curtainState";
 
-import SceneManager from "./sceneManager";
-import WorldManager from "./worldManager";
-import ConversationManager from "./conversationManager";
+/* Game managers */
+import SceneManager from "./managers/sceneManager";
+import WorldManager from "./managers/worldManager";
+import ConversationManager from "./managers/conversationManager";
+import ReactionManager from "./managers/reactionManager";
+import StateMachine from "./managers/stateManager";
 
+/* Canvas initialization */
 const { canvas } = init();
-
 const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 ctx.webkitImageSmoothingEnabled = false;
@@ -34,36 +43,86 @@ ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 ctx.scale(3, 3);
 
+/* Primary field scene */
 const FieldScene = ({ areaId }) => {
   /* World creation */
   const { createWorld } = WorldManager();
   const { loadedEntities, tileEngine } = createWorld({ areaId });
 
   /* Dialogue creation */
-  const { goToExact, goToNext, start } = ConversationManager();
+  const conversationManager = ConversationManager();
+
+  /* Main states creation */
+  const sceneStateMachine = StateMachine();
+  const screenEffectsStateMachine = StateMachine();
 
   /* All but the player are generated here */
+  const playerStart = loadedEntities.find(x => x.id === "entranceMarker");
+
   const player = Entity({
-    x: 0,
-    y: 0,
+    x: playerStart ? playerStart.x : 0,
+    y: playerStart ? playerStart.y : 0,
     name: "Player",
     id: "player",
     assetId: "player",
     controlledByUser: true
   });
 
-  /* TODO: make immutable? */
+  /* Sprites collection for easier render / updates */
   let sprites = [player, ...loadedEntities];
 
-  const sceneStateMachine = StateMachine();
-  const screenEffectsStateMachine = StateMachine();
+  /* Decide what happens on different player interaction events (was separated, seemed pointless at this stage) */
+  const reactionManager = ReactionManager([
+    {
+      type: ENTITY_TYPE.DOOR,
+      reactionEvent: firstAvailable => {
+        // TODO: Entities should manage their own animations (same problem seen elsewhere)
+        firstAvailable.playAnimation("open");
 
+        screenEffectsStateMachine.push(
+          curtainState({
+            id: "curtain",
+            ctx,
+            direction: -1,
+            onFadeComplete: () => {
+              emit(EV_SCENECHANGE, {
+                areaId: firstAvailable.customProperties.goesTo
+              });
+            }
+          })
+        );
+      }
+    },
+    {
+      type: ENTITY_TYPE.PICKUP,
+      reactionEvent: firstAvailable => (firstAvailable.ttl = 0)
+    },
+    {
+      type: ENTITY_TYPE.NPC,
+      reactionEvent: (firstAvailable, sprites) =>
+        sceneStateMachine.push(
+          startConvo({
+            id: "conversation",
+            sprites,
+            onNext: props => emit(EV_CONVONEXT),
+            onEntry: props =>
+              emit(EV_CONVOSTART, { startId: "m1", currentActors: sprites })
+          }),
+          {
+            currentActors: sprites.find(spr => spr.id === firstAvailable.id)
+          }
+        )
+    }
+  ]);
+
+  /* Bootstrap some states for when the scene loads */
   sceneStateMachine.push(
     fieldState({
       id: "field",
       sprites,
       canvas,
-      tileEngine
+      tileEngine,
+      reactionManager
     })
   );
 
@@ -75,103 +134,18 @@ const FieldScene = ({ areaId }) => {
     })
   );
 
-  // Experimental
-  const reactionRegister = {
-    [ENTITY_TYPE.DOOR]: (firstAvailable, sprites) => {
-      firstAvailable.playAnimation("open");
+  /* Scene events */
+  on(EV_CONVOEND, () => sceneStateMachine.pop());
 
-      screenEffectsStateMachine.push(
-        curtainState({
-          id: "curtain",
-          ctx,
-          direction: -1,
-          onFadeComplete: () => {
-            emit(EV_SCENECHANGE, {
-              areaId: firstAvailable.customProperties.goesTo
-            });
-          }
-        })
-      );
-    },
-    [ENTITY_TYPE.PICKUP]: (firstAvailable, sprites) => {
-      firstAvailable.ttl = 0;
-    },
-    [ENTITY_TYPE.NPC]: (firstAvailable, sprites) => {
-      sceneStateMachine.push(
-        startConvo({
-          id: "conversation",
-          sprites,
-          onNext: props => {
-            goToNext({
-              currentActors: sprites
-            });
-          },
-          onEntry: props => {
-            start("m1", {
-              // This needs plugging in
-              currentActors: sprites
-            });
-          }
-        }),
-        {
-          currentActors: sprites.find(spr => spr.id === firstAvailable.id)
-        }
-      );
-    }
-  };
+  /* Finally, enable the UI (TODO: Double check this is clearing properly) */
+  UI({
+    conversationManager,
+    sprites
+  }).start();
 
-  let pushed = false;
-  let justTriggered = false;
-  const onCollisionDetected = (origin, colliders = []) => {
-    if (
-      colliders.length &&
-      origin.controlledByUser &&
-      keyPressed("e") &&
-      !pushed
-    ) {
-      if (!justTriggered) {
-        const firstAvailable = colliders[0];
-        const reaction = reactionRegister[firstAvailable.type];
-
-        /* Not all things will have a reaction set */
-        if (reaction) {
-          reaction(firstAvailable, sprites);
-        }
-      } else {
-        justTriggered = false;
-      }
-
-      pushed = true;
-    } else if (pushed && !keyPressed("e")) {
-      pushed = false;
-    }
-  };
-
-  const entranceMarker = sprites.find(x => x.id === "entranceMarker");
-
-  if (entranceMarker) {
-    player.x = entranceMarker.x;
-    player.y = entranceMarker.y;
-  }
-
-  // Experimental
-  on(EV_CONVOEND, () => {
-    sceneStateMachine.pop();
-    justTriggered = true;
-  });
-
-  on(EV_CONVOCHOICE, choice =>
-    goToExact(choice.to, {
-      currentActors: sprites
-    })
-  );
-  //
-
+  /* Primary loop */
   return GameLoop({
     update: () => {
-      sceneStateMachine.update();
-      screenEffectsStateMachine.update();
-
       let collisions = [];
 
       /* Check for anything dead (GC does the rest) */
@@ -191,8 +165,13 @@ const FieldScene = ({ areaId }) => {
         }
       });
 
-      /* This would be a great place to sort by distance also. */
-      onCollisionDetected(player, collisions.filter(c => c.id !== player.id));
+      screenEffectsStateMachine.update();
+
+      /* This would be a great place to sort by distance also (todo later). */
+      sceneStateMachine.update({
+        origin: player,
+        collisions: collisions.filter(c => c.id !== player.id)
+      });
     },
     render: () => {
       tileEngine.render();
@@ -216,15 +195,10 @@ load(
   "assets/gameData/entityData.json",
   "assets/gameData/worldData.json"
 ).then(assets => {
-  const sceneManager = SceneManager({ sceneObject: FieldScene });
-
-  UI({
-    onConversationChoice: choice => emit(EV_CONVOCHOICE, choice)
-  }).start();
-
   initKeys();
 
+  const sceneManager = SceneManager({ sceneObject: FieldScene });
   sceneManager.loadScene({ areaId: "area1" });
 
-  on(EV_SCENECHANGE, sceneManager.loadScene);
+  on(EV_SCENECHANGE, props => sceneManager.loadScene({ ...props }));
 });

@@ -5,13 +5,15 @@ export const EV_CONVOEND = "ev.convoEnd";
 export const EV_CONVONEXT = "ev.convoNext";
 export const EV_CONVOCHOICE = "ev.convoChoice";
 export const EV_SCENECHANGE = "ev.sceneChange";
+export const EV_INTERACTION = "ev.onInteraction";
 
 export const EVENTS = [
   EV_CONVOSTART,
   EV_CONVOEND,
   EV_CONVONEXT,
   EV_CONVOCHOICE,
-  EV_SCENECHANGE
+  EV_SCENECHANGE,
+  EV_INTERACTION
 ];
 
 const hasEvent = e => EVENTS.some(s => s === e);

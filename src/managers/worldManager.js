@@ -1,5 +1,5 @@
 import { dataAssets, TileEngine } from "kontra";
-import Entity from "./entity";
+import Entity from "../objects/entity";
 
 export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
   const { dataKey } = options;

@@ -36,14 +36,15 @@ export default ({
   };
 
   return {
-    currentIndex: () => index(),
+    isComplete: () => isComplete,
+    currentIndex: () => index,
     // TODO: Can't we just alias or condense these?
     start: (query, props = {}) => {
       const queriedNode = _queryNode(query);
 
       index = queriedNode.index;
       currentNode = queriedNode;
-      setIsRunning = true;
+      isRunning = true;
       isComplete = false;
 
       onChatStarted(queriedNode, props);
@@ -62,17 +63,17 @@ export default ({
     },
     goToNext: (props = {}) => {
       // We need to run this 'after' the finish so it avoids chained exec on exit.
-      if (!isRunning()) return;
+      if (!isRunning) return;
 
       if (isComplete) {
-        setIsRunning = false;
+        isRunning = false;
 
         return;
       }
 
       // TODO: Beware, if you're not checking for existent choices, this will error out,
       // or do something a little funky. May want to check for choices here instead?
-      const { id, to, choices, actions } = currentNode();
+      const { id, to, choices, actions } = currentNode;
 
       // Wait if choices are presented.
       if (choices.length) return;

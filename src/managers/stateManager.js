@@ -9,11 +9,11 @@ export default () => {
         top(states).enter(props);
       }
     },
-    update: () => {
+    update: props => {
       const currentState = top(states);
       if (!currentState) return;
 
-      currentState.update();
+      currentState.update(props);
 
       // Attempts an auto-complete if internal isComplete has been set somehow.
       if (currentState.isComplete()) {

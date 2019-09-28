@@ -1,5 +1,11 @@
 import m from "mithril";
-import { on, EV_CONVOSTART, EV_CONVONEXT, EV_CONVOEND } from "./events";
+import {
+  on,
+  off,
+  EV_CONVOSTART,
+  EV_CONVONEXT,
+  EV_CONVOEND
+} from "../common/events";
 
 const typeWriter = ({ text, onTyped = str => {}, onFinished = () => {} }) => {
   let animId = "";
@@ -15,9 +21,9 @@ const typeWriter = ({ text, onTyped = str => {}, onFinished = () => {} }) => {
     str = s + text.charAt(i);
 
     i += 1;
-    onTyped(str());
+    onTyped(str);
 
-    requestAnimationFrame(() => t(str(), i));
+    requestAnimationFrame(() => t(str, i));
   };
 
   return {
@@ -30,14 +36,19 @@ const Shell = ({ attrs }) => {
   let name = "";
   let text = "";
   let choices = [];
+  let actors = [];
 
-  const onConvoNext = props => {
+  const onConvoStart = ({ startId, currentActors }) => {
     if (isTyping) return;
-    isTypine = true;
+    isTyping = true;
 
-    const actorName = props.node.actor
-      ? props.passedProps.currentActors.find(x => props.node.actor === x.id)
-          .name
+    actors = currentActors;
+
+    const props = attrs.conversationManager.start(startId);
+    if (!props) return;
+
+    const actorName = props.actor
+      ? actors.find(x => props.actor === x.id).name
       : null;
     name = actorName;
     text = "";
@@ -48,34 +59,97 @@ const Shell = ({ attrs }) => {
 
     // Start typewriter effect
     typeWriter({
-      text: props.node.text,
+      text: props.text,
       onTyped: str => {
         text = str;
         m.redraw();
       },
       onFinished: () => {
-        isTypine = false;
-        choices = props.node.choices.length ? props.node.choices : [];
+        isTyping = false;
+        choices = props.choices.length ? props.choices : [];
+        m.redraw();
+      }
+    }).start();
+  };
+
+  const onConvoNext = () => {
+    if (isTyping) return;
+    isTyping = true;
+
+    const props = attrs.conversationManager.goToNext();
+    if (!props) return;
+
+    const actorName = props.actor
+      ? actors.find(x => props.actor === x.id).name
+      : null;
+    name = actorName;
+    text = "";
+    choices = [];
+
+    // Apparently this needs to be forced (will double check)
+    m.redraw();
+
+    // Start typewriter effect
+    typeWriter({
+      text: props.text,
+      onTyped: str => {
+        text = str;
+        m.redraw();
+      },
+      onFinished: () => {
+        isTyping = false;
+        choices = props.choices.length ? props.choices : [];
         m.redraw();
       }
     }).start();
   };
 
   const onChoiceSelected = choice => {
+    if (isTyping) return;
+    isTyping = true;
+
+    const props = attrs.conversationManager.goToExact(choice.to);
+    if (!props) return;
+
+    const actorName = props.actor
+      ? actors.find(x => props.actor === x.id).name
+      : null;
+    name = actorName;
+    text = "";
     choices = [];
-    attrs.onConversationChoice(choice);
+
+    // Apparently this needs to be forced (will double check)
+    m.redraw();
+
+    // Start typewriter effect
+    typeWriter({
+      text: props.text,
+      onTyped: str => {
+        text = str;
+        m.redraw();
+      },
+      onFinished: () => {
+        isTyping = false;
+        choices = props.choices.length ? props.choices : [];
+        m.redraw();
+      }
+    }).start();
   };
 
   const onConvoEnd = () => {
+    isTyping = false;
     name = "";
     text = "";
     choices = [];
+    actors = [];
     m.redraw();
   };
 
   return {
     oninit: () => {
-      on(EV_CONVOSTART, onConvoNext);
+      console.log("UI initialized.");
+      /* TODO: Make sure to unbind these on unload! */
+      on(EV_CONVOSTART, onConvoStart);
       on(EV_CONVONEXT, onConvoNext);
       on(EV_CONVOEND, onConvoEnd);
     },
@@ -111,14 +185,15 @@ const Shell = ({ attrs }) => {
 
 export default (
   props = {
+    conversationManager,
+    sprites,
     onConversationChoice: () => {}
   }
 ) => {
   return {
-    start: () => {
+    start: () =>
       m.mount(document.getElementById("ui"), {
         view: () => m(Shell, props)
-      });
-    }
+      })
   };
 };

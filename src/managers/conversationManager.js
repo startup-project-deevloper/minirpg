@@ -1,6 +1,6 @@
 import { setStoreItem, dataAssets } from "kontra";
-import { emit, EV_CONVONEXT, EV_CONVOSTART, EV_CONVOEND } from "./events";
-import ConversationIterator from "./conversationIterator";
+import { emit, EV_CONVONEXT, EV_CONVOSTART, EV_CONVOEND } from "../common/events";
+import ConversationIterator from "../common/conversationIterator";
 
 export default (
   options = { dataKey: "assets/gameData/conversationData.json" }

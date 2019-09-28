@@ -6194,13 +6194,13 @@ m.PromisePolyfill = require("./promise/polyfill")
 
 module.exports = m
 
-},{"./hyperscript":"node_modules/mithril/hyperscript.js","./request":"node_modules/mithril/request.js","./mount-redraw":"node_modules/mithril/mount-redraw.js","./route":"node_modules/mithril/route.js","./render":"node_modules/mithril/render.js","./querystring/parse":"node_modules/mithril/querystring/parse.js","./querystring/build":"node_modules/mithril/querystring/build.js","./pathname/parse":"node_modules/mithril/pathname/parse.js","./pathname/build":"node_modules/mithril/pathname/build.js","./render/vnode":"node_modules/mithril/render/vnode.js","./promise/polyfill":"node_modules/mithril/promise/polyfill.js"}],"src/events.js":[function(require,module,exports) {
+},{"./hyperscript":"node_modules/mithril/hyperscript.js","./request":"node_modules/mithril/request.js","./mount-redraw":"node_modules/mithril/mount-redraw.js","./route":"node_modules/mithril/route.js","./render":"node_modules/mithril/render.js","./querystring/parse":"node_modules/mithril/querystring/parse.js","./querystring/build":"node_modules/mithril/querystring/build.js","./pathname/parse":"node_modules/mithril/pathname/parse.js","./pathname/build":"node_modules/mithril/pathname/build.js","./render/vnode":"node_modules/mithril/render/vnode.js","./promise/polyfill":"node_modules/mithril/promise/polyfill.js"}],"src/common/events.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.emit = exports.off = exports.on = exports.EVENTS = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
+exports.emit = exports.off = exports.on = exports.EVENTS = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
 
 var _kontra = require("kontra");
 
@@ -6214,7 +6214,9 @@ var EV_CONVOCHOICE = "ev.convoChoice";
 exports.EV_CONVOCHOICE = EV_CONVOCHOICE;
 var EV_SCENECHANGE = "ev.sceneChange";
 exports.EV_SCENECHANGE = EV_SCENECHANGE;
-var EVENTS = [EV_CONVOSTART, EV_CONVOEND, EV_CONVONEXT, EV_CONVOCHOICE, EV_SCENECHANGE];
+var EV_INTERACTION = "ev.onInteraction";
+exports.EV_INTERACTION = EV_INTERACTION;
+var EVENTS = [EV_CONVOSTART, EV_CONVOEND, EV_CONVONEXT, EV_CONVOCHOICE, EV_SCENECHANGE, EV_INTERACTION];
 exports.EVENTS = EVENTS;
 
 var hasEvent = function hasEvent(e) {
@@ -6241,7 +6243,7 @@ var emit = function emit(e) {
 };
 
 exports.emit = emit;
-},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/ui.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/ui/ui.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6251,7 +6253,7 @@ exports.default = void 0;
 
 var _mithril = _interopRequireDefault(require("mithril"));
 
-var _events = require("./events");
+var _events = require("../common/events");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -6276,9 +6278,9 @@ var typeWriter = function typeWriter(_ref) {
 
     str = s + text.charAt(i);
     i += 1;
-    onTyped(str());
+    onTyped(str);
     requestAnimationFrame(function () {
-      return t(str(), i);
+      return t(str, i);
     });
   };
 
@@ -6297,12 +6299,18 @@ var Shell = function Shell(_ref2) {
   var name = "";
   var text = "";
   var choices = [];
+  var actors = [];
 
-  var onConvoNext = function onConvoNext(props) {
+  var onConvoStart = function onConvoStart(_ref3) {
+    var startId = _ref3.startId,
+        currentActors = _ref3.currentActors;
     if (isTyping) return;
-    isTypine = true;
-    var actorName = props.node.actor ? props.passedProps.currentActors.find(function (x) {
-      return props.node.actor === x.id;
+    isTyping = true;
+    actors = currentActors;
+    var props = attrs.conversationManager.start(startId);
+    if (!props) return;
+    var actorName = props.actor ? actors.find(function (x) {
+      return props.actor === x.id;
     }).name : null;
     name = actorName;
     text = "";
@@ -6312,15 +6320,46 @@ var Shell = function Shell(_ref2) {
 
 
     typeWriter({
-      text: props.node.text,
+      text: props.text,
       onTyped: function onTyped(str) {
         text = str;
 
         _mithril.default.redraw();
       },
       onFinished: function onFinished() {
-        isTypine = false;
-        choices = props.node.choices.length ? props.node.choices : [];
+        isTyping = false;
+        choices = props.choices.length ? props.choices : [];
+
+        _mithril.default.redraw();
+      }
+    }).start();
+  };
+
+  var onConvoNext = function onConvoNext() {
+    if (isTyping) return;
+    isTyping = true;
+    var props = attrs.conversationManager.goToNext();
+    if (!props) return;
+    var actorName = props.actor ? actors.find(function (x) {
+      return props.actor === x.id;
+    }).name : null;
+    name = actorName;
+    text = "";
+    choices = []; // Apparently this needs to be forced (will double check)
+
+    _mithril.default.redraw(); // Start typewriter effect
+
+
+    typeWriter({
+      text: props.text,
+      onTyped: function onTyped(str) {
+        text = str;
+
+        _mithril.default.redraw();
+      },
+      onFinished: function onFinished() {
+        isTyping = false;
+        choices = props.choices.length ? props.choices : [];
 
         _mithril.default.redraw();
       }
@@ -6328,21 +6367,52 @@ var Shell = function Shell(_ref2) {
   };
 
   var onChoiceSelected = function onChoiceSelected(choice) {
-    choices = [];
-    attrs.onConversationChoice(choice);
+    if (isTyping) return;
+    isTyping = true;
+    var props = attrs.conversationManager.goToExact(choice.to);
+    if (!props) return;
+    var actorName = props.actor ? actors.find(function (x) {
+      return props.actor === x.id;
+    }).name : null;
+    name = actorName;
+    text = "";
+    choices = []; // Apparently this needs to be forced (will double check)
+
+    _mithril.default.redraw(); // Start typewriter effect
+
+
+    typeWriter({
+      text: props.text,
+      onTyped: function onTyped(str) {
+        text = str;
+
+        _mithril.default.redraw();
+      },
+      onFinished: function onFinished() {
+        isTyping = false;
+        choices = props.choices.length ? props.choices : [];
+
+        _mithril.default.redraw();
+      }
+    }).start();
   };
 
   var onConvoEnd = function onConvoEnd() {
+    isTyping = false;
     name = "";
     text = "";
     choices = [];
+    actors = [];
 
     _mithril.default.redraw();
   };
 
   return {
     oninit: function oninit() {
-      (0, _events.on)(_events.EV_CONVOSTART, onConvoNext);
+      console.log("UI initialized.");
+      /* TODO: Make sure to unbind these on unload! */
+
+      (0, _events.on)(_events.EV_CONVOSTART, onConvoStart);
       (0, _events.on)(_events.EV_CONVONEXT, onConvoNext);
       (0, _events.on)(_events.EV_CONVOEND, onConvoEnd);
     },
@@ -6372,11 +6442,13 @@ var Shell = function Shell(_ref2) {
 
 var _default = function _default() {
   var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
+    conversationManager: conversationManager,
+    sprites: sprites,
     onConversationChoice: function onConversationChoice() {}
   };
   return {
     start: function start() {
-      _mithril.default.mount(document.getElementById("ui"), {
+      return _mithril.default.mount(document.getElementById("ui"), {
         view: function view() {
           return (0, _mithril.default)(Shell, props);
         }
@@ -6386,7 +6458,7 @@ var _default = function _default() {
 };
 
 exports.default = _default;
-},{"mithril":"node_modules/mithril/index.js","./events":"src/events.js"}],"src/entity.js":[function(require,module,exports) {
+},{"mithril":"node_modules/mithril/index.js","../common/events":"src/common/events.js"}],"src/objects/entity.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6453,104 +6525,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/fsm.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var top = function top(arr) {
-  return arr[arr.length - 1];
-};
-
-var _default = function _default() {
-  var states = [];
-  return {
-    push: function push(state, props) {
-      if (!states.some(function (s) {
-        return s.id === state.id;
-      })) {
-        states.push(state);
-        top(states).enter(props);
-      }
-    },
-    update: function update() {
-      var currentState = top(states);
-      if (!currentState) return;
-      currentState.update(); // Attempts an auto-complete if internal isComplete has been set somehow.
-
-      if (currentState.isComplete()) {
-        currentState.exit();
-        states.pop();
-      }
-    },
-    pop: function pop() {
-      // Unlike above, some states may require manual intervention.
-      var currentState = top(states);
-      currentState.exit();
-      states.pop();
-    }
-  };
-};
-
-exports.default = _default;
-},{}],"src/states/startConvo.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _kontra = require("kontra");
-
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      sprites = _ref.sprites,
-      _ref$onEntry = _ref.onEntry,
-      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
-      _ref$onExit = _ref.onExit,
-      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit,
-      _ref$onNext = _ref.onNext,
-      onNext = _ref$onNext === void 0 ? function () {} : _ref$onNext;
-  var _isComplete = false;
-  var pushed = false;
-  return {
-    id: id,
-    isComplete: function isComplete() {
-      return _isComplete;
-    },
-    enter: function enter(props) {
-      console.log("Player entered a conversational state:");
-      console.log(props);
-      onEntry();
-    },
-    update: function update() {
-      sprites.map(function (sprite) {
-        if (!sprite.manualAnimation) {
-          sprite.playAnimation("idle");
-        }
-
-        sprite.update();
-      });
-
-      if ((0, _kontra.keyPressed)("e") && !pushed) {
-        onNext();
-        pushed = true;
-      } else if (pushed && !(0, _kontra.keyPressed)("e")) {
-        pushed = false;
-      }
-    },
-    exit: function exit() {
-      return onExit();
-    }
-  };
-};
-
-exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/helpers.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/common/helpers.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6609,7 +6584,7 @@ var circleCollision = function circleCollision(collider, targets) {
 };
 
 exports.circleCollision = circleCollision;
-},{}],"src/consts.js":[function(require,module,exports) {
+},{}],"src/common/consts.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6627,7 +6602,7 @@ var ENTITY_TYPE = {
   PLAYER: 99
 };
 exports.ENTITY_TYPE = ENTITY_TYPE;
-},{}],"src/states/fieldState.js":[function(require,module,exports) {
+},{}],"src/input/onPush.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6637,25 +6612,130 @@ exports.default = void 0;
 
 var _kontra = require("kontra");
 
+var _default = function _default(key) {
+  var cb = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function () {};
+  var pushed = false;
+  return function (props) {
+    if (!pushed && (0, _kontra.keyPressed)(key)) {
+      cb(props);
+      pushed = true;
+    } else if (pushed && !(0, _kontra.keyPressed)("e")) {
+      pushed = false;
+    }
+  };
+};
+
+exports.default = _default;
+},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/states/startConvo.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _onPush = _interopRequireDefault(require("../input/onPush"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 var _default = function _default(_ref) {
   var id = _ref.id,
       sprites = _ref.sprites,
-      canvas = _ref.canvas,
-      tileEngine = _ref.tileEngine,
       _ref$onEntry = _ref.onEntry,
       onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
       _ref$onExit = _ref.onExit,
-      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
+      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit,
+      _ref$onNext = _ref.onNext,
+      onNext = _ref$onNext === void 0 ? function () {} : _ref$onNext;
   var _isComplete = false;
+  var onInteractionPushed = (0, _onPush.default)("e", function () {
+    return onNext();
+  });
   return {
     id: id,
     isComplete: function isComplete() {
       return _isComplete;
     },
     enter: function enter(props) {
+      console.log("Player entered a conversational state:");
+      console.log(props);
       onEntry();
     },
     update: function update() {
+      onInteractionPushed();
+      sprites.map(function (sprite) {
+        if (!sprite.manualAnimation) {
+          sprite.playAnimation("idle");
+        }
+
+        sprite.update();
+      });
+    },
+    exit: function exit() {
+      return onExit();
+    }
+  };
+};
+
+exports.default = _default;
+},{"../input/onPush":"src/input/onPush.js"}],"src/states/fieldState.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _kontra = require("kontra");
+
+var _onPush = _interopRequireDefault(require("../input/onPush"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var _default = function _default(_ref) {
+  var id = _ref.id,
+      sprites = _ref.sprites,
+      canvas = _ref.canvas,
+      tileEngine = _ref.tileEngine,
+      reactionManager = _ref.reactionManager,
+      _ref$onEntry = _ref.onEntry,
+      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
+      _ref$onExit = _ref.onExit,
+      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
+  var _isComplete = false;
+  var interactionCooldown = false;
+  /* TODO: Use consts on keys also */
+
+  var onInteractionPushed = (0, _onPush.default)("e", function (_ref2) {
+    var origin = _ref2.origin,
+        _ref2$collisions = _ref2.collisions,
+        collisions = _ref2$collisions === void 0 ? [] : _ref2$collisions;
+
+    if (collisions.length && origin.controlledByUser) {
+      if (!interactionCooldown) {
+        var firstAvailable = collisions[0];
+        var reactionData = reactionManager.get(firstAvailable.type);
+        /* Not all things will have a reaction set, plus they might expect
+        different properties to be passed in future. */
+
+        if (reactionData) {
+          reactionData.reactionEvent(firstAvailable, sprites);
+        }
+      } else {
+        interactionCooldown = false;
+      }
+    }
+  });
+  return {
+    id: id,
+    isComplete: function isComplete() {
+      return _isComplete;
+    },
+    enter: function enter(props) {
+      return onEntry();
+    },
+    update: function update(props) {
+      onInteractionPushed(props);
       sprites.map(function (sprite) {
         // sprite is beyond the left edge
         if (sprite.x < 0) {
@@ -6739,13 +6819,13 @@ var _default = function _default(_ref) {
       });
     },
     exit: function exit() {
-      onExit();
+      return onExit();
     }
   };
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/states/curtainState.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../input/onPush":"src/input/onPush.js"}],"src/states/curtainState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6785,7 +6865,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{}],"src/sceneManager.js":[function(require,module,exports) {
+},{}],"src/managers/sceneManager.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6806,7 +6886,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{}],"src/worldManager.js":[function(require,module,exports) {
+},{}],"src/managers/worldManager.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6816,7 +6896,7 @@ exports.default = void 0;
 
 var _kontra = require("kontra");
 
-var _entity = _interopRequireDefault(require("./entity"));
+var _entity = _interopRequireDefault(require("../objects/entity"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -6855,7 +6935,7 @@ var _default = function _default() {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","./entity":"src/entity.js"}],"src/conversationIterator.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../objects/entity":"src/objects/entity.js"}],"src/common/conversationIterator.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6876,7 +6956,7 @@ var _default = function _default(_ref) {
   var index = 0;
   var currentNode = conversationData[index];
   var isRunning = false;
-  var isComplete = false;
+  var _isComplete = false;
 
   var _displayNode = function _displayNode(queriedNode) {
     if (queriedNode) {
@@ -6899,8 +6979,11 @@ var _default = function _default(_ref) {
   };
 
   return {
+    isComplete: function isComplete() {
+      return _isComplete;
+    },
     currentIndex: function currentIndex() {
-      return index();
+      return index;
     },
     // TODO: Can't we just alias or condense these?
     start: function start(query) {
@@ -6910,8 +6993,8 @@ var _default = function _default(_ref) {
 
       index = queriedNode.index;
       currentNode = queriedNode;
-      setIsRunning = true;
-      isComplete = false;
+      isRunning = true;
+      _isComplete = false;
       onChatStarted(queriedNode, props);
       return _displayNode(queriedNode);
     },
@@ -6928,21 +7011,20 @@ var _default = function _default(_ref) {
     goToNext: function goToNext() {
       var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
       // We need to run this 'after' the finish so it avoids chained exec on exit.
-      if (!isRunning()) return;
+      if (!isRunning) return;
 
-      if (isComplete) {
-        setIsRunning = false;
+      if (_isComplete) {
+        isRunning = false;
         return;
       } // TODO: Beware, if you're not checking for existent choices, this will error out,
       // or do something a little funky. May want to check for choices here instead?
 
 
-      var _currentNode = currentNode(),
+      var _currentNode = currentNode,
           id = _currentNode.id,
           to = _currentNode.to,
           choices = _currentNode.choices,
           actions = _currentNode.actions; // Wait if choices are presented.
-
 
       if (choices.length) return; // TODO: Consts please.
 
@@ -6964,7 +7046,7 @@ var _default = function _default(_ref) {
           console.log("Cancelled, nothing was saved.");
         }
 
-        isComplete = true;
+        _isComplete = true;
         onChatComplete(id);
         console.log("End reached, close the convo.");
         return;
@@ -6981,7 +7063,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{}],"src/conversationManager.js":[function(require,module,exports) {
+},{}],"src/managers/conversationManager.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6991,9 +7073,9 @@ exports.default = void 0;
 
 var _kontra = require("kontra");
 
-var _events = require("./events");
+var _events = require("../common/events");
 
-var _conversationIterator = _interopRequireDefault(require("./conversationIterator"));
+var _conversationIterator = _interopRequireDefault(require("../common/conversationIterator"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -7034,36 +7116,105 @@ var _default = function _default() {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","./events":"src/events.js","./conversationIterator":"src/conversationIterator.js"}],"src/index.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../common/events":"src/common/events.js","../common/conversationIterator":"src/common/conversationIterator.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _default = function _default() {
+  var reactions = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  return {
+    get: function get(type) {
+      return reactions.find(function (reaction) {
+        return reaction.type === type;
+      });
+    }
+  };
+};
+
+exports.default = _default;
+},{}],"src/managers/stateManager.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var top = function top(arr) {
+  return arr[arr.length - 1];
+};
+
+var _default = function _default() {
+  var states = [];
+  return {
+    push: function push(state, props) {
+      if (!states.some(function (s) {
+        return s.id === state.id;
+      })) {
+        states.push(state);
+        top(states).enter(props);
+      }
+    },
+    update: function update(props) {
+      var currentState = top(states);
+      if (!currentState) return;
+      currentState.update(props); // Attempts an auto-complete if internal isComplete has been set somehow.
+
+      if (currentState.isComplete()) {
+        currentState.exit();
+        states.pop();
+      }
+    },
+    pop: function pop() {
+      // Unlike above, some states may require manual intervention.
+      var currentState = top(states);
+      currentState.exit();
+      states.pop();
+    }
+  };
+};
+
+exports.default = _default;
+},{}],"src/index.js":[function(require,module,exports) {
 "use strict";
 
 var _kontra = require("kontra");
 
-var _ui = _interopRequireDefault(require("./ui"));
+var _ui = _interopRequireDefault(require("./ui/ui"));
 
-var _entity = _interopRequireDefault(require("./entity"));
+var _entity = _interopRequireDefault(require("./objects/entity"));
 
-var _fsm = _interopRequireDefault(require("./fsm"));
+var _helpers = require("./common/helpers");
+
+var _consts = require("./common/consts");
+
+var _events = require("./common/events");
 
 var _startConvo = _interopRequireDefault(require("./states/startConvo"));
-
-var _events = require("./events");
-
-var _helpers = require("./helpers");
-
-var _consts = require("./consts");
 
 var _fieldState = _interopRequireDefault(require("./states/fieldState"));
 
 var _curtainState = _interopRequireDefault(require("./states/curtainState"));
 
-var _sceneManager = _interopRequireDefault(require("./sceneManager"));
+var _sceneManager = _interopRequireDefault(require("./managers/sceneManager"));
 
-var _worldManager = _interopRequireDefault(require("./worldManager"));
+var _worldManager = _interopRequireDefault(require("./managers/worldManager"));
 
-var _conversationManager = _interopRequireDefault(require("./conversationManager"));
+var _conversationManager = _interopRequireDefault(require("./managers/conversationManager"));
+
+var _reactionManager = _interopRequireDefault(require("./managers/reactionManager"));
+
+var _stateManager = _interopRequireDefault(require("./managers/stateManager"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -7075,6 +7226,7 @@ function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.
 
 function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
 
+/* Canvas initialization */
 var _init = (0, _kontra.init)(),
     canvas = _init.canvas;
 
@@ -7085,10 +7237,9 @@ ctx.mozImageSmoothingEnabled = false;
 ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 ctx.scale(3, 3);
+/* Primary field scene */
 
 var FieldScene = function FieldScene(_ref) {
-  var _reactionRegister;
-
   var areaId = _ref.areaId;
 
   /* World creation */
@@ -7103,122 +7254,101 @@ var FieldScene = function FieldScene(_ref) {
   /* Dialogue creation */
 
 
-  var _ConversationManager = (0, _conversationManager.default)(),
-      goToExact = _ConversationManager.goToExact,
-      goToNext = _ConversationManager.goToNext,
-      start = _ConversationManager.start;
+  var conversationManager = (0, _conversationManager.default)();
+  /* Main states creation */
+
+  var sceneStateMachine = (0, _stateManager.default)();
+  var screenEffectsStateMachine = (0, _stateManager.default)();
   /* All but the player are generated here */
 
-
+  var playerStart = loadedEntities.find(function (x) {
+    return x.id === "entranceMarker";
+  });
   var player = (0, _entity.default)({
-    x: 0,
-    y: 0,
+    x: playerStart ? playerStart.x : 0,
+    y: playerStart ? playerStart.y : 0,
     name: "Player",
     id: "player",
     assetId: "player",
     controlledByUser: true
   });
-  /* TODO: make immutable? */
+  /* Sprites collection for easier render / updates */
 
   var sprites = [player].concat(_toConsumableArray(loadedEntities));
-  var sceneStateMachine = (0, _fsm.default)();
-  var screenEffectsStateMachine = (0, _fsm.default)();
+  /* Decide what happens on different player interaction events (was separated, seemed pointless at this stage) */
+
+  var reactionManager = (0, _reactionManager.default)([{
+    type: _consts.ENTITY_TYPE.DOOR,
+    reactionEvent: function reactionEvent(firstAvailable) {
+      // TODO: Entities should manage their own animations (same problem seen elsewhere)
+      firstAvailable.playAnimation("open");
+      screenEffectsStateMachine.push((0, _curtainState.default)({
+        id: "curtain",
+        ctx: ctx,
+        direction: -1,
+        onFadeComplete: function onFadeComplete() {
+          (0, _events.emit)(_events.EV_SCENECHANGE, {
+            areaId: firstAvailable.customProperties.goesTo
+          });
+        }
+      }));
+    }
+  }, {
+    type: _consts.ENTITY_TYPE.PICKUP,
+    reactionEvent: function reactionEvent(firstAvailable) {
+      return firstAvailable.ttl = 0;
+    }
+  }, {
+    type: _consts.ENTITY_TYPE.NPC,
+    reactionEvent: function reactionEvent(firstAvailable, sprites) {
+      return sceneStateMachine.push((0, _startConvo.default)({
+        id: "conversation",
+        sprites: sprites,
+        onNext: function onNext(props) {
+          return (0, _events.emit)(_events.EV_CONVONEXT);
+        },
+        onEntry: function onEntry(props) {
+          return (0, _events.emit)(_events.EV_CONVOSTART, {
+            startId: "m1",
+            currentActors: sprites
+          });
+        }
+      }), {
+        currentActors: sprites.find(function (spr) {
+          return spr.id === firstAvailable.id;
+        })
+      });
+    }
+  }]);
+  /* Bootstrap some states for when the scene loads */
+
   sceneStateMachine.push((0, _fieldState.default)({
     id: "field",
     sprites: sprites,
     canvas: canvas,
-    tileEngine: tileEngine
+    tileEngine: tileEngine,
+    reactionManager: reactionManager
   }));
   screenEffectsStateMachine.push((0, _curtainState.default)({
     id: "curtain",
     ctx: ctx,
     direction: 1
-  })); // Experimental
-
-  var reactionRegister = (_reactionRegister = {}, _defineProperty(_reactionRegister, _consts.ENTITY_TYPE.DOOR, function (firstAvailable, sprites) {
-    firstAvailable.playAnimation("open");
-    screenEffectsStateMachine.push((0, _curtainState.default)({
-      id: "curtain",
-      ctx: ctx,
-      direction: -1,
-      onFadeComplete: function onFadeComplete() {
-        (0, _events.emit)(_events.EV_SCENECHANGE, {
-          areaId: firstAvailable.customProperties.goesTo
-        });
-      }
-    }));
-  }), _defineProperty(_reactionRegister, _consts.ENTITY_TYPE.PICKUP, function (firstAvailable, sprites) {
-    firstAvailable.ttl = 0;
-  }), _defineProperty(_reactionRegister, _consts.ENTITY_TYPE.NPC, function (firstAvailable, sprites) {
-    sceneStateMachine.push((0, _startConvo.default)({
-      id: "conversation",
-      sprites: sprites,
-      onNext: function onNext(props) {
-        goToNext({
-          currentActors: sprites
-        });
-      },
-      onEntry: function onEntry(props) {
-        start("m1", {
-          // This needs plugging in
-          currentActors: sprites
-        });
-      }
-    }), {
-      currentActors: sprites.find(function (spr) {
-        return spr.id === firstAvailable.id;
-      })
-    });
-  }), _reactionRegister);
-  var pushed = false;
-  var justTriggered = false;
-
-  var onCollisionDetected = function onCollisionDetected(origin) {
-    var colliders = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-
-    if (colliders.length && origin.controlledByUser && (0, _kontra.keyPressed)("e") && !pushed) {
-      if (!justTriggered) {
-        var firstAvailable = colliders[0];
-        var reaction = reactionRegister[firstAvailable.type];
-        /* Not all things will have a reaction set */
-
-        if (reaction) {
-          reaction(firstAvailable, sprites);
-        }
-      } else {
-        justTriggered = false;
-      }
-
-      pushed = true;
-    } else if (pushed && !(0, _kontra.keyPressed)("e")) {
-      pushed = false;
-    }
-  };
-
-  var entranceMarker = sprites.find(function (x) {
-    return x.id === "entranceMarker";
-  });
-
-  if (entranceMarker) {
-    player.x = entranceMarker.x;
-    player.y = entranceMarker.y;
-  } // Experimental
-
+  }));
+  /* Scene events */
 
   (0, _events.on)(_events.EV_CONVOEND, function () {
-    sceneStateMachine.pop();
-    justTriggered = true;
+    return sceneStateMachine.pop();
   });
-  (0, _events.on)(_events.EV_CONVOCHOICE, function (choice) {
-    return goToExact(choice.to, {
-      currentActors: sprites
-    });
-  }); //
+  /* Finally, enable the UI (TODO: Double check this is clearing properly) */
+
+  (0, _ui.default)({
+    conversationManager: conversationManager,
+    sprites: sprites
+  }).start();
+  /* Primary loop */
 
   return (0, _kontra.GameLoop)({
     update: function update() {
-      sceneStateMachine.update();
-      screenEffectsStateMachine.update();
       var collisions = [];
       /* Check for anything dead (GC does the rest) */
 
@@ -7237,11 +7367,15 @@ var FieldScene = function FieldScene(_ref) {
           collisions.push(sprite);
         }
       });
-      /* This would be a great place to sort by distance also. */
+      screenEffectsStateMachine.update();
+      /* This would be a great place to sort by distance also (todo later). */
 
-      onCollisionDetected(player, collisions.filter(function (c) {
-        return c.id !== player.id;
-      }));
+      sceneStateMachine.update({
+        origin: player,
+        collisions: collisions.filter(function (c) {
+          return c.id !== player.id;
+        })
+      });
     },
     render: function render() {
       tileEngine.render();
@@ -7260,21 +7394,18 @@ TODO: Can we also const the dataKeys across the board plz. */
 
 
 (0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json").then(function (assets) {
+  (0, _kontra.initKeys)();
   var sceneManager = (0, _sceneManager.default)({
     sceneObject: FieldScene
   });
-  (0, _ui.default)({
-    onConversationChoice: function onConversationChoice(choice) {
-      return (0, _events.emit)(_events.EV_CONVOCHOICE, choice);
-    }
-  }).start();
-  (0, _kontra.initKeys)();
   sceneManager.loadScene({
     areaId: "area1"
   });
-  (0, _events.on)(_events.EV_SCENECHANGE, sceneManager.loadScene);
+  (0, _events.on)(_events.EV_SCENECHANGE, function (props) {
+    return sceneManager.loadScene(_objectSpread({}, props));
+  });
 });
-},{"kontra":"node_modules/kontra/kontra.mjs","./ui":"src/ui.js","./entity":"src/entity.js","./fsm":"src/fsm.js","./states/startConvo":"src/states/startConvo.js","./events":"src/events.js","./helpers":"src/helpers.js","./consts":"src/consts.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js","./sceneManager":"src/sceneManager.js","./worldManager":"src/worldManager.js","./conversationManager":"src/conversationManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./ui/ui":"src/ui/ui.js","./objects/entity":"src/objects/entity.js","./common/helpers":"src/common/helpers.js","./common/consts":"src/common/consts.js","./common/events":"src/common/events.js","./states/startConvo":"src/states/startConvo.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js","./managers/sceneManager":"src/managers/sceneManager.js","./managers/worldManager":"src/managers/worldManager.js","./managers/conversationManager":"src/managers/conversationManager.js","./managers/reactionManager":"src/managers/reactionManager.js","./managers/stateManager":"src/managers/stateManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -7302,7 +7433,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60341" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55854" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
