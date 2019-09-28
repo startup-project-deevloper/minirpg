@@ -1,7 +1,7 @@
-const top = arr => arr[arr.length - 1];
-
 export default () => {
   let states = [];
+  const top = arr => arr[arr.length - 1];
+
   return {
     push: (state, props) => {
       if (!states.some(s => s.id === state.id)) {
@@ -15,14 +15,12 @@ export default () => {
 
       currentState.update(props);
 
-      // Attempts an auto-complete if internal isComplete has been set somehow.
       if (currentState.isComplete()) {
         currentState.exit();
         states.pop();
       }
     },
     pop: () => {
-      // Unlike above, some states may require manual intervention.
       const currentState = top(states);
       currentState.exit();
       states.pop();

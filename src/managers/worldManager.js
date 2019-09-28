@@ -1,5 +1,5 @@
 import { dataAssets, TileEngine } from "kontra";
-import Entity from "../objects/entity";
+import Entity from "../sprites/entity";
 
 export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
   const { dataKey } = options;
@@ -9,11 +9,14 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
     createWorld: ({ areaId }) => {
       const { entities, mapKey } = worldData.find(x => x.id === areaId);
       const map = dataAssets[mapKey];
+      const tileEngine = TileEngine(map);
 
       return {
         mapKey,
-        tileEngine: TileEngine(map),
-        loadedEntities: entities.map(entity => Entity({ ...entity }))
+        tileEngine,
+        loadedEntities: entities.map(entity =>
+          Entity({ ...entity, tileEngine })
+        )
       };
     }
   };

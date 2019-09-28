@@ -4,12 +4,12 @@
 * https://0x72.itch.io/dungeontileset-ii
 */
 
-/* Overarching libs */
+/* Libs */
 import { init, GameLoop, load, initKeys } from "kontra";
 import UI from "./ui/ui";
 
 /* Common utils, objects and events */
-import Entity from "./objects/entity";
+import Entity from "./sprites/entity";
 import { circleCollision } from "./common/helpers";
 import { ENTITY_TYPE } from "./common/consts";
 import {
@@ -65,7 +65,8 @@ const FieldScene = ({ areaId }) => {
     name: "Player",
     id: "player",
     assetId: "player",
-    controlledByUser: true
+    controlledByUser: true,
+    tileEngine
   });
 
   /* Sprites collection for easier render / updates */
@@ -103,10 +104,13 @@ const FieldScene = ({ areaId }) => {
         sceneStateMachine.push(
           startConvo({
             id: "conversation",
-            sprites,
             onNext: props => emit(EV_CONVONEXT),
-            onEntry: props =>
-              emit(EV_CONVOSTART, { startId: "m1", currentActors: sprites })
+            // Note: should only effect current actors, not all sprites!
+            onExit: () => sprites.map(spr => (spr.movementDisabled = false)),
+            onEntry: props => {
+              emit(EV_CONVOSTART, { startId: "m1", currentActors: sprites });
+              sprites.map(spr => (spr.movementDisabled = true));
+            }
           }),
           {
             currentActors: sprites.find(spr => spr.id === firstAvailable.id)
@@ -120,7 +124,6 @@ const FieldScene = ({ areaId }) => {
     fieldState({
       id: "field",
       sprites,
-      canvas,
       tileEngine,
       reactionManager
     })
@@ -153,6 +156,8 @@ const FieldScene = ({ areaId }) => {
 
       /* Add a flag to sprite to enable/disable collision checks */
       sprites.map(sprite => {
+        sprite.update();
+
         const collidingWith = circleCollision(
           sprite,
           sprites.filter(s => s.id !== sprite.id)
@@ -164,8 +169,6 @@ const FieldScene = ({ areaId }) => {
           collisions.push(sprite);
         }
       });
-
-      screenEffectsStateMachine.update();
 
       /* This would be a great place to sort by distance also (todo later). */
       sceneStateMachine.update({
@@ -180,6 +183,8 @@ const FieldScene = ({ areaId }) => {
       sprites
         .sort((a, b) => Math.round(a.y - a.z) - Math.round(b.y - b.z))
         .forEach(sprite => sprite.render());
+
+      screenEffectsStateMachine.update();
     }
   });
 };

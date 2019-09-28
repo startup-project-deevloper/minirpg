@@ -2,7 +2,6 @@ import onPush from "../input/onPush";
 
 export default ({
   id,
-  sprites,
   onEntry = () => {},
   onExit = () => {},
   onNext = () => {}
@@ -13,21 +12,8 @@ export default ({
   return {
     id,
     isComplete: () => isComplete,
-    enter: props => {
-      console.log("Player entered a conversational state:");
-      console.log(props);
-      onEntry();
-    },
-    update: () => {
-      onInteractionPushed();
-
-      sprites.map(sprite => {
-        if (!sprite.manualAnimation) {
-          sprite.playAnimation("idle");
-        }
-        sprite.update();
-      });
-    },
+    enter: props => onEntry(),
+    update: () => onInteractionPushed(),
     exit: () => onExit()
   };
 };
