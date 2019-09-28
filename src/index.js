@@ -3,35 +3,26 @@
 * https://pixel-poem.itch.io/dungeon-assetpuck
 * https://0x72.itch.io/dungeontileset-ii
 */
-import {
-  init,
-  GameLoop,
-  load,
-  TileEngine,
-  dataAssets,
-  initKeys,
-  keyPressed,
-  setStoreItem
-} from "kontra";
+import { init, GameLoop, load, initKeys, keyPressed } from "kontra";
 import UI from "./ui";
 import Entity from "./entity";
-import ConversationIterator from "./conversationIterator";
 import StateMachine from "./fsm";
 import startConvo from "./states/startConvo";
 import {
   emit,
   on,
-  off,
-  EV_CONVONEXT,
-  EV_CONVOSTART,
   EV_CONVOEND,
   EV_SCENECHANGE,
   EV_CONVOCHOICE
 } from "./events";
 import { circleCollision } from "./helpers";
-import { mainFlow, ENTITY_TYPE, worldData } from "./data";
+import { ENTITY_TYPE } from "./consts";
 import fieldState from "./states/fieldState";
 import curtainState from "./states/curtainState";
+
+import SceneManager from "./sceneManager";
+import WorldManager from "./worldManager";
+import ConversationManager from "./conversationManager";
 
 const { canvas } = init();
 
@@ -43,76 +34,13 @@ ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 ctx.scale(3, 3);
 
-const Scene = ({ areaId, onError = () => {} }) => {
-  if (!areaId) {
-    /* Use error code const */
-    onError(0);
-    return;
-  }
+const FieldScene = ({ areaId }) => {
+  /* World creation */
+  const { createWorld } = WorldManager();
+  const { loadedEntities, tileEngine } = createWorld({ areaId });
 
-  const convoIterator = ConversationIterator({
-    collection: mainFlow,
-    onChatStarted: (node, passedProps = {}) =>
-      emit(EV_CONVOSTART, { node, passedProps }),
-    onChatNext: (node, passedProps = {}) =>
-      emit(EV_CONVONEXT, { node, passedProps }),
-    onChatComplete: exitId => emit(EV_CONVOEND, { exitId }),
-    onChainProgress: lastNodeId => {
-      setStoreItem("progress", {
-        storyProgress: lastNodeId
-      });
-    }
-  });
-
-  const createFieldState = ({ sprites, canvas, tileEngine }) => {
-    return fieldState({
-      id: "field",
-      sprites,
-      canvas,
-      tileEngine
-    });
-  };
-
-  const createConversationState = ({ sprites }) => {
-    // Shouldn't really pass sprites just to play their anims, they should be self-managed.
-    return startConvo({
-      id: "conversation",
-      sprites,
-      onNext: props => {
-        convoIterator.goToNext({
-          currentActors: sprites
-        });
-      },
-      onEntry: props => {
-        convoIterator.start("m1", {
-          // This needs plugging in
-          currentActors: sprites
-        });
-      }
-    });
-  };
-
-  const createCurtainState = ({ ctx, direction, onFadeComplete }) => {
-    return curtainState({
-      id: "curtain",
-      ctx,
-      direction,
-      onFadeComplete
-    });
-  };
-
-  const createWorld = ({ areaId, worldData }) => {
-    const { entities, mapKey } = worldData.find(x => x.id === areaId);
-
-    return {
-      mapKey,
-      loadedEntities: entities.map(entity => Entity({ ...entity }))
-    };
-  };
-
-  const { loadedEntities, mapKey } = createWorld({ areaId, worldData });
-  const map = dataAssets[mapKey];
-  const tileEngine = TileEngine(map);
+  /* Dialogue creation */
+  const { goToExact, goToNext, start } = ConversationManager();
 
   /* All but the player are generated here */
   const player = Entity({
@@ -124,14 +52,15 @@ const Scene = ({ areaId, onError = () => {} }) => {
     controlledByUser: true
   });
 
-  /* TODO: make immutable */
+  /* TODO: make immutable? */
   let sprites = [player, ...loadedEntities];
 
   const sceneStateMachine = StateMachine();
   const screenEffectsStateMachine = StateMachine();
 
   sceneStateMachine.push(
-    createFieldState({
+    fieldState({
+      id: "field",
       sprites,
       canvas,
       tileEngine
@@ -139,7 +68,8 @@ const Scene = ({ areaId, onError = () => {} }) => {
   );
 
   screenEffectsStateMachine.push(
-    createCurtainState({
+    curtainState({
+      id: "curtain",
       ctx,
       direction: 1
     })
@@ -151,7 +81,8 @@ const Scene = ({ areaId, onError = () => {} }) => {
       firstAvailable.playAnimation("open");
 
       screenEffectsStateMachine.push(
-        createCurtainState({
+        curtainState({
+          id: "curtain",
           ctx,
           direction: -1,
           onFadeComplete: () => {
@@ -167,8 +98,20 @@ const Scene = ({ areaId, onError = () => {} }) => {
     },
     [ENTITY_TYPE.NPC]: (firstAvailable, sprites) => {
       sceneStateMachine.push(
-        createConversationState({
-          sprites
+        startConvo({
+          id: "conversation",
+          sprites,
+          onNext: props => {
+            goToNext({
+              currentActors: sprites
+            });
+          },
+          onEntry: props => {
+            start("m1", {
+              // This needs plugging in
+              currentActors: sprites
+            });
+          }
         }),
         {
           currentActors: sprites.find(spr => spr.id === firstAvailable.id)
@@ -218,7 +161,7 @@ const Scene = ({ areaId, onError = () => {} }) => {
   });
 
   on(EV_CONVOCHOICE, choice =>
-    convoIterator.goToExact(choice.to, {
+    goToExact(choice.to, {
       currentActors: sprites
     })
   );
@@ -262,40 +205,26 @@ const Scene = ({ areaId, onError = () => {} }) => {
   });
 };
 
-/* Make sure to embed your tilesets or it'll run in to problems */
+/* Make sure to embed your tilesets or it'll run in to problems,
+TODO: Can we also const the dataKeys across the board plz. */
 load(
   "assets/tileimages/test.png",
   "assets/tiledata/test.json",
   "assets/entityimages/little_devil.png",
-  "assets/entityimages/little_orc.png"
+  "assets/entityimages/little_orc.png",
+  "assets/gameData/conversationData.json",
+  "assets/gameData/entityData.json",
+  "assets/gameData/worldData.json"
 ).then(assets => {
-  const handleOnErrored = code => {
-    if (code === 0) {
-      throw new Error("Critical: Cannot load an area without an id!");
-    }
-  };
-
-  const loadScene = props => {
-    /* TODO: Don't forget to unbind everything! */
-    console.info("==> Next Scene:", props);
-
-    // Curtain effects here (perhaps just use css?)
-    Scene({
-      ...props,
-      onError: c => {
-        off(EV_SCENECHANGE, loadScene);
-        handleOnErrored(c);
-      }
-    }).start();
-  };
-
-  on(EV_SCENECHANGE, loadScene);
-
-  initKeys();
+  const sceneManager = SceneManager({ sceneObject: FieldScene });
 
   UI({
     onConversationChoice: choice => emit(EV_CONVOCHOICE, choice)
   }).start();
 
-  loadScene({ areaId: "area1" });
+  initKeys();
+
+  sceneManager.loadScene({ areaId: "area1" });
+
+  on(EV_SCENECHANGE, sceneManager.loadScene);
 });

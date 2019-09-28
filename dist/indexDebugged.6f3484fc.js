@@ -4095,22 +4095,50 @@ let kontra = {
 };
 var _default = kontra;
 exports.default = _default;
+},{}],"src/sceneManager.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _default = function _default(_ref) {
+  var _ref$scenes = _ref.scenes,
+      scenes = _ref$scenes === void 0 ? [] : _ref$scenes;
+  var currentScene = null;
+  return {
+    loadScene: function loadScene(props) {
+      var areaId = props.areaId;
+      if (currentScene) currentScene.stop();
+
+      var _scenes$find = scenes.find(function (scene) {
+        return scene.areaId === areaId;
+      }),
+          Scene = _scenes$find.sceneObject;
+
+      currentScene = Scene(props);
+      currentScene.start();
+    }
+  };
+};
+
+exports.default = _default;
 },{}],"src/indexDebugged.js":[function(require,module,exports) {
 "use strict";
 
 var _kontra = require("kontra");
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+var _sceneManager = _interopRequireDefault(require("./sceneManager"));
 
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _init = (0, _kontra.init)(),
     canvas = _init.canvas;
 
 var Scene = function Scene(_ref) {
   var areaId = _ref.areaId;
+  console.info("==> Next Scene Loaded:", areaId);
   return (0, _kontra.GameLoop)({
     update: function update() {
       return console.log("Area Id:", areaId);
@@ -4120,21 +4148,25 @@ var Scene = function Scene(_ref) {
 };
 
 (0, _kontra.load)("assets/tileimages/test.png").then(function (assets) {
-  var loadScene = function loadScene(props) {
-    console.info("==> Next Scene:", props);
-    return Scene(_objectSpread({}, props)).start();
-  };
-
-  loadScene({
+  var sceneManager = (0, _sceneManager.default)({
+    scenes: [{
+      areaId: "area1",
+      sceneObject: Scene
+    }, {
+      areaId: "area2",
+      sceneObject: Scene
+    }]
+  });
+  sceneManager.loadScene({
     areaId: "area1"
   });
   setTimeout(function () {
-    loadScene({
+    sceneManager.loadScene({
       areaId: "area2"
     });
   }, 3000);
 });
-},{"kontra":"node_modules/kontra/kontra.mjs"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./sceneManager":"src/sceneManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -4162,7 +4194,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64078" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60341" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

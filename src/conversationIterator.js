@@ -1,22 +1,19 @@
-import { useState } from "./helpers";
-
 export default ({
-  collection,
+  conversationData,
   onChatStarted = (node, props) => {},
   onChatNext = (node, props) => {},
   onChatComplete = lastPositionSaved => {},
   onChainProgress = lastNodeId => {}
 }) => {
-  const [index, setIndex] = useState(0);
-  const [currentNode, setCurrentNode] = useState(collection[index()]);
-  const [isRunning, setIsRunning] = useState(false);
-
+  let index = 0;
+  let currentNode = conversationData[index];
+  let isRunning = false;
   let isComplete = false;
 
   const _displayNode = queriedNode => {
     if (queriedNode) {
-      setCurrentNode(queriedNode);
-      setIndex(queriedNode.index);
+      currentNode = queriedNode;
+      index = queriedNode.index;
       return queriedNode;
     } else {
       throw "No node match.";
@@ -24,8 +21,8 @@ export default ({
   };
 
   const _queryNode = query => {
-    const queriedNode = collection.length
-      ? collection.filter((node, index) => {
+    const queriedNode = conversationData.length
+      ? conversationData.filter((node, index) => {
           return query === node.id
             ? {
                 node,
@@ -44,9 +41,9 @@ export default ({
     start: (query, props = {}) => {
       const queriedNode = _queryNode(query);
 
-      setIndex(queriedNode.index);
-      setCurrentNode(queriedNode);
-      setIsRunning(true);
+      index = queriedNode.index;
+      currentNode = queriedNode;
+      setIsRunning = true;
       isComplete = false;
 
       onChatStarted(queriedNode, props);
@@ -56,8 +53,8 @@ export default ({
     goToExact: (query, props = {}) => {
       const queriedNode = _queryNode(query);
 
-      setIndex(queriedNode.index);
-      setCurrentNode(queriedNode);
+      index = queriedNode.index;
+      currentNode = queriedNode;
 
       onChatNext(queriedNode, props);
 
@@ -66,10 +63,10 @@ export default ({
     goToNext: (props = {}) => {
       // We need to run this 'after' the finish so it avoids chained exec on exit.
       if (!isRunning()) return;
-      
+
       if (isComplete) {
-        setIsRunning(false);
-        
+        setIsRunning = false;
+
         return;
       }
 
@@ -102,8 +99,8 @@ export default ({
 
       const queriedNode = _queryNode(to);
 
-      setIndex(queriedNode.index);
-      setCurrentNode(queriedNode);
+      index = queriedNode.index;
+      currentNode = queriedNode;
 
       onChatNext(queriedNode, props);
 

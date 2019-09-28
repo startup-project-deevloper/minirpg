@@ -1,5 +1,4 @@
-import { Sprite, imageAssets, SpriteSheet } from "kontra";
-import { entityData } from "./data";
+import { Sprite, imageAssets, dataAssets, SpriteSheet } from "kontra";
 
 export default ({
   id,
@@ -10,13 +9,16 @@ export default ({
   name,
   controlledByUser = false,
   collidesWithTiles = true,
-  customProperties = {}
+  customProperties = {},
+  dataKey = "assets/gameData/entityData.json"
 }) => {
   if (!id || !assetId) {
     throw new Error(
       "Entity is fairly useless without an id, you should add one."
     );
   }
+
+  const entityData = dataAssets[dataKey];
 
   const {
     animations,
