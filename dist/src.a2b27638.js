@@ -6969,7 +6969,32 @@ var _default = function _default() {
   };
   var dataKey = options.dataKey;
   var worldData = _kontra.dataAssets[dataKey];
+  var entitiesInStore = (0, _kontra.getStoreItem)("entities");
+
+  var getEntityFromStore = function getEntityFromStore(id) {
+    return entitiesInStore ? entitiesInStore.find(function (e) {
+      return e.id === id;
+    }) : null;
+  };
+
   return {
+    resetEntityStates: function resetEntityStates() {
+      return (0, _kontra.setStoreItem)("entities", []);
+    },
+    saveEntityState: function saveEntityState(entityData) {
+      var id = entityData.id,
+          ttl = entityData.ttl;
+      var existingEntities = (0, _kontra.getStoreItem)("entities");
+      (0, _kontra.setStoreItem)("entities", existingEntities ? existingEntities.filter(function (ent) {
+        return ent.id !== id;
+      }).concat([{
+        id: id,
+        ttl: ttl
+      }]) : [{
+        id: id,
+        ttl: ttl
+      }]);
+    },
     createWorld: function createWorld(_ref) {
       var areaId = _ref.areaId;
 
@@ -6985,9 +7010,13 @@ var _default = function _default() {
         mapKey: mapKey,
         tileEngine: tileEngine,
         loadedEntities: entities.map(function (entity) {
-          return (0, _entity.default)(_objectSpread({}, entity, {
+          var id = entity.id;
+          var exists = getEntityFromStore(id);
+          return !exists || exists && exists.ttl > 0 ? (0, _entity.default)(_objectSpread({}, entity, {
             tileEngine: tileEngine
-          }));
+          })) : null;
+        }).filter(function (e) {
+          return e;
         })
       };
     }
@@ -7292,7 +7321,8 @@ var FieldScene = function FieldScene(_ref) {
 
   /* World creation */
   var _WorldManager = (0, _worldManager.default)(),
-      createWorld = _WorldManager.createWorld;
+      createWorld = _WorldManager.createWorld,
+      saveEntityState = _WorldManager.saveEntityState;
 
   var _createWorld = createWorld({
     areaId: areaId
@@ -7346,7 +7376,8 @@ var FieldScene = function FieldScene(_ref) {
   }, {
     type: _consts.ENTITY_TYPE.PICKUP,
     reactionEvent: function reactionEvent(firstAvailable) {
-      return firstAvailable.ttl = 0;
+      firstAvailable.ttl = 0;
+      saveEntityState(firstAvailable);
     }
   }, {
     type: _consts.ENTITY_TYPE.NPC,
@@ -7491,7 +7522,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50387" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54617" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

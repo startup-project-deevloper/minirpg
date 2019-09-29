@@ -47,7 +47,7 @@ ctx.scale(3, 3);
 /* Primary field scene */
 const FieldScene = ({ areaId }) => {
   /* World creation */
-  const { createWorld } = WorldManager();
+  const { createWorld, saveEntityState } = WorldManager();
   const { loadedEntities, tileEngine } = createWorld({ areaId });
 
   /* Dialogue creation */
@@ -98,7 +98,10 @@ const FieldScene = ({ areaId }) => {
     },
     {
       type: ENTITY_TYPE.PICKUP,
-      reactionEvent: firstAvailable => (firstAvailable.ttl = 0)
+      reactionEvent: firstAvailable => {
+        firstAvailable.ttl = 0;
+        saveEntityState(firstAvailable);
+      }
     },
     {
       type: ENTITY_TYPE.NPC,
