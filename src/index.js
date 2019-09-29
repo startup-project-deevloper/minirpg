@@ -13,6 +13,7 @@ import Entity from "./sprites/entity";
 import { circleCollision } from "./common/helpers";
 import { ENTITY_TYPE } from "./common/consts";
 import {
+  allOff,
   on,
   emit,
   EV_SCENECHANGE,
@@ -86,6 +87,7 @@ const FieldScene = ({ areaId }) => {
             ctx,
             direction: -1,
             onFadeComplete: () => {
+              allOff([EV_SCENECHANGE]);
               emit(EV_SCENECHANGE, {
                 areaId: firstAvailable.customProperties.goesTo
               });

@@ -1,3 +1,5 @@
+import { emit, EV_DEBUGLOG } from "../common/events";
+
 export const uniqueId = (pre = "") =>
   `${pre}${pre.length ? "_" : ""}` +
   (Number(String(Math.random()).slice(2)) +
@@ -21,10 +23,10 @@ export const vmulti = (vec, v) => {
 
 export const circleCollision = (collider, targets, destroyOnHit = false) => {
   if (!collider.radius) {
-    console.error("Cannot detect collisions without radious property.");
+    console.error("Cannot detect collisions without radius property.");
   }
 
-  return targets.filter((target) => {
+  return targets.filter(target => {
     let dx = target.x - collider.x;
     let dy = target.y - collider.y;
     if (Math.sqrt(dx * dx + dy * dy) < target.radius + collider.width) {
@@ -32,4 +34,9 @@ export const circleCollision = (collider, targets, destroyOnHit = false) => {
       return target;
     }
   });
+};
+
+export const debug = o => {
+  console.info(o);
+  emit(EV_DEBUGLOG, o);
 };

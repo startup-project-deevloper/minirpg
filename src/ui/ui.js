@@ -1,10 +1,10 @@
 import m from "mithril";
 import {
   on,
-  off,
   EV_CONVOSTART,
   EV_CONVONEXT,
-  EV_CONVOEND
+  EV_CONVOEND,
+  EV_DEBUGLOG
 } from "../common/events";
 
 const typeWriter = ({ text, onTyped = str => {}, onFinished = () => {} }) => {
@@ -32,6 +32,7 @@ const typeWriter = ({ text, onTyped = str => {}, onFinished = () => {} }) => {
 };
 
 const Shell = ({ attrs }) => {
+  let debugText = [];
   let isTyping = false;
   let name = "";
   let text = "";
@@ -145,15 +146,19 @@ const Shell = ({ attrs }) => {
     m.redraw();
   };
 
+  const onDebugLog = (output, clearPrevious = false) => {
+    debugText = clearPrevious ? [output] : [...debugText, output];
+    m.redraw();
+  };
+
   return {
     oninit: () => {
       console.log("UI initialized.");
-      /* TODO: Make sure to unbind these on unload! */
       on(EV_CONVOSTART, onConvoStart);
       on(EV_CONVONEXT, onConvoNext);
       on(EV_CONVOEND, onConvoEnd);
+      on(EV_DEBUGLOG, onDebugLog);
     },
-    // Remember: Don't make fat components.
     view: () => {
       return m("div", { class: "uiShell" }, [
         text &&
@@ -177,7 +182,13 @@ const Shell = ({ attrs }) => {
               ),
               isTyping ? "" : m("span", { class: "arrow" })
             ])
-          ])
+          ]),
+        m("div", { class: "debugWindow" }, [
+          debugText.map(s => {
+            return m("span", s);
+          }),
+          m("span", { class: "cursor4" }, "_")
+        ])
       ]);
     }
   };

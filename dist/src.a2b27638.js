@@ -6200,7 +6200,7 @@ module.exports = m
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.emit = exports.off = exports.on = exports.EVENTS = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
+exports.emit = exports.allOff = exports.off = exports.on = exports.EV_DEBUGLOG = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
 
 var _kontra = require("kontra");
 
@@ -6216,17 +6216,13 @@ var EV_SCENECHANGE = "ev.sceneChange";
 exports.EV_SCENECHANGE = EV_SCENECHANGE;
 var EV_INTERACTION = "ev.onInteraction";
 exports.EV_INTERACTION = EV_INTERACTION;
-var EVENTS = [EV_CONVOSTART, EV_CONVOEND, EV_CONVONEXT, EV_CONVOCHOICE, EV_SCENECHANGE, EV_INTERACTION];
-exports.EVENTS = EVENTS;
-
-var hasEvent = function hasEvent(e) {
-  return EVENTS.some(function (s) {
-    return s === e;
-  });
-};
+var EV_DEBUGLOG = "ev.debugLog";
+exports.EV_DEBUGLOG = EV_DEBUGLOG;
+var registry = {};
 
 var on = function on(e, fn) {
-  return hasEvent(e) && (0, _kontra.on)(e, fn);
+  registry[e] = fn;
+  (0, _kontra.on)(e, registry[e]);
 };
 
 exports.on = on;
@@ -6237,9 +6233,20 @@ var off = function off(e, fn) {
 
 exports.off = off;
 
+var allOff = function allOff() {
+  var ignoreList = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  return Object.keys(registry).map(function (k) {
+    return !ignoreList.some(function (str) {
+      return str === k;
+    }) && off(k, registry[k]);
+  });
+};
+
+exports.allOff = allOff;
+
 var emit = function emit(e) {
   var args = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-  return hasEvent(e) && (0, _kontra.emit)(e, args);
+  return (0, _kontra.emit)(e, args);
 };
 
 exports.emit = emit;
@@ -6256,6 +6263,14 @@ var _mithril = _interopRequireDefault(require("mithril"));
 var _events = require("../common/events");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
 
 var typeWriter = function typeWriter(_ref) {
   var text = _ref.text,
@@ -6295,6 +6310,7 @@ var typeWriter = function typeWriter(_ref) {
 
 var Shell = function Shell(_ref2) {
   var attrs = _ref2.attrs;
+  var debugText = [];
   var isTyping = false;
   var name = "";
   var text = "";
@@ -6407,16 +6423,21 @@ var Shell = function Shell(_ref2) {
     _mithril.default.redraw();
   };
 
+  var onDebugLog = function onDebugLog(output) {
+    var clearPrevious = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+    debugText = clearPrevious ? [output] : [].concat(_toConsumableArray(debugText), [output]);
+
+    _mithril.default.redraw();
+  };
+
   return {
     oninit: function oninit() {
       console.log("UI initialized.");
-      /* TODO: Make sure to unbind these on unload! */
-
       (0, _events.on)(_events.EV_CONVOSTART, onConvoStart);
       (0, _events.on)(_events.EV_CONVONEXT, onConvoNext);
       (0, _events.on)(_events.EV_CONVOEND, onConvoEnd);
+      (0, _events.on)(_events.EV_DEBUGLOG, onDebugLog);
     },
-    // Remember: Don't make fat components.
     view: function view() {
       return (0, _mithril.default)("div", {
         class: "uiShell"
@@ -6435,7 +6456,13 @@ var Shell = function Shell(_ref2) {
         }, choice.text);
       })), isTyping ? "" : (0, _mithril.default)("span", {
         class: "arrow"
-      })])])]);
+      })])]), (0, _mithril.default)("div", {
+        class: "debugWindow"
+      }, [debugText.map(function (s) {
+        return (0, _mithril.default)("span", s);
+      }), (0, _mithril.default)("span", {
+        class: "cursor4"
+      }, "_")])]);
     }
   };
 };
@@ -6645,7 +6672,9 @@ exports.default = _default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.circleCollision = exports.vmulti = exports.between = exports.uniqueId = void 0;
+exports.debug = exports.circleCollision = exports.vmulti = exports.between = exports.uniqueId = void 0;
+
+var _events = require("../common/events");
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
@@ -6683,7 +6712,7 @@ var circleCollision = function circleCollision(collider, targets) {
   var destroyOnHit = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
   if (!collider.radius) {
-    console.error("Cannot detect collisions without radious property.");
+    console.error("Cannot detect collisions without radius property.");
   }
 
   return targets.filter(function (target) {
@@ -6698,7 +6727,14 @@ var circleCollision = function circleCollision(collider, targets) {
 };
 
 exports.circleCollision = circleCollision;
-},{}],"src/common/consts.js":[function(require,module,exports) {
+
+var debug = function debug(o) {
+  console.info(o);
+  (0, _events.emit)(_events.EV_DEBUGLOG, o);
+};
+
+exports.debug = debug;
+},{"../common/events":"src/common/events.js"}],"src/common/consts.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6995,11 +7031,8 @@ var _default = function _default(_ref) {
   };
 
   var queryNode = function queryNode(query) {
-    var queriedNode = conversationData.length ? conversationData.filter(function (node, index) {
-      return query === node.id ? {
-        node: node,
-        index: index
-      } : null;
+    var queriedNode = conversationData.length ? conversationData.filter(function (node) {
+      return query === node.id;
     })[0] : null;
     return displayNode(queriedNode);
   };
@@ -7303,6 +7336,7 @@ var FieldScene = function FieldScene(_ref) {
         ctx: ctx,
         direction: -1,
         onFadeComplete: function onFadeComplete() {
+          (0, _events.allOff)([_events.EV_SCENECHANGE]);
           (0, _events.emit)(_events.EV_SCENECHANGE, {
             areaId: firstAvailable.customProperties.goesTo
           });
@@ -7457,7 +7491,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52331" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50387" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

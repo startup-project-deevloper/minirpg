@@ -23,14 +23,7 @@ export default ({
 
   const queryNode = query => {
     const queriedNode = conversationData.length
-      ? conversationData.filter((node, index) => {
-          return query === node.id
-            ? {
-                node,
-                index
-              }
-            : null;
-        })[0]
+      ? conversationData.filter(node => query === node.id)[0]
       : null;
 
     return displayNode(queriedNode);

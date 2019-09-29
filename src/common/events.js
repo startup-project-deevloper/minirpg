@@ -6,20 +6,20 @@ export const EV_CONVONEXT = "ev.convoNext";
 export const EV_CONVOCHOICE = "ev.convoChoice";
 export const EV_SCENECHANGE = "ev.sceneChange";
 export const EV_INTERACTION = "ev.onInteraction";
+export const EV_DEBUGLOG = "ev.debugLog";
 
-export const EVENTS = [
-  EV_CONVOSTART,
-  EV_CONVOEND,
-  EV_CONVONEXT,
-  EV_CONVOCHOICE,
-  EV_SCENECHANGE,
-  EV_INTERACTION
-];
+let registry = {};
 
-const hasEvent = e => EVENTS.some(s => s === e);
-
-export const on = (e, fn) => hasEvent(e) && kontraOn(e, fn);
+export const on = (e, fn) => {
+  registry[e] = fn;
+  kontraOn(e, registry[e]);
+};
 
 export const off = (e, fn) => kontraOff(e, fn);
 
-export const emit = (e, args = null) => hasEvent(e) && kontraEmit(e, args);
+export const allOff = (ignoreList = []) =>
+  Object.keys(registry).map(
+    k => !ignoreList.some(str => str === k) && off(k, registry[k])
+  );
+
+export const emit = (e, args = null) => kontraEmit(e, args);

@@ -50,54 +50,22 @@ p {
 }
 
 .debugWindow {
+  padding: 1em;
+  width: 100%;
   position: absolute;
-  left: 1em;
-  top: 1em;
+  left: 0;
+  top: 0;
+  font-family: "Lucida Console", Monaco, monospace;
+  background: rgba(0, 0, 0, 0.8);
+  max-height: 10em;
+  overflow-y: auto;
 }
 
-@-webkit-keyframes arrow_anim {
-  from {
-    margin-top: 58px;
-  }
-  to {
-    margin-top: 67px;
-  }
-}
-
-@-moz-keyframes arrow_anim {
-  from {
-    margin-top: 58px;
-  }
-  to {
-    margin-top: 67px;
-  }
-}
-
-@-ms-keyframes arrow_anim {
-  from {
-    margin-top: 58px;
-  }
-  to {
-    margin-top: 67px;
-  }
-}
-
-@-o-keyframes arrow_anim {
-  from {
-    margin-top: 58px;
-  }
-  to {
-    margin-top: 67px;
-  }
-}
-
-@keyframes arrow_anim {
-  from {
-    margin-top: 58px;
-  }
-  to {
-    margin-top: 67px;
-  }
+.cursor4 {
+  -webkit-animation: blink 1s infinite;
+  -moz-animation: blink 1s infinite;
+  -o-animation: blink 1s infinite;
+  animation: blink 1s infinite;
 }
 
 .arrow {
@@ -147,29 +115,57 @@ p {
 }
 
 .choiceWindow {
-    width: 100%;
-    display: flex;
-    flex-direction: row;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
 }
 
 .choiceBox {
-    border-radius: 5px;
-    padding: 0.5em;
-    width: 100%;
-    margin: 0.5em;
-    text-align: center;
-    background: #3c3c3c;
-    cursor: pointer;
-    color: #f5eac8;
-    transition: all .2s;
-    border: 3px solid #f5eac8;
-    text-transform: uppercase;
-    font-weight: bold;
+  border-radius: 5px;
+  padding: 0.5em;
+  width: 100%;
+  margin: 0.5em;
+  text-align: center;
+  background: #3c3c3c;
+  cursor: pointer;
+  color: #f5eac8;
+  transition: all 0.2s;
+  border: 3px solid #f5eac8;
+  text-transform: uppercase;
+  font-weight: bold;
 }
 
 .choiceBox:hover {
-    color: #111;
-    background: #f5eac8;
+  color: #111;
+  background: #f5eac8;
 }
+
+@keyframes arrow_anim {
+  from {
+    margin-top: 58px;
+  }
+  to {
+    margin-top: 67px;
+  }
+}
+
+@keyframes blink {
+  0% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 
 /*# sourceMappingURL=/game.e659a89f.css.map */
