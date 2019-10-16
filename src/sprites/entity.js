@@ -60,6 +60,28 @@ export default ({
     manualAnimation,
     movementDisabled,
     update: () => {
+      /* Attacking */
+      if (keyPressed("q")) {
+        /*
+        For attacking, going full throttle with a turn-based system is quite a lot
+        to handle. For now it'd be easier to settle for arcade sort of attacks and
+        being clever with patterns / interaction such as seen on Zelda.
+
+        So that said, what general idea is this:
+        - Hitbox appears, probably with an animation in sync with it
+        - Collision picked up when hitbox hits whatever the thing is
+        - The thing that's hit get informed of the hit, and as to what actually
+        hit it. If the thing is hostile (no friendly-fire), we search for the item in
+        question and run against its stats.
+        - It's a lot to calculate on the hit, but it has to be done at some point. After
+        that the damage animation plays on the target, and so on. Let the entity handle
+        what happens to it under circumstances such as if it's locked in animation, etc.
+        - The attacker can just worry about its self and what it's doing with attack and
+        animations.
+        */
+      }
+
+      /* Movement */
       const dir = controlledByUser
         ? {
             x: keyPressed("a") ? -1 : keyPressed("d") ? 1 : 0,
