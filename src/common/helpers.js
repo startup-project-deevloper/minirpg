@@ -27,8 +27,27 @@ export const circleCollision = (collider, targets, destroyOnHit = false) => {
   }
 
   return targets.filter(target => {
-    let dx = target.x - collider.x;
-    let dy = target.y - collider.y;
+    const offsets = target.collisionBodyOptions
+      ? {
+          x: target.collisionBodyOptions.offsetX
+            ? target.x + target.collisionBodyOptions.offsetX
+            : target.x,
+          y: target.collisionBodyOptions.offsetY
+            ? target.y + target.collisionBodyOptions.offsetY
+            : target.y
+        }
+      : {
+          x: target.x,
+          y: target.y
+        };
+
+    let dx = offsets.x - collider.x;
+    let dy = offsets.y - collider.y;
+
+    // You might be seeing results from two perspectives. I'd ensure that it only comes from one in the case of
+    // a door.
+    console.log(Math.sqrt(dx * dx + dy * dy))
+    
     if (Math.sqrt(dx * dx + dy * dy) < target.radius + collider.width) {
       target.ttl = destroyOnHit ? 0 : target.ttl;
       return target;

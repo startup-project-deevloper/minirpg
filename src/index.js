@@ -61,8 +61,8 @@ const FieldScene = ({ areaId }) => {
   const playerStart = loadedEntities.find(x => x.id === "entranceMarker");
 
   const player = Entity({
-    x: playerStart ? playerStart.x : 0,
-    y: playerStart ? playerStart.y : 0,
+    x: playerStart ? playerStart.x : 128,
+    y: playerStart ? playerStart.y : 128,
     name: "Player",
     id: "player",
     assetId: "player",
@@ -163,6 +163,9 @@ const FieldScene = ({ areaId }) => {
       sprites.map(sprite => {
         sprite.update();
 
+        /* This is a bit flawed as we check for collision events on every sprite when in reality we only need it
+        for say the player. Or, more to the point, only certain collisions apply in certain contexts. If a player walks to
+        a door, we only need for the player to detect the collision and trigger an action. The door can just be a prop. */
         const collidingWith = circleCollision(
           sprite,
           sprites.filter(s => s.id !== sprite.id)
@@ -208,7 +211,7 @@ load(
   initKeys();
 
   const sceneManager = SceneManager({ sceneObject: FieldScene });
-  sceneManager.loadScene({ areaId: "area1" });
+  sceneManager.loadScene({ areaId: "area3" });
 
   on(EV_SCENECHANGE, props => sceneManager.loadScene({ ...props }));
 });

@@ -35,6 +35,7 @@ export default ({
     frameWidth,
     frameHeight,
     sheet,
+    collisionBodyOptions = null,
     manualAnimation = false
   } = entityData.find(ent => ent.id === assetId);
 
@@ -57,6 +58,7 @@ export default ({
     animations: spriteSheet.animations,
     collidesWithTiles,
     controlledByUser,
+    collisionBodyOptions,
     manualAnimation,
     movementDisabled,
     update: () => {
@@ -109,6 +111,9 @@ export default ({
       sprite.advance();
     }
   });
+
+  console.log("=> Sprite generated:", sprite.name, sprite.id);
+  console.log(sprite);
 
   return sprite;
 };

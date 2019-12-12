@@ -6602,6 +6602,8 @@ var _default = function _default(_ref) {
       frameWidth = _entityData$find.frameWidth,
       frameHeight = _entityData$find.frameHeight,
       sheet = _entityData$find.sheet,
+      _entityData$find$coll = _entityData$find.collisionBodyOptions,
+      collisionBodyOptions = _entityData$find$coll === void 0 ? null : _entityData$find$coll,
       _entityData$find$manu = _entityData$find.manualAnimation,
       manualAnimation = _entityData$find$manu === void 0 ? false : _entityData$find$manu;
 
@@ -6623,6 +6625,7 @@ var _default = function _default(_ref) {
     animations: spriteSheet.animations,
     collidesWithTiles: collidesWithTiles,
     controlledByUser: controlledByUser,
+    collisionBodyOptions: collisionBodyOptions,
     manualAnimation: manualAnimation,
     movementDisabled: movementDisabled,
     update: function update() {
@@ -6684,6 +6687,8 @@ var _default = function _default(_ref) {
       sprite.advance();
     }
   });
+  console.log("=> Sprite generated:", sprite.name, sprite.id);
+  console.log(sprite);
   return sprite;
 };
 
@@ -6738,8 +6743,18 @@ var circleCollision = function circleCollision(collider, targets) {
   }
 
   return targets.filter(function (target) {
-    var dx = target.x - collider.x;
-    var dy = target.y - collider.y;
+    var offsets = target.collisionBodyOptions ? {
+      x: target.collisionBodyOptions.offsetX ? target.x + target.collisionBodyOptions.offsetX : target.x,
+      y: target.collisionBodyOptions.offsetY ? target.y + target.collisionBodyOptions.offsetY : target.y
+    } : {
+      x: target.x,
+      y: target.y
+    };
+    var dx = offsets.x - collider.x;
+    var dy = offsets.y - collider.y; // You might be seeing results from two perspectives. I'd ensure that it only comes from one in the case of
+    // a door.
+
+    console.log(Math.sqrt(dx * dx + dy * dy));
 
     if (Math.sqrt(dx * dx + dy * dy) < target.radius + collider.width) {
       target.ttl = destroyOnHit ? 0 : target.ttl;
@@ -7365,8 +7380,8 @@ var FieldScene = function FieldScene(_ref) {
     return x.id === "entranceMarker";
   });
   var player = (0, _entity.default)({
-    x: playerStart ? playerStart.x : 0,
-    y: playerStart ? playerStart.y : 0,
+    x: playerStart ? playerStart.x : 128,
+    y: playerStart ? playerStart.y : 128,
     name: "Player",
     id: "player",
     assetId: "player",
@@ -7469,6 +7484,10 @@ var FieldScene = function FieldScene(_ref) {
 
       sprites.map(function (sprite) {
         sprite.update();
+        /* This is a bit flawed as we check for collision events on every sprite when in reality we only need it
+        for say the player. Or, more to the point, only certain collisions apply in certain contexts. If a player walks to
+        a door, we only need for the player to detect the collision and trigger an action. The door can just be a prop. */
+
         var collidingWith = (0, _helpers.circleCollision)(sprite, sprites.filter(function (s) {
           return s.id !== sprite.id;
         }));
@@ -7510,7 +7529,7 @@ TODO: Can we also const the dataKeys across the board plz. */
     sceneObject: FieldScene
   });
   sceneManager.loadScene({
-    areaId: "area1"
+    areaId: "area3"
   });
   (0, _events.on)(_events.EV_SCENECHANGE, function (props) {
     return sceneManager.loadScene(_objectSpread({}, props));
@@ -7544,7 +7563,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58178" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "65482" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

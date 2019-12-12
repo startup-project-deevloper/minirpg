@@ -5,6 +5,8 @@
         "sheet": "assets/entityimages/little_devil.png",
         "frameWidth": 16,
         "frameHeight": 16,
+        "collisionBodyOptions": null,
+        "manualAnimation": false,
         "animations": {
             "idle": {
                 "frames": [
@@ -33,6 +35,8 @@
         "sheet": "assets/entityimages/little_orc.png",
         "frameWidth": 16,
         "frameHeight": 16,
+        "collisionBodyOptions": null,
+        "manualAnimation": false,
         "animations": {
             "idle": {
                 "frames": [
@@ -61,6 +65,8 @@
         "sheet": "assets/tileimages/test.png",
         "frameWidth": 16,
         "frameHeight": 16,
+        "collisionBodyOptions": null,
+        "manualAnimation": false,
         "animations": {
             "idle": {
                 "frames": [
@@ -76,6 +82,10 @@
         "sheet": "assets/tileimages/test.png",
         "frameWidth": 32,
         "frameHeight": 16,
+        "collisionBodyOptions": {
+            "offsetY": -500,
+            "offsetX": 0
+        },
         "manualAnimation": true,
         "animations": {
             "idle": {
@@ -100,6 +110,8 @@
         "sheet": "assets/tileimages/test.png",
         "frameWidth": 16,
         "frameHeight": 16,
+        "collisionBodyOptions": null,
+        "manualAnimation": false,
         "animations": {
             "idle": {
                 "frames": [
