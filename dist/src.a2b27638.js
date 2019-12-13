@@ -6425,7 +6425,12 @@ var Shell = function Shell(_ref2) {
 
   var onDebugLog = function onDebugLog(output) {
     var clearPrevious = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+    var maxLines = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 4;
     debugText = clearPrevious ? [output] : [].concat(_toConsumableArray(debugText), [output]);
+
+    if (debugText.length > maxLines) {
+      debugText.splice(0, 1);
+    }
 
     _mithril.default.redraw();
   };
@@ -6699,7 +6704,7 @@ exports.default = _default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.debug = exports.circleCollision = exports.vmulti = exports.between = exports.uniqueId = void 0;
+exports.debug = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.between = exports.uniqueId = void 0;
 
 var _events = require("../common/events");
 
@@ -6735,6 +6740,23 @@ var vmulti = function vmulti(vec, v) {
 
 exports.vmulti = vmulti;
 
+var dist = function dist(p1, p2) {
+  var a = p1.x - p2.x;
+  var b = p1.y - p2.y;
+  return Math.sqrt(a * a + b * b);
+};
+
+exports.dist = dist;
+
+var sortByDist = function sortByDist(target) {
+  var items = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+  return items.sort(function (a, b) {
+    return dist(target, a.position) - dist(target, b.position);
+  });
+};
+
+exports.sortByDist = sortByDist;
+
 var circleCollision = function circleCollision(collider, targets) {
   var destroyOnHit = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
@@ -6742,7 +6764,9 @@ var circleCollision = function circleCollision(collider, targets) {
     console.error("Cannot detect collisions without radius property.");
   }
 
-  return targets.filter(function (target) {
+  var filtered = targets.filter(function (target) {
+    /* Because why would you ever want to collide with yourself? */
+    if (collider.id === target.id) return;
     var offsets = target.collisionBodyOptions ? {
       x: target.collisionBodyOptions.offsetX ? target.x + target.collisionBodyOptions.offsetX : target.x,
       y: target.collisionBodyOptions.offsetY ? target.y + target.collisionBodyOptions.offsetY : target.y
@@ -6751,16 +6775,17 @@ var circleCollision = function circleCollision(collider, targets) {
       y: target.y
     };
     var dx = offsets.x - collider.x;
-    var dy = offsets.y - collider.y; // You might be seeing results from two perspectives. I'd ensure that it only comes from one in the case of
-    // a door.
-
-    console.log(Math.sqrt(dx * dx + dy * dy));
+    var dy = offsets.y - collider.y;
+    /* You might be seeing results from two perspectives. I'd ensure that it only comes from
+    one in the case of a door. */
+    //debug(target.name + ": " + Math.sqrt(dx * dx + dy * dy))
 
     if (Math.sqrt(dx * dx + dy * dy) < target.radius + collider.width) {
       target.ttl = destroyOnHit ? 0 : target.ttl;
       return target;
     }
   });
+  return filtered;
 };
 
 exports.circleCollision = circleCollision;
@@ -7354,7 +7379,9 @@ ctx.scale(3, 3);
 /* Primary field scene */
 
 var FieldScene = function FieldScene(_ref) {
-  var areaId = _ref.areaId;
+  var areaId = _ref.areaId,
+      _ref$playerStartId = _ref.playerStartId,
+      playerStartId = _ref$playerStartId === void 0 ? "playerStart" : _ref$playerStartId;
 
   /* World creation */
   var _WorldManager = (0, _worldManager.default)(),
@@ -7377,7 +7404,7 @@ var FieldScene = function FieldScene(_ref) {
   /* All but the player are generated here */
 
   var playerStart = loadedEntities.find(function (x) {
-    return x.id === "entranceMarker";
+    return x.id === playerStartId;
   });
   var player = (0, _entity.default)({
     x: playerStart ? playerStart.x : 128,
@@ -7480,31 +7507,39 @@ var FieldScene = function FieldScene(_ref) {
       sprites = sprites.filter(function (spr) {
         return spr.isAlive();
       });
-      /* Add a flag to sprite to enable/disable collision checks */
+      /* Player to useable collision */
+
+      var playerCollidingWith = (0, _helpers.sortByDist)(player, (0, _helpers.circleCollision)(player, sprites.filter(function (s) {
+        return s.id !== "player";
+      })));
+      /* Update all sprites */
 
       sprites.map(function (sprite) {
-        sprite.update();
-        /* This is a bit flawed as we check for collision events on every sprite when in reality we only need it
-        for say the player. Or, more to the point, only certain collisions apply in certain contexts. If a player walks to
-        a door, we only need for the player to detect the collision and trigger an action. The door can just be a prop. */
+        return sprite.update();
+      }); // ...
 
-        var collidingWith = (0, _helpers.circleCollision)(sprite, sprites.filter(function (s) {
-          return s.id !== sprite.id;
-        }));
-        sprite.isColliding = collidingWith.length > 0;
-
-        if (sprite.isColliding) {
-          collisions.push(sprite);
-        }
-      });
-      /* This would be a great place to sort by distance also (todo later). */
+      player.isColliding = playerCollidingWith.length > 0;
+      /* Origin is the controller of the scene, so 9/10 that'll probably be the player */
 
       sceneStateMachine.update({
         origin: player,
-        collisions: collisions.filter(function (c) {
-          return c.id !== player.id;
-        })
+        collisions: playerCollidingWith
       });
+      /* Add a flag to sprite to enable/disable collision checks */
+      // sprites.map(sprite => {
+      //   sprite.update();
+      //   /* This is a bit flawed as we check for collision events on every sprite when in reality we only need it
+      //   for say the player. Or, more to the point, only certain collisions apply in certain contexts. If a player walks to
+      //   a door, we only need for the player to detect the collision and trigger an action. The door can just be a prop. */
+      //   const collidingWith = circleCollision(
+      //     sprite,
+      //     sprites.filter(s => s.id !== sprite.id)
+      //   );
+      //   sprite.isColliding = collidingWith.length > 0;
+      //   if (sprite.isColliding) {
+      //     collisions.push(sprite);
+      //   }
+      // });
     },
     render: function render() {
       tileEngine.render();
@@ -7524,12 +7559,13 @@ TODO: Can we also const the dataKeys across the board plz. */
 
 
 (0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json").then(function (assets) {
-  (0, _kontra.initKeys)();
+  (0, _kontra.initKeys)(); // Hook up player start
+
   var sceneManager = (0, _sceneManager.default)({
     sceneObject: FieldScene
   });
   sceneManager.loadScene({
-    areaId: "area3"
+    areaId: "area1"
   });
   (0, _events.on)(_events.EV_SCENECHANGE, function (props) {
     return sceneManager.loadScene(_objectSpread({}, props));
@@ -7563,7 +7599,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "65482" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51652" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

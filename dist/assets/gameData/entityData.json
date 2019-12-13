@@ -83,7 +83,7 @@
         "frameWidth": 32,
         "frameHeight": 16,
         "collisionBodyOptions": {
-            "offsetY": -500,
+            "offsetY": -5,
             "offsetX": 0
         },
         "manualAnimation": true,

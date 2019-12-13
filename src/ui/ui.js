@@ -146,8 +146,14 @@ const Shell = ({ attrs }) => {
     m.redraw();
   };
 
-  const onDebugLog = (output, clearPrevious = false) => {
+  const onDebugLog = (output, clearPrevious = false, maxLines = 4) => {
+    
     debugText = clearPrevious ? [output] : [...debugText, output];
+
+    if (debugText.length > maxLines) {
+      debugText.splice(0, 1);
+    }
+
     m.redraw();
   };
 

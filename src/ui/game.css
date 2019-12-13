@@ -61,6 +61,10 @@ p {
   overflow-y: auto;
 }
 
+.debugWindow span {
+  display: block;
+}
+
 .cursor4 {
   -webkit-animation: blink 1s infinite;
   -moz-animation: blink 1s infinite;

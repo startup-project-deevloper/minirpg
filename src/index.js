@@ -10,7 +10,7 @@ import UI from "./ui/ui";
 
 /* Common utils, objects and events */
 import Entity from "./sprites/entity";
-import { circleCollision } from "./common/helpers";
+import { circleCollision, sortByDist } from "./common/helpers";
 import { ENTITY_TYPE } from "./common/consts";
 import {
   allOff,
@@ -45,7 +45,7 @@ ctx.oImageSmoothingEnabled = false;
 ctx.scale(3, 3);
 
 /* Primary field scene */
-const FieldScene = ({ areaId }) => {
+const FieldScene = ({ areaId, playerStartId = "playerStart" }) => {
   /* World creation */
   const { createWorld, saveEntityState } = WorldManager();
   const { loadedEntities, tileEngine } = createWorld({ areaId });
@@ -58,7 +58,7 @@ const FieldScene = ({ areaId }) => {
   const screenEffectsStateMachine = StateMachine();
 
   /* All but the player are generated here */
-  const playerStart = loadedEntities.find(x => x.id === "entranceMarker");
+  const playerStart = loadedEntities.find(x => x.id === playerStartId);
 
   const player = Entity({
     x: playerStart ? playerStart.x : 128,
@@ -159,30 +159,42 @@ const FieldScene = ({ areaId }) => {
       /* Check for anything dead (GC does the rest) */
       sprites = sprites.filter(spr => spr.isAlive());
 
-      /* Add a flag to sprite to enable/disable collision checks */
-      sprites.map(sprite => {
-        sprite.update();
+      /* Player to useable collision */
+      const playerCollidingWith = sortByDist(player, circleCollision(
+        player,
+        sprites.filter(s => s.id !== "player")
+      ));
 
-        /* This is a bit flawed as we check for collision events on every sprite when in reality we only need it
-        for say the player. Or, more to the point, only certain collisions apply in certain contexts. If a player walks to
-        a door, we only need for the player to detect the collision and trigger an action. The door can just be a prop. */
-        const collidingWith = circleCollision(
-          sprite,
-          sprites.filter(s => s.id !== sprite.id)
-        );
+      /* Update all sprites */
+      sprites.map(sprite => sprite.update());
 
-        sprite.isColliding = collidingWith.length > 0;
+      // ...
+      player.isColliding = playerCollidingWith.length > 0;
 
-        if (sprite.isColliding) {
-          collisions.push(sprite);
-        }
-      });
-
-      /* This would be a great place to sort by distance also (todo later). */
+      /* Origin is the controller of the scene, so 9/10 that'll probably be the player */
       sceneStateMachine.update({
         origin: player,
-        collisions: collisions.filter(c => c.id !== player.id)
+        collisions: playerCollidingWith
       });
+
+      /* Add a flag to sprite to enable/disable collision checks */
+      // sprites.map(sprite => {
+      //   sprite.update();
+
+      //   /* This is a bit flawed as we check for collision events on every sprite when in reality we only need it
+      //   for say the player. Or, more to the point, only certain collisions apply in certain contexts. If a player walks to
+      //   a door, we only need for the player to detect the collision and trigger an action. The door can just be a prop. */
+      //   const collidingWith = circleCollision(
+      //     sprite,
+      //     sprites.filter(s => s.id !== sprite.id)
+      //   );
+
+      //   sprite.isColliding = collidingWith.length > 0;
+
+      //   if (sprite.isColliding) {
+      //     collisions.push(sprite);
+      //   }
+      // });
     },
     render: () => {
       tileEngine.render();
@@ -210,8 +222,9 @@ load(
 ).then(assets => {
   initKeys();
 
+  // Hook up player start
   const sceneManager = SceneManager({ sceneObject: FieldScene });
-  sceneManager.loadScene({ areaId: "area3" });
+  sceneManager.loadScene({ areaId: "area1" });
 
   on(EV_SCENECHANGE, props => sceneManager.loadScene({ ...props }));
 });
