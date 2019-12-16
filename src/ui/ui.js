@@ -80,6 +80,8 @@ const Shell = ({ attrs }) => {
   };
 
   const onConvoNext = () => {
+
+    console.log("call next...");
     
     /* Something very wrong with convo stuff, have a re-think. */
     if (isTyping) return;

@@ -151,6 +151,23 @@ const FieldScene = ({ areaId, playerStartId }) => {
   on(EV_CONVOEND, () => sceneStateMachine.pop());
 
   /* Finally, enable the UI (TODO: Double check this is clearing properly) */
+  /*
+  Suggested update:
+  - UI shouldn't give a damn about conversation managers or sprites for that
+  matter. You should just call upon its various functions and go from there.
+  - This will help avoid further coupling issues.
+  - To control all this you could actually just use the state
+  that handles conversations and stuff. If you're going to pass things in to anything,
+  pass them in to the states since they're totall custom.
+
+  Also, I'd prepare the UI in a separate place. Initialise it when the
+  application starts. You don't have to do it in here. Especially if there's
+  events that can be used. Index doesn't need to care about any of this
+  stuff. Just import the script and let it do the rest.
+  */
+
+  // So instead of calling this here, just import the script and get
+  // the thing to self initialise.
   UI({
     conversationManager,
     sprites

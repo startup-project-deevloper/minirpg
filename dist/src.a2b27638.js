@@ -6407,7 +6407,9 @@ var Shell = function Shell(_ref2) {
   };
 
   var onConvoNext = function onConvoNext() {
+    console.log("call next...");
     /* Something very wrong with convo stuff, have a re-think. */
+
     if (isTyping) return;
     /* If you're in a convo and its waiting for button press, this will turn to true. This
     isn't what we want in that edge case. */
@@ -7554,6 +7556,22 @@ var FieldScene = function FieldScene(_ref) {
   });
   /* Finally, enable the UI (TODO: Double check this is clearing properly) */
 
+  /*
+  Suggested update:
+  - UI shouldn't give a damn about conversation managers or sprites for that
+  matter. You should just call upon its various functions and go from there.
+  - This will help avoid further coupling issues.
+  - To control all this you could actually just use the state
+  that handles conversations and stuff. If you're going to pass things in to anything,
+  pass them in to the states since they're totall custom.
+    Also, I'd prepare the UI in a separate place. Initialise it when the
+  application starts. You don't have to do it in here. Especially if there's
+  events that can be used. Index doesn't need to care about any of this
+  stuff. Just import the script and let it do the rest.
+  */
+  // So instead of calling this here, just import the script and get
+  // the thing to self initialise.
+
   (0, _ui.default)({
     conversationManager: conversationManager,
     sprites: sprites
@@ -7669,7 +7687,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51938" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58588" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
