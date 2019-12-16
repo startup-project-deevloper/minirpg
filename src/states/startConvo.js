@@ -1,36 +1,19 @@
-import { keyPressed } from "kontra";
+import onPush from "../input/onPush";
 
 export default ({
   id,
-  sprites,
   onEntry = () => {},
   onExit = () => {},
   onNext = () => {}
 }) => {
   let isComplete = false;
-  let pushed = false;
+  const onInteractionPushed = onPush("e", () => onNext());
 
   return {
     id,
     isComplete: () => isComplete,
-    enter: props => {
-      console.log("Player entered a conversational state:");
-      console.log(props);
-      onEntry();
-    },
-    update: () => {
-      sprites.map(sprite => {
-        sprite.playAnimation("idle");
-        sprite.update();
-      });
-
-      if (keyPressed("e") && !pushed) {
-        onNext();
-        pushed = true;
-      } else if (pushed && !keyPressed("e")) {
-        pushed = false;
-      }
-    },
+    enter: props => onEntry(),
+    update: () => onInteractionPushed(),
     exit: () => onExit()
   };
 };

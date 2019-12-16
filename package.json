@@ -9,8 +9,7 @@
   },
   "dependencies": {
     "kontra": "^6.6.0",
-    "mithril": "^2.0.4",
-    "nanoevents": "^2.0.0"
+    "mithril": "^2.0.4"
   },
   "devDependencies": {
     "@babel/core": "7.2.0",

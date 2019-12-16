@@ -1,0 +1,43 @@
+[
+    {
+        "id": "m1",
+        "actor": "daryl",
+        "from": null,
+        "to": "m2",
+        "text": "This is the first message, what will you choose?This is the first message, what will you choose?This is the first message, what will you choose?This is the first message, what will you choose?",
+        "choices": [],
+        "actions": []
+    },
+    {
+        "id": "m2",
+        "actor": "daryl",
+        "from": "m1a",
+        "to": "m4",
+        "text": "You have selected the A button.You have selee selected the A button.You have selee selected the A button.You have selee selected the A button.You have selee selected the A button.You have selee selected the A button.You have selected the A button.You have selected the A button.You have selected the A button.You have selected the A button.",
+        "choices": [],
+        "actions": []
+    },
+    {
+        "id": "m3",
+        "actor": "daryl",
+        "from": "m1b",
+        "to": null,
+        "text": "You have selected the B button.You have selected the B button.You have selected the B button.You have selected the B button.You have selected the B button.",
+        "choices": [],
+        "actions": [
+            "cancel"
+        ]
+    },
+    {
+        "id": "m4",
+        "actor": "daryl",
+        "from": "m2",
+        "to": null,
+        "text": "This should be the last in the chashould be the last in the chashould be the last in the chain for A.",
+        "choices": [],
+        "actions": [
+            "endConversation",
+            "save"
+        ]
+    }
+]
