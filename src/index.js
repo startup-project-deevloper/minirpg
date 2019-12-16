@@ -113,10 +113,11 @@ const FieldScene = ({ areaId, playerStartId }) => {
         sceneStateMachine.push(
           startConvo({
             id: "conversation",
-            onNext: props => emit(EV_CONVONEXT),
             // Note: should only effect current actors, not all sprites!
             onExit: () => sprites.map(spr => (spr.movementDisabled = false)),
             onEntry: props => {
+              // TODO: Let's fix this bit, seems to be a bit... off.
+              console.log("Trigger a convo")
               emit(EV_CONVOSTART, { startId: "m1", currentActors: sprites });
               sprites.map(spr => (spr.movementDisabled = true));
             }

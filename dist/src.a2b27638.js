@@ -6320,12 +6320,15 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
 var typeWriter = function typeWriter(_ref) {
   var text = _ref.text,
+      _ref$onStart = _ref.onStart,
+      onStart = _ref$onStart === void 0 ? function () {} : _ref$onStart,
       _ref$onTyped = _ref.onTyped,
       onTyped = _ref$onTyped === void 0 ? function (str) {} : _ref$onTyped,
       _ref$onFinished = _ref.onFinished,
       onFinished = _ref$onFinished === void 0 ? function () {} : _ref$onFinished;
   var animId = "";
   var str = "";
+  onStart();
 
   var t = function t() {
     var s = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -6366,8 +6369,11 @@ var Shell = function Shell(_ref2) {
   var onConvoStart = function onConvoStart(_ref3) {
     var startId = _ref3.startId,
         currentActors = _ref3.currentActors;
+
+    /* Avoid multiple calls here, causes problems */
+    console.log("Convo start even triggered.");
+    console.log(isTyping, startId, currentActors);
     if (isTyping) return;
-    isTyping = true;
     actors = currentActors;
     var props = attrs.conversationManager.start(startId);
     if (!props) return;
@@ -6383,6 +6389,9 @@ var Shell = function Shell(_ref2) {
 
     typeWriter({
       text: props.text,
+      onStart: function onStart() {
+        return isTyping = true;
+      },
       onTyped: function onTyped(str) {
         text = str;
 
@@ -6398,10 +6407,14 @@ var Shell = function Shell(_ref2) {
   };
 
   var onConvoNext = function onConvoNext() {
+    /* Something very wrong with convo stuff, have a re-think. */
     if (isTyping) return;
-    isTyping = true;
+    /* If you're in a convo and its waiting for button press, this will turn to true. This
+    isn't what we want in that edge case. */
+
     var props = attrs.conversationManager.goToNext();
     if (!props) return;
+    console.log(props);
     var actorName = props.actor ? actors.find(function (x) {
       return props.actor === x.id;
     }).name : null;
@@ -6414,6 +6427,9 @@ var Shell = function Shell(_ref2) {
 
     typeWriter({
       text: props.text,
+      onStart: function onStart() {
+        return isTyping = true;
+      },
       onTyped: function onTyped(str) {
         text = str;
 
@@ -6430,7 +6446,6 @@ var Shell = function Shell(_ref2) {
 
   var onChoiceSelected = function onChoiceSelected(choice) {
     if (isTyping) return;
-    isTyping = true;
     var props = attrs.conversationManager.goToExact(choice.to);
     if (!props) return;
     var actorName = props.actor ? actors.find(function (x) {
@@ -6445,6 +6460,9 @@ var Shell = function Shell(_ref2) {
 
     typeWriter({
       text: props.text,
+      onStart: function onStart() {
+        return isTyping = true;
+      },
       onTyped: function onTyped(str) {
         text = str;
 
@@ -7273,13 +7291,6 @@ var _default = function _default() {
 
   return (0, _conversationIterator.default)({
     conversationData: conversationData,
-    onChatStarted: function onChatStarted(node) {
-      var passedProps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      return (0, _events.emit)(_events.EV_CONVOSTART, {
-        node: node,
-        passedProps: passedProps
-      });
-    },
     onChatNext: function onChatNext(node) {
       var passedProps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
       return (0, _events.emit)(_events.EV_CONVONEXT, {
@@ -7499,9 +7510,6 @@ var FieldScene = function FieldScene(_ref) {
     reactionEvent: function reactionEvent(firstAvailable, sprites) {
       return sceneStateMachine.push((0, _startConvo.default)({
         id: "conversation",
-        onNext: function onNext(props) {
-          return (0, _events.emit)(_events.EV_CONVONEXT);
-        },
         // Note: should only effect current actors, not all sprites!
         onExit: function onExit() {
           return sprites.map(function (spr) {
@@ -7509,6 +7517,8 @@ var FieldScene = function FieldScene(_ref) {
           });
         },
         onEntry: function onEntry(props) {
+          // TODO: Let's fix this bit, seems to be a bit... off.
+          console.log("Trigger a convo");
           (0, _events.emit)(_events.EV_CONVOSTART, {
             startId: "m1",
             currentActors: sprites

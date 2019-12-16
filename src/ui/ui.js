@@ -7,9 +7,11 @@ import {
   EV_DEBUGLOG
 } from "../common/events";
 
-const typeWriter = ({ text, onTyped = str => {}, onFinished = () => {} }) => {
+const typeWriter = ({ text, onStart = () => {}, onTyped = str => {}, onFinished = () => {} }) => {
   let animId = "";
   let str = "";
+
+  onStart();
 
   const t = (s = "", i = 0) => {
     if (i > text.length) {
@@ -40,8 +42,10 @@ const Shell = ({ attrs }) => {
   let actors = [];
 
   const onConvoStart = ({ startId, currentActors }) => {
+    /* Avoid multiple calls here, causes problems */
+    console.log("Convo start even triggered.");
+    console.log(isTyping, startId, currentActors)
     if (isTyping) return;
-    isTyping = true;
 
     actors = currentActors;
 
@@ -51,6 +55,7 @@ const Shell = ({ attrs }) => {
     const actorName = props.actor
       ? actors.find(x => props.actor === x.id).name
       : null;
+
     name = actorName;
     text = "";
     choices = [];
@@ -61,6 +66,7 @@ const Shell = ({ attrs }) => {
     // Start typewriter effect
     typeWriter({
       text: props.text,
+      onStart: () => isTyping = true,
       onTyped: str => {
         text = str;
         m.redraw();
@@ -74,15 +80,21 @@ const Shell = ({ attrs }) => {
   };
 
   const onConvoNext = () => {
+    
+    /* Something very wrong with convo stuff, have a re-think. */
     if (isTyping) return;
-    isTyping = true;
 
+    /* If you're in a convo and its waiting for button press, this will turn to true. This
+    isn't what we want in that edge case. */
     const props = attrs.conversationManager.goToNext();
     if (!props) return;
 
+    console.log(props)
+    
     const actorName = props.actor
       ? actors.find(x => props.actor === x.id).name
       : null;
+
     name = actorName;
     text = "";
     choices = [];
@@ -93,6 +105,7 @@ const Shell = ({ attrs }) => {
     // Start typewriter effect
     typeWriter({
       text: props.text,
+      onStart: () => isTyping = true,
       onTyped: str => {
         text = str;
         m.redraw();
@@ -107,8 +120,7 @@ const Shell = ({ attrs }) => {
 
   const onChoiceSelected = choice => {
     if (isTyping) return;
-    isTyping = true;
-
+    
     const props = attrs.conversationManager.goToExact(choice.to);
     if (!props) return;
 
@@ -125,6 +137,7 @@ const Shell = ({ attrs }) => {
     // Start typewriter effect
     typeWriter({
       text: props.text,
+      onStart: () => isTyping = true,
       onTyped: str => {
         text = str;
         m.redraw();
