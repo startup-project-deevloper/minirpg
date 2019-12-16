@@ -2,6 +2,7 @@
     {
         "id": "area1",
         "mapKey": "assets/tiledata/test",
+        "playerStartId": "playerStartLocation1",
         "entities": [
             {
                 "x": 120,
@@ -26,7 +27,8 @@
                 "id": "door",
                 "assetId": "standard_door",
                 "customProperties": {
-                    "goesTo": "area2"
+                    "goesTo": "area2",
+                    "playerStartId": "entranceMarker"
                 }
             },
             {
@@ -42,8 +44,8 @@
                 "x": 64,
                 "y": 164,
                 "z": 10,
-                "name": "Player Start",
-                "id": "playerStart",
+                "name": "Player Start (Save Game Location)",
+                "id": "saveGameStartLocation",
                 "assetId": "standard_entrance",
                 "customProperties": {}
             }
@@ -60,7 +62,8 @@
                 "id": "door",
                 "assetId": "standard_door",
                 "customProperties": {
-                    "goesTo": "area1"
+                    "goesTo": "area1",
+                    "playerStartId": "entranceMarker"
                 }
             },
             {

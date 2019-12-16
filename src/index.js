@@ -44,8 +44,8 @@ ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 ctx.scale(3, 3);
 
-/* Primary field scene */
-const FieldScene = ({ areaId, playerStartId = "playerStart" }) => {
+/* Primary field scene (playerStartId is optional) */
+const FieldScene = ({ areaId, playerStartId }) => {
   /* World creation */
   const { createWorld, saveEntityState } = WorldManager();
   const { loadedEntities, tileEngine } = createWorld({ areaId });
@@ -77,6 +77,8 @@ const FieldScene = ({ areaId, playerStartId = "playerStart" }) => {
   const reactionManager = ReactionManager([
     {
       type: ENTITY_TYPE.DOOR,
+      /* First available refers to the first given collision. So it might not always be what
+      what you want it to be. This needs to be made a bit more robust. */
       reactionEvent: firstAvailable => {
         // TODO: Entities should manage their own animations (same problem seen elsewhere)
         firstAvailable.playAnimation("open");
@@ -88,8 +90,10 @@ const FieldScene = ({ areaId, playerStartId = "playerStart" }) => {
             direction: -1,
             onFadeComplete: () => {
               allOff([EV_SCENECHANGE]);
+              /* Player start becomes part of the collider data so we attempt to use that. */
               emit(EV_SCENECHANGE, {
-                areaId: firstAvailable.customProperties.goesTo
+                areaId: firstAvailable.customProperties.goesTo,
+                playerStartId: firstAvailable.customProperties.playerStartId
               });
             }
           })
@@ -222,9 +226,17 @@ load(
 ).then(assets => {
   initKeys();
 
-  // Hook up player start
+  // Hook up player start todo
   const sceneManager = SceneManager({ sceneObject: FieldScene });
-  sceneManager.loadScene({ areaId: "area1" });
+
+  /* First load instigates a player start so this might be found from saveData
+  or if at the very beginning of a game, passed in directly.
+  If we look at the worldData, the playerStart id is actually linked to one of the
+  entities that gets loaded in. This in theory means you can make anything a player start
+  so long as you specify the right id for it. That being said, you do have to make sure
+  both of them exist in the same context, otherwise you'll never get access to it.
+  */
+  sceneManager.loadScene({ areaId: "area1", playerStartId: "saveGameStartLocation" });
 
   on(EV_SCENECHANGE, props => sceneManager.loadScene({ ...props }));
 });
