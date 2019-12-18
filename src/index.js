@@ -6,7 +6,6 @@
 
 /* Libs */
 import { init, GameLoop, load, initKeys } from "kontra";
-import UI from "./ui/ui";
 
 /* Common utils, objects and events */
 import Entity from "./sprites/entity";
@@ -30,7 +29,6 @@ import curtainState from "./states/curtainState";
 /* Game managers */
 import SceneManager from "./managers/sceneManager";
 import WorldManager from "./managers/worldManager";
-import ConversationManager from "./managers/conversationManager";
 import ReactionManager from "./managers/reactionManager";
 import StateMachine from "./managers/stateManager";
 
@@ -49,9 +47,6 @@ const FieldScene = ({ areaId, playerStartId }) => {
   /* World creation */
   const { createWorld, saveEntityState } = WorldManager();
   const { loadedEntities, tileEngine } = createWorld({ areaId });
-
-  /* Dialogue creation */
-  const conversationManager = ConversationManager();
 
   /* Main states creation */
   const sceneStateMachine = StateMachine();
@@ -113,14 +108,11 @@ const FieldScene = ({ areaId, playerStartId }) => {
         sceneStateMachine.push(
           startConvo({
             id: "conversation",
-            // Note: should only effect current actors, not all sprites!
+            startId: "m1",
+            currentActors: sprites,
+            // I don't think you want to disable every single sprite...
             onExit: () => sprites.map(spr => (spr.movementDisabled = false)),
-            onEntry: props => {
-              // TODO: Let's fix this bit, seems to be a bit... off.
-              console.log("Trigger a convo")
-              emit(EV_CONVOSTART, { startId: "m1", currentActors: sprites });
-              sprites.map(spr => (spr.movementDisabled = true));
-            }
+            onEntry: () => sprites.map(spr => (spr.movementDisabled = true))
           }),
           {
             currentActors: sprites.find(spr => spr.id === firstAvailable.id)
@@ -168,10 +160,10 @@ const FieldScene = ({ areaId, playerStartId }) => {
 
   // So instead of calling this here, just import the script and get
   // the thing to self initialise.
-  UI({
-    conversationManager,
-    sprites
-  }).start();
+  // UI({
+  //   conversationManager,
+  //   sprites
+  // }).start();
 
   /* Primary loop */
   return GameLoop({

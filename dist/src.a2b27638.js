@@ -4141,6 +4141,386 @@ let kontra = {
 };
 var _default = kontra;
 exports.default = _default;
+},{}],"src/sprites/spriteFunctions.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.flipSprite = exports.moveSprite = void 0;
+
+var moveSprite = function moveSprite(_ref) {
+  var dir = _ref.dir,
+      sprite = _ref.sprite,
+      _ref$checkCollision = _ref.checkCollision,
+      checkCollision = _ref$checkCollision === void 0 ? function () {
+    return false;
+  } : _ref$checkCollision;
+
+  /* Normalise so you don't go super fast diagonally */
+  var dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
+  var directionNormal = {
+    x: dir.x !== 0 ? dir.x / dirLength : 0,
+    y: dir.y !== 0 ? dir.y / dirLength : 0
+  }; /// For collisions with tiles
+
+  var oldPos = {
+    x: sprite.x,
+    y: sprite.y
+  }; // Move X then check X (careful editing directly, might lead to issues with camera)
+
+  sprite.x += directionNormal.x; // Collider check (const layer names please)
+
+  var collidedWithX = checkCollision(sprite);
+
+  if (sprite.collidesWithTiles && collidedWithX) {
+    sprite.x = oldPos.x;
+    sprite.y = oldPos.y;
+  } // Update old pos ref
+
+
+  oldPos = {
+    x: sprite.x,
+    y: sprite.y
+  }; // Move Y then check Y (careful editing directly, might lead to issues with camera)
+
+  sprite.y += directionNormal.y; // Collider check against tiles
+
+  var collidedWithY = checkCollision(sprite);
+
+  if (sprite.collidesWithTiles && collidedWithY) {
+    sprite.x = oldPos.x;
+    sprite.y = oldPos.y;
+  }
+
+  return {
+    directionNormal: directionNormal
+  };
+};
+
+exports.moveSprite = moveSprite;
+
+var flipSprite = function flipSprite(_ref2) {
+  var direction = _ref2.direction,
+      sprite = _ref2.sprite;
+
+  if (direction.x < 0) {
+    sprite.width = -sprite.width;
+  } else if (direction.x > 0) {
+    sprite.width = sprite.width;
+  }
+};
+
+exports.flipSprite = flipSprite;
+},{}],"src/sprites/entity.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _kontra = require("kontra");
+
+var _spriteFunctions = require("./spriteFunctions");
+
+var _default = function _default(_ref) {
+  var id = _ref.id,
+      assetId = _ref.assetId,
+      x = _ref.x,
+      y = _ref.y,
+      _ref$z = _ref.z,
+      z = _ref$z === void 0 ? 1 : _ref$z,
+      name = _ref.name,
+      tileEngine = _ref.tileEngine,
+      _ref$movementDisabled = _ref.movementDisabled,
+      movementDisabled = _ref$movementDisabled === void 0 ? false : _ref$movementDisabled,
+      _ref$controlledByUser = _ref.controlledByUser,
+      controlledByUser = _ref$controlledByUser === void 0 ? false : _ref$controlledByUser,
+      _ref$collidesWithTile = _ref.collidesWithTiles,
+      collidesWithTiles = _ref$collidesWithTile === void 0 ? true : _ref$collidesWithTile,
+      _ref$customProperties = _ref.customProperties,
+      customProperties = _ref$customProperties === void 0 ? {} : _ref$customProperties,
+      _ref$dataKey = _ref.dataKey,
+      dataKey = _ref$dataKey === void 0 ? "assets/gameData/entityData.json" : _ref$dataKey;
+
+  if (!id || !assetId) {
+    throw new Error("Entity is fairly useless without an id, you should add one.");
+  }
+
+  var entityData = _kontra.dataAssets[dataKey];
+
+  var _entityData$find = entityData.find(function (ent) {
+    return ent.id === assetId;
+  }),
+      animations = _entityData$find.animations,
+      type = _entityData$find.type,
+      frameWidth = _entityData$find.frameWidth,
+      frameHeight = _entityData$find.frameHeight,
+      sheet = _entityData$find.sheet,
+      _entityData$find$coll = _entityData$find.collisionBodyOptions,
+      collisionBodyOptions = _entityData$find$coll === void 0 ? null : _entityData$find$coll,
+      _entityData$find$manu = _entityData$find.manualAnimation,
+      manualAnimation = _entityData$find$manu === void 0 ? false : _entityData$find$manu;
+
+  var spriteSheet = (0, _kontra.SpriteSheet)({
+    image: _kontra.imageAssets[sheet],
+    frameWidth: frameWidth,
+    frameHeight: frameHeight,
+    animations: animations
+  });
+  var sprite = (0, _kontra.Sprite)({
+    type: type,
+    id: id,
+    name: name,
+    x: x,
+    y: y,
+    z: z,
+    customProperties: customProperties,
+    radius: 1,
+    animations: spriteSheet.animations,
+    collidesWithTiles: collidesWithTiles,
+    controlledByUser: controlledByUser,
+    collisionBodyOptions: collisionBodyOptions,
+    manualAnimation: manualAnimation,
+    movementDisabled: movementDisabled,
+    update: function update() {
+      /* Attacking */
+      if ((0, _kontra.keyPressed)("q")) {}
+      /*
+      For attacking, going full throttle with a turn-based system is quite a lot
+      to handle. For now it'd be easier to settle for arcade sort of attacks and
+      being clever with patterns / interaction such as seen on Zelda.
+        So that said, what general idea is this:
+      - Hitbox appears, probably with an animation in sync with it
+      - Collision picked up when hitbox hits whatever the thing is
+      - The thing that's hit get informed of the hit, and as to what actually
+      hit it. If the thing is hostile (no friendly-fire), we search for the item in
+      question and run against its stats.
+      - It's a lot to calculate on the hit, but it has to be done at some point. After
+      that the damage animation plays on the target, and so on. Let the entity handle
+      what happens to it under circumstances such as if it's locked in animation, etc.
+      - The attacker can just worry about its self and what it's doing with attack and
+      animations.
+      */
+
+      /* Movement */
+
+
+      var dir = controlledByUser ? {
+        x: (0, _kontra.keyPressed)("a") ? -1 : (0, _kontra.keyPressed)("d") ? 1 : 0,
+        y: (0, _kontra.keyPressed)("w") ? -1 : (0, _kontra.keyPressed)("s") ? 1 : 0
+      } : {
+        x: 0,
+        y: 0
+      }; // AI (to add later)
+
+      var _moveSprite = (0, _spriteFunctions.moveSprite)({
+        dir: sprite.movementDisabled ? {
+          x: 0,
+          y: 0
+        } : dir,
+        sprite: sprite,
+        checkCollision: function checkCollision(sprite) {
+          return tileEngine.layerCollidesWith("Collision", sprite);
+        }
+      }),
+          directionNormal = _moveSprite.directionNormal; // Flip the sprite on movement
+
+
+      (0, _spriteFunctions.flipSprite)({
+        direction: directionNormal,
+        sprite: sprite
+      }); // Do some animations
+
+      var isMoving = directionNormal.x !== 0 || directionNormal.y !== 0;
+
+      if (!sprite.manualAnimation) {
+        sprite.playAnimation(isMoving ? "walk" : "idle");
+      } // Call this to ensure animations are player
+
+
+      sprite.advance();
+    }
+  });
+  console.log("=> Sprite generated:", sprite.name, sprite.id);
+  console.log(sprite);
+  return sprite;
+};
+
+exports.default = _default;
+},{"kontra":"node_modules/kontra/kontra.mjs","./spriteFunctions":"src/sprites/spriteFunctions.js"}],"src/common/events.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.emit = exports.allOff = exports.off = exports.on = exports.EV_DEBUGLOG = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
+
+var _kontra = require("kontra");
+
+var EV_CONVOSTART = "ev.convoStart";
+exports.EV_CONVOSTART = EV_CONVOSTART;
+var EV_CONVOEND = "ev.convoEnd";
+exports.EV_CONVOEND = EV_CONVOEND;
+var EV_CONVONEXT = "ev.convoNext";
+exports.EV_CONVONEXT = EV_CONVONEXT;
+var EV_CONVOCHOICE = "ev.convoChoice";
+exports.EV_CONVOCHOICE = EV_CONVOCHOICE;
+var EV_SCENECHANGE = "ev.sceneChange";
+exports.EV_SCENECHANGE = EV_SCENECHANGE;
+var EV_INTERACTION = "ev.onInteraction";
+exports.EV_INTERACTION = EV_INTERACTION;
+var EV_DEBUGLOG = "ev.debugLog";
+exports.EV_DEBUGLOG = EV_DEBUGLOG;
+var registry = {};
+
+var on = function on(e, fn) {
+  registry[e] = fn;
+  (0, _kontra.on)(e, registry[e]);
+};
+
+exports.on = on;
+
+var off = function off(e, fn) {
+  return (0, _kontra.off)(e, fn);
+};
+
+exports.off = off;
+
+var allOff = function allOff() {
+  var ignoreList = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  return Object.keys(registry).map(function (k) {
+    return !ignoreList.some(function (str) {
+      return str === k;
+    }) && off(k, registry[k]);
+  });
+};
+
+exports.allOff = allOff;
+
+var emit = function emit(e) {
+  var args = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+  return (0, _kontra.emit)(e, args);
+};
+
+exports.emit = emit;
+},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/common/helpers.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.debug = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.between = exports.uniqueId = void 0;
+
+var _events = require("../common/events");
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+var uniqueId = function uniqueId() {
+  var pre = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+  return "".concat(pre).concat(pre.length ? "_" : "") + (Number(String(Math.random()).slice(2)) + Date.now() + Math.round(performance.now())).toString(36);
+};
+
+exports.uniqueId = uniqueId;
+
+var between = function between(v, a, b) {
+  return v > a && v < b;
+};
+
+exports.between = between;
+
+var vmulti = function vmulti(vec, v) {
+  var x = 0;
+  var y = 0;
+
+  if (_typeof(v) === "object") {
+    x = vec.x * v.x;
+    y = vec.y * v.y;
+  } else {
+    x = vec.x * v;
+    y = vec.y * v;
+  }
+
+  return Vector(x, y);
+};
+
+exports.vmulti = vmulti;
+
+var dist = function dist(p1, p2) {
+  var a = p1.x - p2.x;
+  var b = p1.y - p2.y;
+  return Math.sqrt(a * a + b * b);
+};
+
+exports.dist = dist;
+
+var sortByDist = function sortByDist(target) {
+  var items = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+  return items.sort(function (a, b) {
+    return dist(target, a.position) - dist(target, b.position);
+  });
+};
+
+exports.sortByDist = sortByDist;
+
+var circleCollision = function circleCollision(collider, targets) {
+  var destroyOnHit = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+  if (!collider.radius) {
+    console.error("Cannot detect collisions without radius property.");
+  }
+
+  var filtered = targets.filter(function (target) {
+    /* Because why would you ever want to collide with yourself? */
+    if (collider.id === target.id) return;
+    var offsets = target.collisionBodyOptions ? {
+      x: target.collisionBodyOptions.offsetX ? target.x + target.collisionBodyOptions.offsetX : target.x,
+      y: target.collisionBodyOptions.offsetY ? target.y + target.collisionBodyOptions.offsetY : target.y
+    } : {
+      x: target.x,
+      y: target.y
+    };
+    var dx = offsets.x - collider.x;
+    var dy = offsets.y - collider.y;
+    /* You might be seeing results from two perspectives. I'd ensure that it only comes from
+    one in the case of a door. */
+    //debug(target.name + ": " + Math.sqrt(dx * dx + dy * dy))
+
+    if (Math.sqrt(dx * dx + dy * dy) < target.radius + collider.width) {
+      target.ttl = destroyOnHit ? 0 : target.ttl;
+      return target;
+    }
+  });
+  return filtered;
+};
+
+exports.circleCollision = circleCollision;
+
+var debug = function debug(o) {
+  console.info(o);
+  (0, _events.emit)(_events.EV_DEBUGLOG, o);
+};
+
+exports.debug = debug;
+},{"../common/events":"src/common/events.js"}],"src/common/consts.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.ENTITY_TYPE = void 0;
+var ENTITY_TYPE = {
+  PICKUP: 0,
+  NPC: 1,
+  ENEMY: 2,
+  SWITCH: 3,
+  DOOR: 4,
+  CONTAINER: 5,
+  ENTRANCE: 6,
+  PLAYER: 99
+};
+exports.ENTITY_TYPE = ENTITY_TYPE;
 },{}],"node_modules/mithril/render/vnode.js":[function(require,module,exports) {
 "use strict"
 
@@ -6240,63 +6620,7 @@ m.PromisePolyfill = require("./promise/polyfill")
 
 module.exports = m
 
-},{"./hyperscript":"node_modules/mithril/hyperscript.js","./request":"node_modules/mithril/request.js","./mount-redraw":"node_modules/mithril/mount-redraw.js","./route":"node_modules/mithril/route.js","./render":"node_modules/mithril/render.js","./querystring/parse":"node_modules/mithril/querystring/parse.js","./querystring/build":"node_modules/mithril/querystring/build.js","./pathname/parse":"node_modules/mithril/pathname/parse.js","./pathname/build":"node_modules/mithril/pathname/build.js","./render/vnode":"node_modules/mithril/render/vnode.js","./promise/polyfill":"node_modules/mithril/promise/polyfill.js"}],"src/common/events.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.emit = exports.allOff = exports.off = exports.on = exports.EV_DEBUGLOG = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
-
-var _kontra = require("kontra");
-
-var EV_CONVOSTART = "ev.convoStart";
-exports.EV_CONVOSTART = EV_CONVOSTART;
-var EV_CONVOEND = "ev.convoEnd";
-exports.EV_CONVOEND = EV_CONVOEND;
-var EV_CONVONEXT = "ev.convoNext";
-exports.EV_CONVONEXT = EV_CONVONEXT;
-var EV_CONVOCHOICE = "ev.convoChoice";
-exports.EV_CONVOCHOICE = EV_CONVOCHOICE;
-var EV_SCENECHANGE = "ev.sceneChange";
-exports.EV_SCENECHANGE = EV_SCENECHANGE;
-var EV_INTERACTION = "ev.onInteraction";
-exports.EV_INTERACTION = EV_INTERACTION;
-var EV_DEBUGLOG = "ev.debugLog";
-exports.EV_DEBUGLOG = EV_DEBUGLOG;
-var registry = {};
-
-var on = function on(e, fn) {
-  registry[e] = fn;
-  (0, _kontra.on)(e, registry[e]);
-};
-
-exports.on = on;
-
-var off = function off(e, fn) {
-  return (0, _kontra.off)(e, fn);
-};
-
-exports.off = off;
-
-var allOff = function allOff() {
-  var ignoreList = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-  return Object.keys(registry).map(function (k) {
-    return !ignoreList.some(function (str) {
-      return str === k;
-    }) && off(k, registry[k]);
-  });
-};
-
-exports.allOff = allOff;
-
-var emit = function emit(e) {
-  var args = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-  return (0, _kontra.emit)(e, args);
-};
-
-exports.emit = emit;
-},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/ui/ui.js":[function(require,module,exports) {
+},{"./hyperscript":"node_modules/mithril/hyperscript.js","./request":"node_modules/mithril/request.js","./mount-redraw":"node_modules/mithril/mount-redraw.js","./route":"node_modules/mithril/route.js","./render":"node_modules/mithril/render.js","./querystring/parse":"node_modules/mithril/querystring/parse.js","./querystring/build":"node_modules/mithril/querystring/build.js","./pathname/parse":"node_modules/mithril/pathname/parse.js","./pathname/build":"node_modules/mithril/pathname/build.js","./render/vnode":"node_modules/mithril/render/vnode.js","./promise/polyfill":"node_modules/mithril/promise/polyfill.js"}],"src/ui/ui.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6309,6 +6633,12 @@ var _mithril = _interopRequireDefault(require("mithril"));
 var _events = require("../common/events");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
@@ -6406,21 +6736,12 @@ var Shell = function Shell(_ref2) {
     }).start();
   };
 
-  var onConvoNext = function onConvoNext() {
-    console.log("call next...");
-    /* Something very wrong with convo stuff, have a re-think. */
+  var callChoices = function callChoices(props) {// ?
+  };
 
+  var callText = function callText(props) {
     if (isTyping) return;
-    /* If you're in a convo and its waiting for button press, this will turn to true. This
-    isn't what we want in that edge case. */
-
-    var props = attrs.conversationManager.goToNext();
-    if (!props) return;
-    console.log(props);
-    var actorName = props.actor ? actors.find(function (x) {
-      return props.actor === x.id;
-    }).name : null;
-    name = actorName;
+    name = props.actor;
     text = "";
     choices = []; // Apparently this needs to be forced (will double check)
 
@@ -6502,12 +6823,13 @@ var Shell = function Shell(_ref2) {
   };
 
   return {
+    callText: callText,
+    callChoices: callChoices,
     oninit: function oninit() {
-      console.log("UI initialized.");
-      (0, _events.on)(_events.EV_CONVOSTART, onConvoStart);
-      (0, _events.on)(_events.EV_CONVONEXT, onConvoNext);
-      (0, _events.on)(_events.EV_CONVOEND, onConvoEnd);
-      (0, _events.on)(_events.EV_DEBUGLOG, onDebugLog);
+      console.log("UI initialized."); //on(EV_CONVOSTART, onConvoStart);
+      //on(EV_CONVONEXT, callText);
+      //on(EV_CONVOEND, onConvoEnd);
+      //on(EV_DEBUGLOG, onDebugLog);
     },
     view: function view() {
       return (0, _mithril.default)("div", {
@@ -6538,348 +6860,172 @@ var Shell = function Shell(_ref2) {
   };
 };
 
-var _default = function _default() {
-  var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
-    conversationManager: conversationManager,
-    sprites: sprites,
-    onConversationChoice: function onConversationChoice() {}
-  };
+var inst = function inst() {
+  var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  // Need to expose functions here from above somehow
+  var v = (0, _mithril.default)(Shell, props);
+  console.log(v);
   return {
     start: function start() {
       return _mithril.default.mount(document.getElementById("ui"), {
-        view: function view() {
-          return (0, _mithril.default)(Shell, props);
-        }
+        view: v
       });
     }
   };
 };
 
+var _default = _objectSpread({}, inst());
+
 exports.default = _default;
-},{"mithril":"node_modules/mithril/index.js","../common/events":"src/common/events.js"}],"src/sprites/spriteFunctions.js":[function(require,module,exports) {
+},{"mithril":"node_modules/mithril/index.js","../common/events":"src/common/events.js"}],"src/common/conversationIterator.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.flipSprite = exports.moveSprite = void 0;
+exports.default = exports.MODES = void 0;
 
-var moveSprite = function moveSprite(_ref) {
-  var dir = _ref.dir,
-      sprite = _ref.sprite,
-      _ref$checkCollision = _ref.checkCollision,
-      checkCollision = _ref$checkCollision === void 0 ? function () {
-    return false;
-  } : _ref$checkCollision;
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-  /* Normalise so you don't go super fast diagonally */
-  var dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
-  var directionNormal = {
-    x: dir.x !== 0 ? dir.x / dirLength : 0,
-    y: dir.y !== 0 ? dir.y / dirLength : 0
-  }; /// For collisions with tiles
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
-  var oldPos = {
-    x: sprite.x,
-    y: sprite.y
-  }; // Move X then check X (careful editing directly, might lead to issues with camera)
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-  sprite.x += directionNormal.x; // Collider check (const layer names please)
+var MODES = {
+  NOTRUNNING: 100,
+  NEXTNODE: 200,
+  AWAITINGINPUT: 300,
+  JUSTFINISHED: 400,
+  COMPLETED: 500
+};
+exports.MODES = MODES;
 
-  var collidedWithX = checkCollision(sprite);
+var _default = function _default(_ref) {
+  var conversationData = _ref.conversationData,
+      _ref$onChatStarted = _ref.onChatStarted,
+      onChatStarted = _ref$onChatStarted === void 0 ? function (node, props) {} : _ref$onChatStarted,
+      _ref$onChatNext = _ref.onChatNext,
+      onChatNext = _ref$onChatNext === void 0 ? function (node, props) {} : _ref$onChatNext,
+      _ref$onChatComplete = _ref.onChatComplete,
+      onChatComplete = _ref$onChatComplete === void 0 ? function (lastPositionSaved) {} : _ref$onChatComplete,
+      _ref$onChainProgress = _ref.onChainProgress,
+      onChainProgress = _ref$onChainProgress === void 0 ? function (lastNodeId) {} : _ref$onChainProgress,
+      _ref$onChatCancelled = _ref.onChatCancelled,
+      onChatCancelled = _ref$onChatCancelled === void 0 ? function () {} : _ref$onChatCancelled;
+  var index = 0;
+  var currentNode = conversationData[index];
+  var _isRunning = false;
+  var _isComplete = false;
 
-  if (sprite.collidesWithTiles && collidedWithX) {
-    sprite.x = oldPos.x;
-    sprite.y = oldPos.y;
-  } // Update old pos ref
+  var displayNode = function displayNode(queriedNode) {
+    if (queriedNode) {
+      currentNode = queriedNode;
+      index = queriedNode.index;
+      return queriedNode;
+    } else {
+      throw "No node match.";
+    }
+  };
+
+  var queryNode = function queryNode(query) {
+    var queriedNode = conversationData.length ? conversationData.filter(function (node) {
+      return query === node.id;
+    })[0] : null;
+    return displayNode(queriedNode);
+  };
+
+  var start = function start(query) {
+    var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    var queriedNode = queryNode(query);
+    _isRunning = true;
+    _isComplete = false;
+    onChatStarted(queriedNode, props);
+    return _objectSpread({}, displayNode(queriedNode), {
+      mode: MODES.NEXTNODE
+    });
+  };
+
+  var goToExact = function goToExact(query) {
+    var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    var queriedNode = queryNode(query);
+    onChatNext(queriedNode, props);
+    return _objectSpread({}, displayNode(queriedNode), {
+      mode: MODES.NEXTNODE
+    });
+  };
+
+  var goToNext = function goToNext() {
+    var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    // We need to run this 'after' the finish so it avoids chained exec on exit.
+    if (!_isRunning) return {
+      mode: MODES.NOTRUNNING
+    };
+
+    if (_isComplete) {
+      _isRunning = false;
+      return {
+        mode: MODES.COMPLETED
+      };
+    } // TODO: Beware, if you're not checking for existent choices, this will error out,
+    // or do something a little funky. May want to check for choices here instead?
 
 
-  oldPos = {
-    x: sprite.x,
-    y: sprite.y
-  }; // Move Y then check Y (careful editing directly, might lead to issues with camera)
+    var _currentNode = currentNode,
+        id = _currentNode.id,
+        to = _currentNode.to,
+        choices = _currentNode.choices,
+        actions = _currentNode.actions; // Wait if choices are presented.
 
-  sprite.y += directionNormal.y; // Collider check against tiles
+    if (choices.length) return _objectSpread({}, currentNode, {
+      mode: MODES.AWAITINGINPUT // TODO: Consts please.
 
-  var collidedWithY = checkCollision(sprite);
+    });
 
-  if (sprite.collidesWithTiles && collidedWithY) {
-    sprite.x = oldPos.x;
-    sprite.y = oldPos.y;
-  }
+    if (actions.some(function (action) {
+      return action === "endConversation";
+    }) || choices.length === 0 && !to) {
+      if (actions.some(function (action) {
+        return action === "save";
+      })) {
+        onChainProgress(id);
+      }
+
+      if (actions.some(function (action) {
+        return action === "cancel";
+      })) {
+        onChatCancelled();
+      }
+
+      _isComplete = true;
+      onChatComplete(id);
+      console.log("End reached, close the convo.");
+      return _objectSpread({}, currentNode, {
+        mode: MODES.JUSTFINISHED
+      });
+    }
+
+    return _objectSpread({}, goToExact(to, props), {
+      mode: MODES.NEXTNODE
+    });
+  };
 
   return {
-    directionNormal: directionNormal
+    isComplete: function isComplete() {
+      return _isComplete;
+    },
+    isRunning: function isRunning() {
+      return _isRunning;
+    },
+    currentIndex: function currentIndex() {
+      return index;
+    },
+    start: start,
+    goToExact: goToExact,
+    goToNext: goToNext
   };
 };
 
-exports.moveSprite = moveSprite;
-
-var flipSprite = function flipSprite(_ref2) {
-  var direction = _ref2.direction,
-      sprite = _ref2.sprite;
-
-  if (direction.x < 0) {
-    sprite.width = -sprite.width;
-  } else if (direction.x > 0) {
-    sprite.width = sprite.width;
-  }
-};
-
-exports.flipSprite = flipSprite;
-},{}],"src/sprites/entity.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _kontra = require("kontra");
-
-var _spriteFunctions = require("./spriteFunctions");
-
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      assetId = _ref.assetId,
-      x = _ref.x,
-      y = _ref.y,
-      _ref$z = _ref.z,
-      z = _ref$z === void 0 ? 1 : _ref$z,
-      name = _ref.name,
-      tileEngine = _ref.tileEngine,
-      _ref$movementDisabled = _ref.movementDisabled,
-      movementDisabled = _ref$movementDisabled === void 0 ? false : _ref$movementDisabled,
-      _ref$controlledByUser = _ref.controlledByUser,
-      controlledByUser = _ref$controlledByUser === void 0 ? false : _ref$controlledByUser,
-      _ref$collidesWithTile = _ref.collidesWithTiles,
-      collidesWithTiles = _ref$collidesWithTile === void 0 ? true : _ref$collidesWithTile,
-      _ref$customProperties = _ref.customProperties,
-      customProperties = _ref$customProperties === void 0 ? {} : _ref$customProperties,
-      _ref$dataKey = _ref.dataKey,
-      dataKey = _ref$dataKey === void 0 ? "assets/gameData/entityData.json" : _ref$dataKey;
-
-  if (!id || !assetId) {
-    throw new Error("Entity is fairly useless without an id, you should add one.");
-  }
-
-  var entityData = _kontra.dataAssets[dataKey];
-
-  var _entityData$find = entityData.find(function (ent) {
-    return ent.id === assetId;
-  }),
-      animations = _entityData$find.animations,
-      type = _entityData$find.type,
-      frameWidth = _entityData$find.frameWidth,
-      frameHeight = _entityData$find.frameHeight,
-      sheet = _entityData$find.sheet,
-      _entityData$find$coll = _entityData$find.collisionBodyOptions,
-      collisionBodyOptions = _entityData$find$coll === void 0 ? null : _entityData$find$coll,
-      _entityData$find$manu = _entityData$find.manualAnimation,
-      manualAnimation = _entityData$find$manu === void 0 ? false : _entityData$find$manu;
-
-  var spriteSheet = (0, _kontra.SpriteSheet)({
-    image: _kontra.imageAssets[sheet],
-    frameWidth: frameWidth,
-    frameHeight: frameHeight,
-    animations: animations
-  });
-  var sprite = (0, _kontra.Sprite)({
-    type: type,
-    id: id,
-    name: name,
-    x: x,
-    y: y,
-    z: z,
-    customProperties: customProperties,
-    radius: 1,
-    animations: spriteSheet.animations,
-    collidesWithTiles: collidesWithTiles,
-    controlledByUser: controlledByUser,
-    collisionBodyOptions: collisionBodyOptions,
-    manualAnimation: manualAnimation,
-    movementDisabled: movementDisabled,
-    update: function update() {
-      /* Attacking */
-      if ((0, _kontra.keyPressed)("q")) {}
-      /*
-      For attacking, going full throttle with a turn-based system is quite a lot
-      to handle. For now it'd be easier to settle for arcade sort of attacks and
-      being clever with patterns / interaction such as seen on Zelda.
-        So that said, what general idea is this:
-      - Hitbox appears, probably with an animation in sync with it
-      - Collision picked up when hitbox hits whatever the thing is
-      - The thing that's hit get informed of the hit, and as to what actually
-      hit it. If the thing is hostile (no friendly-fire), we search for the item in
-      question and run against its stats.
-      - It's a lot to calculate on the hit, but it has to be done at some point. After
-      that the damage animation plays on the target, and so on. Let the entity handle
-      what happens to it under circumstances such as if it's locked in animation, etc.
-      - The attacker can just worry about its self and what it's doing with attack and
-      animations.
-      */
-
-      /* Movement */
-
-
-      var dir = controlledByUser ? {
-        x: (0, _kontra.keyPressed)("a") ? -1 : (0, _kontra.keyPressed)("d") ? 1 : 0,
-        y: (0, _kontra.keyPressed)("w") ? -1 : (0, _kontra.keyPressed)("s") ? 1 : 0
-      } : {
-        x: 0,
-        y: 0
-      }; // AI (to add later)
-
-      var _moveSprite = (0, _spriteFunctions.moveSprite)({
-        dir: sprite.movementDisabled ? {
-          x: 0,
-          y: 0
-        } : dir,
-        sprite: sprite,
-        checkCollision: function checkCollision(sprite) {
-          return tileEngine.layerCollidesWith("Collision", sprite);
-        }
-      }),
-          directionNormal = _moveSprite.directionNormal; // Flip the sprite on movement
-
-
-      (0, _spriteFunctions.flipSprite)({
-        direction: directionNormal,
-        sprite: sprite
-      }); // Do some animations
-
-      var isMoving = directionNormal.x !== 0 || directionNormal.y !== 0;
-
-      if (!sprite.manualAnimation) {
-        sprite.playAnimation(isMoving ? "walk" : "idle");
-      } // Call this to ensure animations are player
-
-
-      sprite.advance();
-    }
-  });
-  console.log("=> Sprite generated:", sprite.name, sprite.id);
-  console.log(sprite);
-  return sprite;
-};
-
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","./spriteFunctions":"src/sprites/spriteFunctions.js"}],"src/common/helpers.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.debug = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.between = exports.uniqueId = void 0;
-
-var _events = require("../common/events");
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-var uniqueId = function uniqueId() {
-  var pre = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-  return "".concat(pre).concat(pre.length ? "_" : "") + (Number(String(Math.random()).slice(2)) + Date.now() + Math.round(performance.now())).toString(36);
-};
-
-exports.uniqueId = uniqueId;
-
-var between = function between(v, a, b) {
-  return v > a && v < b;
-};
-
-exports.between = between;
-
-var vmulti = function vmulti(vec, v) {
-  var x = 0;
-  var y = 0;
-
-  if (_typeof(v) === "object") {
-    x = vec.x * v.x;
-    y = vec.y * v.y;
-  } else {
-    x = vec.x * v;
-    y = vec.y * v;
-  }
-
-  return Vector(x, y);
-};
-
-exports.vmulti = vmulti;
-
-var dist = function dist(p1, p2) {
-  var a = p1.x - p2.x;
-  var b = p1.y - p2.y;
-  return Math.sqrt(a * a + b * b);
-};
-
-exports.dist = dist;
-
-var sortByDist = function sortByDist(target) {
-  var items = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-  return items.sort(function (a, b) {
-    return dist(target, a.position) - dist(target, b.position);
-  });
-};
-
-exports.sortByDist = sortByDist;
-
-var circleCollision = function circleCollision(collider, targets) {
-  var destroyOnHit = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
-  if (!collider.radius) {
-    console.error("Cannot detect collisions without radius property.");
-  }
-
-  var filtered = targets.filter(function (target) {
-    /* Because why would you ever want to collide with yourself? */
-    if (collider.id === target.id) return;
-    var offsets = target.collisionBodyOptions ? {
-      x: target.collisionBodyOptions.offsetX ? target.x + target.collisionBodyOptions.offsetX : target.x,
-      y: target.collisionBodyOptions.offsetY ? target.y + target.collisionBodyOptions.offsetY : target.y
-    } : {
-      x: target.x,
-      y: target.y
-    };
-    var dx = offsets.x - collider.x;
-    var dy = offsets.y - collider.y;
-    /* You might be seeing results from two perspectives. I'd ensure that it only comes from
-    one in the case of a door. */
-    //debug(target.name + ": " + Math.sqrt(dx * dx + dy * dy))
-
-    if (Math.sqrt(dx * dx + dy * dy) < target.radius + collider.width) {
-      target.ttl = destroyOnHit ? 0 : target.ttl;
-      return target;
-    }
-  });
-  return filtered;
-};
-
-exports.circleCollision = circleCollision;
-
-var debug = function debug(o) {
-  console.info(o);
-  (0, _events.emit)(_events.EV_DEBUGLOG, o);
-};
-
-exports.debug = debug;
-},{"../common/events":"src/common/events.js"}],"src/common/consts.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.ENTITY_TYPE = void 0;
-var ENTITY_TYPE = {
-  PICKUP: 0,
-  NPC: 1,
-  ENEMY: 2,
-  SWITCH: 3,
-  DOOR: 4,
-  CONTAINER: 5,
-  ENTRANCE: 6,
-  PLAYER: 99
-};
-exports.ENTITY_TYPE = ENTITY_TYPE;
 },{}],"src/input/onPush.js":[function(require,module,exports) {
 "use strict";
 
@@ -6912,12 +7058,30 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
+var _kontra = require("kontra");
+
+var _ui = _interopRequireDefault(require("../ui/ui"));
+
+var _events = require("../common/events");
+
+var _conversationIterator = _interopRequireWildcard(require("../common/conversationIterator"));
+
 var _onPush = _interopRequireDefault(require("../input/onPush"));
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _objectWithoutProperties(source, excluded) { if (source == null) return {}; var target = _objectWithoutPropertiesLoose(source, excluded); var key, i; if (Object.getOwnPropertySymbols) { var sourceSymbolKeys = Object.getOwnPropertySymbols(source); for (i = 0; i < sourceSymbolKeys.length; i++) { key = sourceSymbolKeys[i]; if (excluded.indexOf(key) >= 0) continue; if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue; target[key] = source[key]; } } return target; }
+
+function _objectWithoutPropertiesLoose(source, excluded) { if (source == null) return {}; var target = {}; var sourceKeys = Object.keys(source); var key, i; for (i = 0; i < sourceKeys.length; i++) { key = sourceKeys[i]; if (excluded.indexOf(key) >= 0) continue; target[key] = source[key]; } return target; }
+
 var _default = function _default(_ref) {
   var id = _ref.id,
+      startId = _ref.startId,
+      currentActors = _ref.currentActors,
       _ref$onEntry = _ref.onEntry,
       onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
       _ref$onExit = _ref.onExit,
@@ -6925,8 +7089,65 @@ var _default = function _default(_ref) {
       _ref$onNext = _ref.onNext,
       onNext = _ref$onNext === void 0 ? function () {} : _ref$onNext;
   var _isComplete = false;
+  var dataKey = "assets/gameData/conversationData.json";
+  var conversationData = _kontra.dataAssets[dataKey]; // This is all very confusing, can it be simplified please?
+
+  var conversationController = (0, _conversationIterator.default)({
+    conversationData: conversationData,
+    onChatNext: function onChatNext(node) {
+      var passedProps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+      return (0, _events.emit)(_events.EV_CONVONEXT, {
+        node: node,
+        passedProps: passedProps
+      });
+    },
+    onChatComplete: function onChatComplete(exitId) {
+      return (0, _events.emit)(_events.EV_CONVOEND, {
+        exitId: exitId
+      });
+    },
+    onChainProgress: function onChainProgress(lastNodeId) {
+      (0, _kontra.setStoreItem)("progress", {
+        storyProgress: lastNodeId
+      });
+    }
+  });
+  console.log(_ui.default);
+
+  var onDisplayText = function onDisplayText(props) {
+    return _ui.default.callText(props);
+  };
+
+  var onDisplayChoice = function onDisplayChoice(_ref2) {
+    var actor = _ref2.actor,
+        choices = _ref2.choices;
+    console.log(actor, choices);
+  };
+
   var onInteractionPushed = (0, _onPush.default)("e", function () {
-    return onNext();
+    var _ref3 = !conversationController.isRunning() ? conversationController.start(startId, {
+      startId: startId,
+      currentActors: currentActors
+    }) : conversationController.goToNext(),
+        mode = _ref3.mode,
+        rest = _objectWithoutProperties(_ref3, ["mode"]);
+
+    switch (mode) {
+      case _conversationIterator.MODES.NEXTNODE:
+        onDisplayText(rest);
+        break;
+
+      case _conversationIterator.MODES.AWAITINGINPUT:
+        onDisplayChoice(rest);
+        break;
+
+      case _conversationIterator.MODES.JUSTFINISHED:
+      case _conversationIterator.MODES.COMPLETED:
+        _isComplete = true;
+        break;
+    } // Is this ever used?
+    //onNext()
+
   });
   return {
     id: id,
@@ -6946,7 +7167,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"../input/onPush":"src/input/onPush.js"}],"src/states/fieldState.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../ui/ui":"src/ui/ui.js","../common/events":"src/common/events.js","../common/conversationIterator":"src/common/conversationIterator.js","../input/onPush":"src/input/onPush.js"}],"src/states/fieldState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7152,169 +7373,7 @@ var _default = function _default() {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","../sprites/entity":"src/sprites/entity.js"}],"src/common/conversationIterator.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _default = function _default(_ref) {
-  var conversationData = _ref.conversationData,
-      _ref$onChatStarted = _ref.onChatStarted,
-      onChatStarted = _ref$onChatStarted === void 0 ? function (node, props) {} : _ref$onChatStarted,
-      _ref$onChatNext = _ref.onChatNext,
-      onChatNext = _ref$onChatNext === void 0 ? function (node, props) {} : _ref$onChatNext,
-      _ref$onChatComplete = _ref.onChatComplete,
-      onChatComplete = _ref$onChatComplete === void 0 ? function (lastPositionSaved) {} : _ref$onChatComplete,
-      _ref$onChainProgress = _ref.onChainProgress,
-      onChainProgress = _ref$onChainProgress === void 0 ? function (lastNodeId) {} : _ref$onChainProgress,
-      _ref$onChatCancelled = _ref.onChatCancelled,
-      onChatCancelled = _ref$onChatCancelled === void 0 ? function () {} : _ref$onChatCancelled;
-  var index = 0;
-  var currentNode = conversationData[index];
-  var isRunning = false;
-  var _isComplete = false;
-
-  var displayNode = function displayNode(queriedNode) {
-    if (queriedNode) {
-      currentNode = queriedNode;
-      index = queriedNode.index;
-      return queriedNode;
-    } else {
-      throw "No node match.";
-    }
-  };
-
-  var queryNode = function queryNode(query) {
-    var queriedNode = conversationData.length ? conversationData.filter(function (node) {
-      return query === node.id;
-    })[0] : null;
-    return displayNode(queriedNode);
-  };
-
-  var start = function start(query) {
-    var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-    var queriedNode = queryNode(query);
-    isRunning = true;
-    _isComplete = false;
-    onChatStarted(queriedNode, props);
-    return displayNode(queriedNode);
-  };
-
-  var goToExact = function goToExact(query) {
-    var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-    var queriedNode = queryNode(query);
-    onChatNext(queriedNode, props);
-    return displayNode(queriedNode);
-  };
-
-  var goToNext = function goToNext() {
-    var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    // We need to run this 'after' the finish so it avoids chained exec on exit.
-    if (!isRunning) return;
-
-    if (_isComplete) {
-      isRunning = false;
-      return;
-    } // TODO: Beware, if you're not checking for existent choices, this will error out,
-    // or do something a little funky. May want to check for choices here instead?
-
-
-    var _currentNode = currentNode,
-        id = _currentNode.id,
-        to = _currentNode.to,
-        choices = _currentNode.choices,
-        actions = _currentNode.actions; // Wait if choices are presented.
-
-    if (choices.length) return; // TODO: Consts please.
-
-    if (actions.some(function (action) {
-      return action === "endConversation";
-    }) || choices.length === 0 && !to) {
-      if (actions.some(function (action) {
-        return action === "save";
-      })) {
-        onChainProgress(id);
-      }
-
-      if (actions.some(function (action) {
-        return action === "cancel";
-      })) {
-        onChatCancelled();
-      }
-
-      _isComplete = true;
-      onChatComplete(id);
-      console.log("End reached, close the convo.");
-      return;
-    }
-
-    return goToExact(to, props);
-  };
-
-  return {
-    isComplete: function isComplete() {
-      return _isComplete;
-    },
-    currentIndex: function currentIndex() {
-      return index;
-    },
-    start: start,
-    goToExact: goToExact,
-    goToNext: goToNext
-  };
-};
-
-exports.default = _default;
-},{}],"src/managers/conversationManager.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _kontra = require("kontra");
-
-var _events = require("../common/events");
-
-var _conversationIterator = _interopRequireDefault(require("../common/conversationIterator"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var _default = function _default() {
-  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
-    dataKey: "assets/gameData/conversationData.json"
-  };
-  var dataKey = options.dataKey;
-  var conversationData = _kontra.dataAssets[dataKey]; // TODO: Make sure this is working as a singleton pattern
-
-  return (0, _conversationIterator.default)({
-    conversationData: conversationData,
-    onChatNext: function onChatNext(node) {
-      var passedProps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      return (0, _events.emit)(_events.EV_CONVONEXT, {
-        node: node,
-        passedProps: passedProps
-      });
-    },
-    onChatComplete: function onChatComplete(exitId) {
-      return (0, _events.emit)(_events.EV_CONVOEND, {
-        exitId: exitId
-      });
-    },
-    onChainProgress: function onChainProgress(lastNodeId) {
-      (0, _kontra.setStoreItem)("progress", {
-        storyProgress: lastNodeId
-      });
-    }
-  });
-};
-
-exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","../common/events":"src/common/events.js","../common/conversationIterator":"src/common/conversationIterator.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../sprites/entity":"src/sprites/entity.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7382,8 +7441,6 @@ exports.default = _default;
 
 var _kontra = require("kontra");
 
-var _ui = _interopRequireDefault(require("./ui/ui"));
-
 var _entity = _interopRequireDefault(require("./sprites/entity"));
 
 var _helpers = require("./common/helpers");
@@ -7401,8 +7458,6 @@ var _curtainState = _interopRequireDefault(require("./states/curtainState"));
 var _sceneManager = _interopRequireDefault(require("./managers/sceneManager"));
 
 var _worldManager = _interopRequireDefault(require("./managers/worldManager"));
-
-var _conversationManager = _interopRequireDefault(require("./managers/conversationManager"));
 
 var _reactionManager = _interopRequireDefault(require("./managers/reactionManager"));
 
@@ -7451,11 +7506,8 @@ var FieldScene = function FieldScene(_ref) {
   }),
       loadedEntities = _createWorld.loadedEntities,
       tileEngine = _createWorld.tileEngine;
-  /* Dialogue creation */
-
-
-  var conversationManager = (0, _conversationManager.default)();
   /* Main states creation */
+
 
   var sceneStateMachine = (0, _stateManager.default)();
   var screenEffectsStateMachine = (0, _stateManager.default)();
@@ -7512,20 +7564,16 @@ var FieldScene = function FieldScene(_ref) {
     reactionEvent: function reactionEvent(firstAvailable, sprites) {
       return sceneStateMachine.push((0, _startConvo.default)({
         id: "conversation",
-        // Note: should only effect current actors, not all sprites!
+        startId: "m1",
+        currentActors: sprites,
+        // I don't think you want to disable every single sprite...
         onExit: function onExit() {
           return sprites.map(function (spr) {
             return spr.movementDisabled = false;
           });
         },
-        onEntry: function onEntry(props) {
-          // TODO: Let's fix this bit, seems to be a bit... off.
-          console.log("Trigger a convo");
-          (0, _events.emit)(_events.EV_CONVOSTART, {
-            startId: "m1",
-            currentActors: sprites
-          });
-          sprites.map(function (spr) {
+        onEntry: function onEntry() {
+          return sprites.map(function (spr) {
             return spr.movementDisabled = true;
           });
         }
@@ -7571,11 +7619,11 @@ var FieldScene = function FieldScene(_ref) {
   */
   // So instead of calling this here, just import the script and get
   // the thing to self initialise.
+  // UI({
+  //   conversationManager,
+  //   sprites
+  // }).start();
 
-  (0, _ui.default)({
-    conversationManager: conversationManager,
-    sprites: sprites
-  }).start();
   /* Primary loop */
 
   return (0, _kontra.GameLoop)({
@@ -7659,7 +7707,7 @@ TODO: Can we also const the dataKeys across the board plz. */
     return sceneManager.loadScene(_objectSpread({}, props));
   });
 });
-},{"kontra":"node_modules/kontra/kontra.mjs","./ui/ui":"src/ui/ui.js","./sprites/entity":"src/sprites/entity.js","./common/helpers":"src/common/helpers.js","./common/consts":"src/common/consts.js","./common/events":"src/common/events.js","./states/startConvo":"src/states/startConvo.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js","./managers/sceneManager":"src/managers/sceneManager.js","./managers/worldManager":"src/managers/worldManager.js","./managers/conversationManager":"src/managers/conversationManager.js","./managers/reactionManager":"src/managers/reactionManager.js","./managers/stateManager":"src/managers/stateManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./sprites/entity":"src/sprites/entity.js","./common/helpers":"src/common/helpers.js","./common/consts":"src/common/consts.js","./common/events":"src/common/events.js","./states/startConvo":"src/states/startConvo.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js","./managers/sceneManager":"src/managers/sceneManager.js","./managers/worldManager":"src/managers/worldManager.js","./managers/reactionManager":"src/managers/reactionManager.js","./managers/stateManager":"src/managers/stateManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -7687,7 +7735,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58588" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52263" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

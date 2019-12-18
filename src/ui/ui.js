@@ -7,7 +7,7 @@ import {
   EV_DEBUGLOG
 } from "../common/events";
 
-const typeWriter = ({ text, onStart = () => {}, onTyped = str => {}, onFinished = () => {} }) => {
+const typeWriter = ({ text, onStart = () => { }, onTyped = str => { }, onFinished = () => { } }) => {
   let animId = "";
   let str = "";
 
@@ -79,25 +79,15 @@ const Shell = ({ attrs }) => {
     }).start();
   };
 
-  const onConvoNext = () => {
+  const callChoices = (props) => {
+    // ?
+  }
 
-    console.log("call next...");
-    
-    /* Something very wrong with convo stuff, have a re-think. */
+  const callText = (props) => {
+
     if (isTyping) return;
 
-    /* If you're in a convo and its waiting for button press, this will turn to true. This
-    isn't what we want in that edge case. */
-    const props = attrs.conversationManager.goToNext();
-    if (!props) return;
-
-    console.log(props)
-    
-    const actorName = props.actor
-      ? actors.find(x => props.actor === x.id).name
-      : null;
-
-    name = actorName;
+    name = props.actor;
     text = "";
     choices = [];
 
@@ -122,7 +112,7 @@ const Shell = ({ attrs }) => {
 
   const onChoiceSelected = choice => {
     if (isTyping) return;
-    
+
     const props = attrs.conversationManager.goToExact(choice.to);
     if (!props) return;
 
@@ -162,7 +152,7 @@ const Shell = ({ attrs }) => {
   };
 
   const onDebugLog = (output, clearPrevious = false, maxLines = 4) => {
-    
+
     debugText = clearPrevious ? [output] : [...debugText, output];
 
     if (debugText.length > maxLines) {
@@ -173,37 +163,39 @@ const Shell = ({ attrs }) => {
   };
 
   return {
+    callText,
+    callChoices,
     oninit: () => {
       console.log("UI initialized.");
-      on(EV_CONVOSTART, onConvoStart);
-      on(EV_CONVONEXT, onConvoNext);
-      on(EV_CONVOEND, onConvoEnd);
-      on(EV_DEBUGLOG, onDebugLog);
+      //on(EV_CONVOSTART, onConvoStart);
+      //on(EV_CONVONEXT, callText);
+      //on(EV_CONVOEND, onConvoEnd);
+      //on(EV_DEBUGLOG, onDebugLog);
     },
     view: () => {
       return m("div", { class: "uiShell" }, [
         text &&
-          m("div", { class: "dialogueBoxOuter" }, [
-            m("div", { class: "dialogue" }, [
-              m("span", name ? `${name}:` : ""),
-              m("span", name ? `"${text}"` : text),
-              m(
-                "div",
-                { class: "choiceWindow" },
-                choices.map(choice => {
-                  return m(
-                    "button",
-                    {
-                      class: "choiceBox",
-                      onclick: () => onChoiceSelected(choice)
-                    },
-                    choice.text
-                  );
-                })
-              ),
-              isTyping ? "" : m("span", { class: "arrow" })
-            ])
-          ]),
+        m("div", { class: "dialogueBoxOuter" }, [
+          m("div", { class: "dialogue" }, [
+            m("span", name ? `${name}:` : ""),
+            m("span", name ? `"${text}"` : text),
+            m(
+              "div",
+              { class: "choiceWindow" },
+              choices.map(choice => {
+                return m(
+                  "button",
+                  {
+                    class: "choiceBox",
+                    onclick: () => onChoiceSelected(choice)
+                  },
+                  choice.text
+                );
+              })
+            ),
+            isTyping ? "" : m("span", { class: "arrow" })
+          ])
+        ]),
         m("div", { class: "debugWindow" }, [
           debugText.map(s => {
             return m("span", s);
@@ -215,17 +207,23 @@ const Shell = ({ attrs }) => {
   };
 };
 
-export default (
-  props = {
-    conversationManager,
-    sprites,
-    onConversationChoice: () => {}
-  }
+const inst = (
+  props = {}
 ) => {
+
+  // Need to expose functions here from above somehow
+  const v = m(Shell, props)
+
+  console.log(v)
+
   return {
     start: () =>
       m.mount(document.getElementById("ui"), {
-        view: () => m(Shell, props)
+        view: v
       })
   };
+};
+
+export default {
+  ...inst()
 };

@@ -1,10 +1,18 @@
+export const MODES = {
+  NOTRUNNING: 100,
+  NEXTNODE: 200,
+  AWAITINGINPUT: 300,
+  JUSTFINISHED: 400,
+  COMPLETED: 500
+}
+
 export default ({
   conversationData,
-  onChatStarted = (node, props) => {},
-  onChatNext = (node, props) => {},
-  onChatComplete = lastPositionSaved => {},
-  onChainProgress = lastNodeId => {},
-  onChatCancelled = () => {}
+  onChatStarted = (node, props) => { },
+  onChatNext = (node, props) => { },
+  onChatComplete = lastPositionSaved => { },
+  onChainProgress = lastNodeId => { },
+  onChatCancelled = () => { }
 }) => {
   let index = 0;
   let currentNode = conversationData[index];
@@ -37,7 +45,10 @@ export default ({
 
     onChatStarted(queriedNode, props);
 
-    return displayNode(queriedNode);
+    return {
+      ...displayNode(queriedNode),
+      mode: MODES.NEXTNODE
+    };
   };
 
   const goToExact = (query, props = {}) => {
@@ -45,16 +56,23 @@ export default ({
 
     onChatNext(queriedNode, props);
 
-    return displayNode(queriedNode);
+    return {
+      ...displayNode(queriedNode),
+      mode: MODES.NEXTNODE
+    };
   };
 
   const goToNext = (props = {}) => {
     // We need to run this 'after' the finish so it avoids chained exec on exit.
-    if (!isRunning) return;
+    if (!isRunning) return {
+      mode: MODES.NOTRUNNING
+    };
 
     if (isComplete) {
       isRunning = false;
-      return;
+      return {
+        mode: MODES.COMPLETED
+      };
     }
 
     // TODO: Beware, if you're not checking for existent choices, this will error out,
@@ -62,7 +80,10 @@ export default ({
     const { id, to, choices, actions } = currentNode;
 
     // Wait if choices are presented.
-    if (choices.length) return;
+    if (choices.length) return {
+      ...currentNode,
+      mode: MODES.AWAITINGINPUT
+    }
 
     // TODO: Consts please.
     if (
@@ -80,14 +101,21 @@ export default ({
       isComplete = true;
       onChatComplete(id);
       console.log("End reached, close the convo.");
-      return;
+      return {
+        ...currentNode,
+        mode: MODES.JUSTFINISHED
+      }
     }
 
-    return goToExact(to, props);
+    return {
+      ...goToExact(to, props),
+      mode: MODES.NEXTNODE
+    };
   };
 
   return {
     isComplete: () => isComplete,
+    isRunning: () => isRunning,
     currentIndex: () => index,
     start,
     goToExact,
