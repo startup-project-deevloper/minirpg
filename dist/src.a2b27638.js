@@ -6624,7 +6624,7 @@ module.exports = m
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = exports._shellInst = void 0;
+exports.default = void 0;
 
 var _mithril = _interopRequireDefault(require("mithril"));
 
@@ -6636,12 +6636,10 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-var GLOBALS = {
-  isTyping: false,
-  name: "",
-  text: "",
-  choices: []
-};
+var isTyping = false;
+var name = "";
+var text = "";
+var choices = [];
 
 var typeWriter = function typeWriter(_ref) {
   var text = _ref.text,
@@ -6683,9 +6681,9 @@ var typeWriter = function typeWriter(_ref) {
 };
 
 var primeGlobals = function primeGlobals(props) {
-  GLOBALS.name = props.name;
-  GLOBALS.text = "";
-  GLOBALS.choices = []; // Apparently this needs to be forced (will double check)
+  name = props.name;
+  text = "";
+  choices = []; // Apparently this needs to be forced (will double check)
 
   _mithril.default.redraw();
 };
@@ -6694,16 +6692,16 @@ var callTypewriter = function callTypewriter(props) {
   return typeWriter({
     text: props.text,
     onStart: function onStart() {
-      return GLOBALS.isTyping = true;
+      return isTyping = true;
     },
     onTyped: function onTyped(str) {
-      GLOBALS.text = str;
+      text = str;
 
       _mithril.default.redraw();
     },
     onFinished: function onFinished() {
-      GLOBALS.isTyping = false;
-      GLOBALS.choices = props.choices.length ? props.choices : [];
+      isTyping = false;
+      choices = props.choices.length ? props.choices : [];
 
       _mithril.default.redraw();
     }
@@ -6711,15 +6709,7 @@ var callTypewriter = function callTypewriter(props) {
 };
 
 var _callText = function callText(props) {
-  if (GLOBALS.isTyping) return;
-  primeGlobals(props);
-  callTypewriter(props);
-};
-
-var callChoice = function callChoice(choice) {
-  if (GLOBALS.isTyping) return;
-  var props = attrs.conversationManager.goToExact(choice.to);
-  if (!props) return;
+  if (isTyping) return;
   primeGlobals(props);
   callTypewriter(props);
 };
@@ -6734,7 +6724,7 @@ var Shell = function Shell(_ref2) {
     view: function view() {
       return (0, _mithril.default)("div", {
         class: "uiShell"
-      }, [text && (0, _mithril.default)("div", {
+      }, text && (0, _mithril.default)("div", {
         class: "dialogueBoxOuter"
       }, [(0, _mithril.default)("div", {
         class: "dialogue"
@@ -6744,34 +6734,44 @@ var Shell = function Shell(_ref2) {
         return (0, _mithril.default)("button", {
           class: "choiceBox",
           onclick: function onclick() {
-            return callChoice(choice);
+            return attrs.onChoiceSelected(choice);
           }
         }, choice.text);
-      })), GLOBALS.isTyping ? "" : (0, _mithril.default)("span", {
+      })), isTyping ? "" : (0, _mithril.default)("span", {
         class: "arrow"
-      })])])]);
+      })])]));
     }
   };
 };
 
-var _shellInst = _mithril.default.mount(document.getElementById("ui"), {
-  view: function view() {
-    return (0, _mithril.default)(Shell, {});
-  }
-})();
-
-exports._shellInst = _shellInst;
+var mounted = false;
 var _default = {
-  callText: function callText(props) {
-    return _callText(_objectSpread({}, props));
+  isBusy: function isBusy() {
+    return isTyping;
   },
-  reset: function reset() {
-    return GLOBALS = {
-      isTyping: false,
-      name: "",
-      text: "",
-      choices: []
-    };
+  mount: function mount() {
+    var attrs = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    mounted = true;
+
+    _mithril.default.mount(document.getElementById("ui"), {
+      view: function view() {
+        return (0, _mithril.default)(Shell, attrs);
+      }
+    });
+  },
+  unmount: function unmount() {
+    mounted = false;
+    isTyping = false;
+    name = "";
+    text = "";
+    choices = [];
+
+    _mithril.default.mount(document.getElementById("ui"), null);
+  },
+  callText: function callText(props) {
+    if (!mounted) return;
+
+    _callText(_objectSpread({}, props));
   }
 };
 exports.default = _default;
@@ -6983,29 +6983,23 @@ var _default = function _default(_ref) {
       _ref$onEntry = _ref.onEntry,
       onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
       _ref$onExit = _ref.onExit,
-      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit,
-      _ref$onNext = _ref.onNext,
-      onNext = _ref$onNext === void 0 ? function () {} : _ref$onNext;
+      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
+  console.log("Start convo:");
   var _isComplete = false;
   var dataKey = "assets/gameData/conversationData.json";
   var conversationData = _kontra.dataAssets[dataKey]; // This is all very confusing, can it be simplified please?
 
   var conversationController = (0, _conversationIterator.default)({
     conversationData: conversationData,
-    onChatNext: function onChatNext(node) {
-      var passedProps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      return (0, _events.emit)(_events.EV_CONVONEXT, {
-        node: node,
-        passedProps: passedProps
-      });
-    },
     onChatComplete: function onChatComplete(exitId) {
-      return (0, _events.emit)(_events.EV_CONVOEND, {
+      _ui.default.unmount();
+
+      (0, _events.emit)(_events.EV_CONVOEND, {
         exitId: exitId
       });
     },
     onChainProgress: function onChainProgress(lastNodeId) {
-      (0, _kontra.setStoreItem)("progress", {
+      return (0, _kontra.setStoreItem)("progress", {
         storyProgress: lastNodeId
       });
     }
@@ -7015,44 +7009,47 @@ var _default = function _default(_ref) {
     var name = _ref2.actor,
         text = _ref2.text,
         choices = _ref2.choices;
-    return _ui.default.callText(name, text, choices);
-  };
-
-  var onDisplayChoice = function onDisplayChoice(_ref3) {
-    var actor = _ref3.actor,
-        choices = _ref3.choices;
-    console.log(actor, choices);
-  };
-
-  var onFinished = function onFinished() {
-    return _ui.default.reset();
+    return _ui.default.callText({
+      name: name,
+      text: text,
+      choices: choices
+    });
   };
 
   var onInteractionPushed = (0, _onPush.default)("e", function () {
-    var _ref4 = !conversationController.isRunning() ? conversationController.start(startId, {
+    if (_ui.default.isBusy()) return;
+
+    var _ref3 = !conversationController.isRunning() ? conversationController.start(startId, {
       startId: startId,
       currentActors: currentActors
     }) : conversationController.goToNext(),
-        mode = _ref4.mode,
-        rest = _objectWithoutProperties(_ref4, ["mode"]);
+        mode = _ref3.mode,
+        rest = _objectWithoutProperties(_ref3, ["mode"]);
 
-    switch (mode) {
-      case _conversationIterator.MODES.NEXTNODE:
-        onDisplayText(rest);
-        break;
+    if (mode === _conversationIterator.MODES.NEXTNODE) {
+      onDisplayText(rest);
+    }
 
-      case _conversationIterator.MODES.AWAITINGINPUT:
-        onDisplayChoice(rest);
-        break;
-
-      case _conversationIterator.MODES.JUSTFINISHED:
-      case _conversationIterator.MODES.COMPLETED:
-        _isComplete = true;
-        break;
-    } // Is this ever used?
-    //onNext()
-
+    _isComplete = mode === _conversationIterator.MODES.JUSTFINISHED || mode === _conversationIterator.MODES.COMPLETED;
   });
+
+  _ui.default.mount({
+    onChoiceSelected: function onChoiceSelected(choice) {
+      console.log("Selected:");
+      console.log(choice);
+
+      var _conversationControll = conversationController.goToExact(choice.to),
+          mode = _conversationControll.mode,
+          rest = _objectWithoutProperties(_conversationControll, ["mode"]);
+
+      if (mode === _conversationIterator.MODES.NEXTNODE) {
+        onDisplayText(rest);
+      }
+
+      _isComplete = mode === _conversationIterator.MODES.JUSTFINISHED || mode === _conversationIterator.MODES.COMPLETED;
+    }
+  });
+
   return {
     id: id,
     isComplete: function isComplete() {

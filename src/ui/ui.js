@@ -1,11 +1,9 @@
 import m from "mithril";
 
-let GLOBALS = {
-  isTyping: false,
-  name: "",
-  text: "",
-  choices: []
-}
+let isTyping = false;
+let name = "";
+let text = "";
+let choices = [];
 
 const typeWriter = ({ text, onStart = () => { }, onTyped = str => { }, onFinished = () => { } }) => {
   let animId = "";
@@ -34,9 +32,9 @@ const typeWriter = ({ text, onStart = () => { }, onTyped = str => { }, onFinishe
 };
 
 const primeGlobals = props => {
-  GLOBALS.name = props.name;
-  GLOBALS.text = "";
-  GLOBALS.choices = [];
+  name = props.name;
+  text = "";
+  choices = [];
 
   // Apparently this needs to be forced (will double check)
   m.redraw();
@@ -44,33 +42,21 @@ const primeGlobals = props => {
 
 const callTypewriter = props => typeWriter({
   text: props.text,
-  onStart: () => GLOBALS.isTyping = true,
+  onStart: () => isTyping = true,
   onTyped: str => {
-    GLOBALS.text = str;
+    text = str;
     m.redraw();
   },
   onFinished: () => {
-    GLOBALS.isTyping = false;
-    GLOBALS.choices = props.choices.length ? props.choices : [];
+    isTyping = false;
+    choices = props.choices.length ? props.choices : [];
     m.redraw();
   }
 }).start();
 
 const callText = (props) => {
 
-  if (GLOBALS.isTyping) return;
-
-  primeGlobals(props);
-  callTypewriter(props);
-};
-
-const callChoice = choice => {
-
-  if (GLOBALS.isTyping) return;
-
-  const props = attrs.conversationManager.goToExact(choice.to);
-
-  if (!props) return;
+  if (isTyping) return;
 
   primeGlobals(props);
   callTypewriter(props);
@@ -81,8 +67,7 @@ const Shell = ({ attrs }) => {
   return {
     oninit: () => console.log("UI initialized."),
     view: () => {
-      return m("div", { class: "uiShell" }, [
-        text &&
+      return m("div", { class: "uiShell" }, text &&
         m("div", { class: "dialogueBoxOuter" }, [
           m("div", { class: "dialogue" }, [
             m("span", name ? `${name}:` : ""),
@@ -95,32 +80,44 @@ const Shell = ({ attrs }) => {
                   "button",
                   {
                     class: "choiceBox",
-                    onclick: () => callChoice(choice)
+                    onclick: () => attrs.onChoiceSelected(choice)
                   },
                   choice.text
                 );
               })
             ),
-            GLOBALS.isTyping ? "" : m("span", { class: "arrow" })
+            isTyping ? "" : m("span", { class: "arrow" })
           ])
-        ])
-      ]);
+        ]));
     }
   };
 };
 
-export const _shellInst = m.mount(document.getElementById("ui"), {
-  view: () => m(Shell, {})
-})()
+let mounted = false;
 
 export default {
-  callText: props => callText({
-    ...props
-  }),
-  reset: () => GLOBALS = {
-    isTyping: false,
-    name: "",
-    text: "",
-    choices: []
+  isBusy: () => isTyping,
+  mount: (attrs = {}) => {
+    mounted = true;
+
+    m.mount(document.getElementById("ui"), {
+      view: () => m(Shell, attrs)
+    })
+  },
+  unmount: () => {
+    mounted = false;
+    isTyping = false;
+    name = "";
+    text = "";
+    choices = [];
+
+    m.mount(document.getElementById("ui"), null);
+  },
+  callText: props => {
+    if (!mounted) return;
+
+    callText({
+      ...props
+    })
   }
 };
