@@ -4355,7 +4355,7 @@ exports.default = _default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.emit = exports.allOff = exports.off = exports.on = exports.EV_DEBUGLOG = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
+exports.emit = exports.allOff = exports.off = exports.on = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
 
 var _kontra = require("kontra");
 
@@ -4371,8 +4371,6 @@ var EV_SCENECHANGE = "ev.sceneChange";
 exports.EV_SCENECHANGE = EV_SCENECHANGE;
 var EV_INTERACTION = "ev.onInteraction";
 exports.EV_INTERACTION = EV_INTERACTION;
-var EV_DEBUGLOG = "ev.debugLog";
-exports.EV_DEBUGLOG = EV_DEBUGLOG;
 var registry = {};
 
 var on = function on(e, fn) {
@@ -6626,11 +6624,9 @@ module.exports = m
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.default = exports._shellInst = void 0;
 
 var _mithril = _interopRequireDefault(require("mithril"));
-
-var _events = require("../common/events");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -6640,13 +6636,12 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
-
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
-
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
-
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+var GLOBALS = {
+  isTyping: false,
+  name: "",
+  text: "",
+  choices: []
+};
 
 var typeWriter = function typeWriter(_ref) {
   var text = _ref.text,
@@ -6687,149 +6682,54 @@ var typeWriter = function typeWriter(_ref) {
   };
 };
 
+var primeGlobals = function primeGlobals(props) {
+  GLOBALS.name = props.name;
+  GLOBALS.text = "";
+  GLOBALS.choices = []; // Apparently this needs to be forced (will double check)
+
+  _mithril.default.redraw();
+};
+
+var callTypewriter = function callTypewriter(props) {
+  return typeWriter({
+    text: props.text,
+    onStart: function onStart() {
+      return GLOBALS.isTyping = true;
+    },
+    onTyped: function onTyped(str) {
+      GLOBALS.text = str;
+
+      _mithril.default.redraw();
+    },
+    onFinished: function onFinished() {
+      GLOBALS.isTyping = false;
+      GLOBALS.choices = props.choices.length ? props.choices : [];
+
+      _mithril.default.redraw();
+    }
+  }).start();
+};
+
+var _callText = function callText(props) {
+  if (GLOBALS.isTyping) return;
+  primeGlobals(props);
+  callTypewriter(props);
+};
+
+var callChoice = function callChoice(choice) {
+  if (GLOBALS.isTyping) return;
+  var props = attrs.conversationManager.goToExact(choice.to);
+  if (!props) return;
+  primeGlobals(props);
+  callTypewriter(props);
+};
+
 var Shell = function Shell(_ref2) {
   var attrs = _ref2.attrs;
-  var debugText = [];
-  var isTyping = false;
-  var name = "";
-  var text = "";
-  var choices = [];
-  var actors = [];
-
-  var onConvoStart = function onConvoStart(_ref3) {
-    var startId = _ref3.startId,
-        currentActors = _ref3.currentActors;
-
-    /* Avoid multiple calls here, causes problems */
-    console.log("Convo start even triggered.");
-    console.log(isTyping, startId, currentActors);
-    if (isTyping) return;
-    actors = currentActors;
-    var props = attrs.conversationManager.start(startId);
-    if (!props) return;
-    var actorName = props.actor ? actors.find(function (x) {
-      return props.actor === x.id;
-    }).name : null;
-    name = actorName;
-    text = "";
-    choices = []; // Apparently this needs to be forced (will double check)
-
-    _mithril.default.redraw(); // Start typewriter effect
-
-
-    typeWriter({
-      text: props.text,
-      onStart: function onStart() {
-        return isTyping = true;
-      },
-      onTyped: function onTyped(str) {
-        text = str;
-
-        _mithril.default.redraw();
-      },
-      onFinished: function onFinished() {
-        isTyping = false;
-        choices = props.choices.length ? props.choices : [];
-
-        _mithril.default.redraw();
-      }
-    }).start();
-  };
-
-  var callChoices = function callChoices(props) {// ?
-  };
-
-  var callText = function callText(props) {
-    if (isTyping) return;
-    name = props.actor;
-    text = "";
-    choices = []; // Apparently this needs to be forced (will double check)
-
-    _mithril.default.redraw(); // Start typewriter effect
-
-
-    typeWriter({
-      text: props.text,
-      onStart: function onStart() {
-        return isTyping = true;
-      },
-      onTyped: function onTyped(str) {
-        text = str;
-
-        _mithril.default.redraw();
-      },
-      onFinished: function onFinished() {
-        isTyping = false;
-        choices = props.choices.length ? props.choices : [];
-
-        _mithril.default.redraw();
-      }
-    }).start();
-  };
-
-  var onChoiceSelected = function onChoiceSelected(choice) {
-    if (isTyping) return;
-    var props = attrs.conversationManager.goToExact(choice.to);
-    if (!props) return;
-    var actorName = props.actor ? actors.find(function (x) {
-      return props.actor === x.id;
-    }).name : null;
-    name = actorName;
-    text = "";
-    choices = []; // Apparently this needs to be forced (will double check)
-
-    _mithril.default.redraw(); // Start typewriter effect
-
-
-    typeWriter({
-      text: props.text,
-      onStart: function onStart() {
-        return isTyping = true;
-      },
-      onTyped: function onTyped(str) {
-        text = str;
-
-        _mithril.default.redraw();
-      },
-      onFinished: function onFinished() {
-        isTyping = false;
-        choices = props.choices.length ? props.choices : [];
-
-        _mithril.default.redraw();
-      }
-    }).start();
-  };
-
-  var onConvoEnd = function onConvoEnd() {
-    isTyping = false;
-    name = "";
-    text = "";
-    choices = [];
-    actors = [];
-
-    _mithril.default.redraw();
-  };
-
-  var onDebugLog = function onDebugLog(output) {
-    var clearPrevious = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-    var maxLines = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 4;
-    debugText = clearPrevious ? [output] : [].concat(_toConsumableArray(debugText), [output]);
-
-    if (debugText.length > maxLines) {
-      debugText.splice(0, 1);
-    }
-
-    _mithril.default.redraw();
-  };
-
+  // I'd start looking at multiple UI components rather than just in here.
   return {
-    callText: callText,
-    callChoices: callChoices,
     oninit: function oninit() {
-      console.log("UI initialized."); //on(EV_CONVOSTART, onConvoStart);
-      //on(EV_CONVONEXT, callText);
-      //on(EV_CONVOEND, onConvoEnd);
-      //on(EV_DEBUGLOG, onDebugLog);
+      return console.log("UI initialized.");
     },
     view: function view() {
       return (0, _mithril.default)("div", {
@@ -6844,40 +6744,38 @@ var Shell = function Shell(_ref2) {
         return (0, _mithril.default)("button", {
           class: "choiceBox",
           onclick: function onclick() {
-            return onChoiceSelected(choice);
+            return callChoice(choice);
           }
         }, choice.text);
-      })), isTyping ? "" : (0, _mithril.default)("span", {
+      })), GLOBALS.isTyping ? "" : (0, _mithril.default)("span", {
         class: "arrow"
-      })])]), (0, _mithril.default)("div", {
-        class: "debugWindow"
-      }, [debugText.map(function (s) {
-        return (0, _mithril.default)("span", s);
-      }), (0, _mithril.default)("span", {
-        class: "cursor4"
-      }, "_")])]);
+      })])])]);
     }
   };
 };
 
-var inst = function inst() {
-  var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-  // Need to expose functions here from above somehow
-  var v = (0, _mithril.default)(Shell, props);
-  console.log(v);
-  return {
-    start: function start() {
-      return _mithril.default.mount(document.getElementById("ui"), {
-        view: v
-      });
-    }
-  };
+var _shellInst = _mithril.default.mount(document.getElementById("ui"), {
+  view: function view() {
+    return (0, _mithril.default)(Shell, {});
+  }
+})();
+
+exports._shellInst = _shellInst;
+var _default = {
+  callText: function callText(props) {
+    return _callText(_objectSpread({}, props));
+  },
+  reset: function reset() {
+    return GLOBALS = {
+      isTyping: false,
+      name: "",
+      text: "",
+      choices: []
+    };
+  }
 };
-
-var _default = _objectSpread({}, inst());
-
 exports.default = _default;
-},{"mithril":"node_modules/mithril/index.js","../common/events":"src/common/events.js"}],"src/common/conversationIterator.js":[function(require,module,exports) {
+},{"mithril":"node_modules/mithril/index.js"}],"src/common/conversationIterator.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7112,25 +7010,31 @@ var _default = function _default(_ref) {
       });
     }
   });
-  console.log(_ui.default);
 
-  var onDisplayText = function onDisplayText(props) {
-    return _ui.default.callText(props);
+  var onDisplayText = function onDisplayText(_ref2) {
+    var name = _ref2.actor,
+        text = _ref2.text,
+        choices = _ref2.choices;
+    return _ui.default.callText(name, text, choices);
   };
 
-  var onDisplayChoice = function onDisplayChoice(_ref2) {
-    var actor = _ref2.actor,
-        choices = _ref2.choices;
+  var onDisplayChoice = function onDisplayChoice(_ref3) {
+    var actor = _ref3.actor,
+        choices = _ref3.choices;
     console.log(actor, choices);
   };
 
+  var onFinished = function onFinished() {
+    return _ui.default.reset();
+  };
+
   var onInteractionPushed = (0, _onPush.default)("e", function () {
-    var _ref3 = !conversationController.isRunning() ? conversationController.start(startId, {
+    var _ref4 = !conversationController.isRunning() ? conversationController.start(startId, {
       startId: startId,
       currentActors: currentActors
     }) : conversationController.goToNext(),
-        mode = _ref3.mode,
-        rest = _objectWithoutProperties(_ref3, ["mode"]);
+        mode = _ref4.mode,
+        rest = _objectWithoutProperties(_ref4, ["mode"]);
 
     switch (mode) {
       case _conversationIterator.MODES.NEXTNODE:
@@ -7602,28 +7506,6 @@ var FieldScene = function FieldScene(_ref) {
   (0, _events.on)(_events.EV_CONVOEND, function () {
     return sceneStateMachine.pop();
   });
-  /* Finally, enable the UI (TODO: Double check this is clearing properly) */
-
-  /*
-  Suggested update:
-  - UI shouldn't give a damn about conversation managers or sprites for that
-  matter. You should just call upon its various functions and go from there.
-  - This will help avoid further coupling issues.
-  - To control all this you could actually just use the state
-  that handles conversations and stuff. If you're going to pass things in to anything,
-  pass them in to the states since they're totall custom.
-    Also, I'd prepare the UI in a separate place. Initialise it when the
-  application starts. You don't have to do it in here. Especially if there's
-  events that can be used. Index doesn't need to care about any of this
-  stuff. Just import the script and let it do the rest.
-  */
-  // So instead of calling this here, just import the script and get
-  // the thing to self initialise.
-  // UI({
-  //   conversationManager,
-  //   sprites
-  // }).start();
-
   /* Primary loop */
 
   return (0, _kontra.GameLoop)({
@@ -7735,7 +7617,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52263" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51746" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

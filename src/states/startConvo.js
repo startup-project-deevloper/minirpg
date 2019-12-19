@@ -30,14 +30,15 @@ export default ({
     }
   });
 
-  console.log(UI)
-
-  const onDisplayText = props =>
-    UI.callText(props);
+  const onDisplayText = ({actor: name, text, choices}) =>
+    UI.callText(name, text, choices);
 
   const onDisplayChoice = ({ actor, choices }) => {
     console.log(actor, choices);
   }
+
+  const onFinished = () =>
+    UI.reset();
 
   const onInteractionPushed =
     onPush("e", () => {
