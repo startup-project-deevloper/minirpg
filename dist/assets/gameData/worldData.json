@@ -13,14 +13,6 @@
                 "customProperties": {}
             },
             {
-                "x": 156,
-                "y": 72,
-                "name": "Potion",
-                "id": "potion",
-                "assetId": "standard_potion",
-                "customProperties": {}
-            },
-            {
                 "x": 112,
                 "y": 48,
                 "name": "Door",
@@ -53,7 +45,7 @@
     },
     {
         "id": "area2",
-        "mapKey": "assets/tiledata/test",
+        "mapKey": "assets/tiledata/test2",
         "entities": [
             {
                 "x": 112,
@@ -73,6 +65,14 @@
                 "name": "Entrance",
                 "id": "entranceMarker",
                 "assetId": "standard_entrance",
+                "customProperties": {}
+            },
+            {
+                "x": 120,
+                "y": 136,
+                "name": "Potion",
+                "id": "potion",
+                "assetId": "standard_potion",
                 "customProperties": {}
             }
         ]

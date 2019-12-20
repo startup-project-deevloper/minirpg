@@ -177,6 +177,7 @@ TODO: Can we also const the dataKeys across the board plz. */
 load(
   "assets/tileimages/test.png",
   "assets/tiledata/test.json",
+  "assets/tiledata/test2.json",
   "assets/entityimages/little_devil.png",
   "assets/entityimages/little_orc.png",
   "assets/gameData/conversationData.json",
