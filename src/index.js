@@ -71,9 +71,9 @@ const FieldScene = ({ areaId, playerStartId }) => {
       type: ENTITY_TYPE.DOOR,
       /* First available refers to the first given collision. So it might not always be what
       what you want it to be. This needs to be made a bit more robust. */
-      reactionEvent: firstAvailable => {
+      reactionEvent: (interactible, actors = []) => {
         // TODO: Entities should manage their own animations (same problem seen elsewhere)
-        firstAvailable.playAnimation("open");
+        interactible.playAnimation("open");
 
         screenEffectsStateMachine.push(
           curtainState({
@@ -84,8 +84,8 @@ const FieldScene = ({ areaId, playerStartId }) => {
               allOff([EV_SCENECHANGE]);
               /* Player start becomes part of the collider data so we attempt to use that. */
               emit(EV_SCENECHANGE, {
-                areaId: firstAvailable.customProperties.goesTo,
-                playerStartId: firstAvailable.customProperties.playerStartId
+                areaId: interactible.customProperties.goesTo,
+                playerStartId: interactible.customProperties.playerStartId
               });
             }
           })
@@ -94,23 +94,20 @@ const FieldScene = ({ areaId, playerStartId }) => {
     },
     {
       type: ENTITY_TYPE.PICKUP,
-      reactionEvent: firstAvailable => {
-        firstAvailable.ttl = 0;
-        saveEntityState(firstAvailable);
+      reactionEvent: (interactible, actors = []) => {
+        interactible.ttl = 0;
+        saveEntityState(interactible);
       }
     },
     {
       type: ENTITY_TYPE.NPC,
-      reactionEvent: actorsInvolved =>
+      reactionEvent: (interactible, actors = []) =>
         sceneStateMachine.push(
           startConvo({
             id: "conversation",
             startId: "m1",
-            onExit: () => {
-              actorsInvolved.map(spr => (spr.movementDisabled = false));
-              sceneStateMachine.pop();
-            },
-            onEntry: () => actorsInvolved.map(spr => (spr.movementDisabled = true))
+            onExit: () => actors.map(spr => (spr.movementDisabled = false)),
+            onEntry: () => actors.map(spr => (spr.movementDisabled = true))
           })
         )
     }
@@ -138,6 +135,7 @@ const FieldScene = ({ areaId, playerStartId }) => {
   /* Primary loop */
   return GameLoop({
     update: () => {
+      /* Add a flag to sprite to enable/disable collision checks */
       let collisions = [];
 
       /* Check for anything dead (GC does the rest) */
@@ -160,25 +158,6 @@ const FieldScene = ({ areaId, playerStartId }) => {
         origin: player,
         collisions: playerCollidingWith
       });
-
-      /* Add a flag to sprite to enable/disable collision checks */
-      // sprites.map(sprite => {
-      //   sprite.update();
-
-      //   /* This is a bit flawed as we check for collision events on every sprite when in reality we only need it
-      //   for say the player. Or, more to the point, only certain collisions apply in certain contexts. If a player walks to
-      //   a door, we only need for the player to detect the collision and trigger an action. The door can just be a prop. */
-      //   const collidingWith = circleCollision(
-      //     sprite,
-      //     sprites.filter(s => s.id !== sprite.id)
-      //   );
-
-      //   sprite.isColliding = collidingWith.length > 0;
-
-      //   if (sprite.isColliding) {
-      //     collisions.push(sprite);
-      //   }
-      // });
     },
     render: () => {
       tileEngine.render();

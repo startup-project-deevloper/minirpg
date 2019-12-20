@@ -7106,13 +7106,15 @@ var _default = function _default(_ref) {
 
     if (collisions.length && origin.controlledByUser) {
       if (!interactionCooldown) {
-        var firstAvailable = collisions[0];
-        var reactionData = reactionManager.get(firstAvailable.type);
+        /* Collision usually pre-sorted by this point, it's not up to the state
+        to handle this though. */
+        var interactible = collisions[0];
+        var reactionData = reactionManager.get(interactible.type);
         /* Not all things will have a reaction set, plus they might expect
         different properties to be passed in future. */
 
         if (reactionData) {
-          reactionData.reactionEvent([firstAvailable, origin]);
+          reactionData.reactionEvent(interactible, [interactible, origin]);
         }
       } else {
         interactionCooldown = false;
@@ -7441,9 +7443,10 @@ var FieldScene = function FieldScene(_ref) {
 
     /* First available refers to the first given collision. So it might not always be what
     what you want it to be. This needs to be made a bit more robust. */
-    reactionEvent: function reactionEvent(firstAvailable) {
+    reactionEvent: function reactionEvent(interactible) {
+      var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
       // TODO: Entities should manage their own animations (same problem seen elsewhere)
-      firstAvailable.playAnimation("open");
+      interactible.playAnimation("open");
       screenEffectsStateMachine.push((0, _curtainState.default)({
         id: "curtain",
         ctx: ctx,
@@ -7453,32 +7456,33 @@ var FieldScene = function FieldScene(_ref) {
           /* Player start becomes part of the collider data so we attempt to use that. */
 
           (0, _events.emit)(_events.EV_SCENECHANGE, {
-            areaId: firstAvailable.customProperties.goesTo,
-            playerStartId: firstAvailable.customProperties.playerStartId
+            areaId: interactible.customProperties.goesTo,
+            playerStartId: interactible.customProperties.playerStartId
           });
         }
       }));
     }
   }, {
     type: _consts.ENTITY_TYPE.PICKUP,
-    reactionEvent: function reactionEvent(firstAvailable) {
-      firstAvailable.ttl = 0;
-      saveEntityState(firstAvailable);
+    reactionEvent: function reactionEvent(interactible) {
+      var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+      interactible.ttl = 0;
+      saveEntityState(interactible);
     }
   }, {
     type: _consts.ENTITY_TYPE.NPC,
-    reactionEvent: function reactionEvent(actorsInvolved) {
+    reactionEvent: function reactionEvent(interactible) {
+      var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
       return sceneStateMachine.push((0, _startConvo.default)({
         id: "conversation",
         startId: "m1",
         onExit: function onExit() {
-          actorsInvolved.map(function (spr) {
+          return actors.map(function (spr) {
             return spr.movementDisabled = false;
           });
-          sceneStateMachine.pop();
         },
         onEntry: function onEntry() {
-          return actorsInvolved.map(function (spr) {
+          return actors.map(function (spr) {
             return spr.movementDisabled = true;
           });
         }
@@ -7504,6 +7508,7 @@ var FieldScene = function FieldScene(_ref) {
 
   return (0, _kontra.GameLoop)({
     update: function update() {
+      /* Add a flag to sprite to enable/disable collision checks */
       var collisions = [];
       /* Check for anything dead (GC does the rest) */
 
@@ -7528,21 +7533,6 @@ var FieldScene = function FieldScene(_ref) {
         origin: player,
         collisions: playerCollidingWith
       });
-      /* Add a flag to sprite to enable/disable collision checks */
-      // sprites.map(sprite => {
-      //   sprite.update();
-      //   /* This is a bit flawed as we check for collision events on every sprite when in reality we only need it
-      //   for say the player. Or, more to the point, only certain collisions apply in certain contexts. If a player walks to
-      //   a door, we only need for the player to detect the collision and trigger an action. The door can just be a prop. */
-      //   const collidingWith = circleCollision(
-      //     sprite,
-      //     sprites.filter(s => s.id !== sprite.id)
-      //   );
-      //   sprite.isColliding = collidingWith.length > 0;
-      //   if (sprite.isColliding) {
-      //     collisions.push(sprite);
-      //   }
-      // });
     },
     render: function render() {
       tileEngine.render();
