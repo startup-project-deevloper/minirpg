@@ -6618,28 +6618,13 @@ m.PromisePolyfill = require("./promise/polyfill")
 
 module.exports = m
 
-},{"./hyperscript":"node_modules/mithril/hyperscript.js","./request":"node_modules/mithril/request.js","./mount-redraw":"node_modules/mithril/mount-redraw.js","./route":"node_modules/mithril/route.js","./render":"node_modules/mithril/render.js","./querystring/parse":"node_modules/mithril/querystring/parse.js","./querystring/build":"node_modules/mithril/querystring/build.js","./pathname/parse":"node_modules/mithril/pathname/parse.js","./pathname/build":"node_modules/mithril/pathname/build.js","./render/vnode":"node_modules/mithril/render/vnode.js","./promise/polyfill":"node_modules/mithril/promise/polyfill.js"}],"src/ui/ui.js":[function(require,module,exports) {
+},{"./hyperscript":"node_modules/mithril/hyperscript.js","./request":"node_modules/mithril/request.js","./mount-redraw":"node_modules/mithril/mount-redraw.js","./route":"node_modules/mithril/route.js","./render":"node_modules/mithril/render.js","./querystring/parse":"node_modules/mithril/querystring/parse.js","./querystring/build":"node_modules/mithril/querystring/build.js","./pathname/parse":"node_modules/mithril/pathname/parse.js","./pathname/build":"node_modules/mithril/pathname/build.js","./render/vnode":"node_modules/mithril/render/vnode.js","./promise/polyfill":"node_modules/mithril/promise/polyfill.js"}],"src/ui/effects.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
-
-var _mithril = _interopRequireDefault(require("mithril"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var isTyping = false;
-var name = "";
-var text = "";
-var choices = [];
+exports.typeWriter = void 0;
 
 var typeWriter = function typeWriter(_ref) {
   var text = _ref.text,
@@ -6680,16 +6665,43 @@ var typeWriter = function typeWriter(_ref) {
   };
 };
 
+exports.typeWriter = typeWriter;
+},{}],"src/ui/ui.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _mithril = _interopRequireDefault(require("mithril"));
+
+var _effects = require("./effects");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var mounted = false;
+var isTyping = false;
+var name = "";
+var text = "";
+var choices = [];
+
 var primeGlobals = function primeGlobals(props) {
   name = props.name;
   text = "";
-  choices = []; // Apparently this needs to be forced (will double check)
+  choices = [];
 
   _mithril.default.redraw();
 };
 
 var callTypewriter = function callTypewriter(props) {
-  return typeWriter({
+  return (0, _effects.typeWriter)({
     text: props.text,
     onStart: function onStart() {
       return isTyping = true;
@@ -6714,8 +6726,8 @@ var _callText = function callText(props) {
   callTypewriter(props);
 };
 
-var Shell = function Shell(_ref2) {
-  var attrs = _ref2.attrs;
+var Shell = function Shell(_ref) {
+  var attrs = _ref.attrs;
   // I'd start looking at multiple UI components rather than just in here.
   return {
     oninit: function oninit() {
@@ -6744,7 +6756,6 @@ var Shell = function Shell(_ref2) {
   };
 };
 
-var mounted = false;
 var _default = {
   isBusy: function isBusy() {
     return isTyping;
@@ -6775,7 +6786,7 @@ var _default = {
   }
 };
 exports.default = _default;
-},{"mithril":"node_modules/mithril/index.js"}],"src/common/conversationIterator.js":[function(require,module,exports) {
+},{"mithril":"node_modules/mithril/index.js","./effects":"src/ui/effects.js"}],"src/common/conversationIterator.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6979,16 +6990,14 @@ function _objectWithoutPropertiesLoose(source, excluded) { if (source == null) r
 var _default = function _default(_ref) {
   var id = _ref.id,
       startId = _ref.startId,
-      currentActors = _ref.currentActors,
       _ref$onEntry = _ref.onEntry,
       onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
       _ref$onExit = _ref.onExit,
       onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
-  console.log("Start convo:");
+  console.log("Start convo.");
   var _isComplete = false;
   var dataKey = "assets/gameData/conversationData.json";
-  var conversationData = _kontra.dataAssets[dataKey]; // This is all very confusing, can it be simplified please?
-
+  var conversationData = _kontra.dataAssets[dataKey];
   var conversationController = (0, _conversationIterator.default)({
     conversationData: conversationData,
     onChatComplete: function onChatComplete(exitId) {
@@ -7020,8 +7029,7 @@ var _default = function _default(_ref) {
     if (_ui.default.isBusy()) return;
 
     var _ref3 = !conversationController.isRunning() ? conversationController.start(startId, {
-      startId: startId,
-      currentActors: currentActors
+      startId: startId
     }) : conversationController.goToNext(),
         mode = _ref3.mode,
         rest = _objectWithoutProperties(_ref3, ["mode"]);
@@ -7076,15 +7084,12 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _kontra = require("kontra");
-
 var _onPush = _interopRequireDefault(require("../input/onPush"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _default = function _default(_ref) {
   var id = _ref.id,
-      sprites = _ref.sprites,
       reactionManager = _ref.reactionManager,
       _ref$onEntry = _ref.onEntry,
       onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
@@ -7107,7 +7112,7 @@ var _default = function _default(_ref) {
         different properties to be passed in future. */
 
         if (reactionData) {
-          reactionData.reactionEvent(firstAvailable, sprites);
+          reactionData.reactionEvent([firstAvailable, origin]);
         }
       } else {
         interactionCooldown = false;
@@ -7132,7 +7137,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","../input/onPush":"src/input/onPush.js"}],"src/states/curtainState.js":[function(require,module,exports) {
+},{"../input/onPush":"src/input/onPush.js"}],"src/states/curtainState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7462,30 +7467,25 @@ var FieldScene = function FieldScene(_ref) {
     }
   }, {
     type: _consts.ENTITY_TYPE.NPC,
-    reactionEvent: function reactionEvent(firstAvailable, sprites) {
+    reactionEvent: function reactionEvent(actorsInvolved) {
       return sceneStateMachine.push((0, _startConvo.default)({
         id: "conversation",
         startId: "m1",
-        currentActors: sprites,
-        // I don't think you want to disable every single sprite...
         onExit: function onExit() {
-          return sprites.map(function (spr) {
+          actorsInvolved.map(function (spr) {
             return spr.movementDisabled = false;
           });
+          sceneStateMachine.pop();
         },
         onEntry: function onEntry() {
-          return sprites.map(function (spr) {
+          return actorsInvolved.map(function (spr) {
             return spr.movementDisabled = true;
           });
         }
-      }), {
-        currentActors: sprites.find(function (spr) {
-          return spr.id === firstAvailable.id;
-        })
-      });
+      }));
     }
   }]);
-  /* Bootstrap some states for when the scene loads */
+  /* Start game within FieldState */
 
   sceneStateMachine.push((0, _fieldState.default)({
     id: "field",
@@ -7493,16 +7493,13 @@ var FieldScene = function FieldScene(_ref) {
     tileEngine: tileEngine,
     reactionManager: reactionManager
   }));
+  /* Open up the first scene with a fade */
+
   screenEffectsStateMachine.push((0, _curtainState.default)({
     id: "curtain",
     ctx: ctx,
     direction: 1
   }));
-  /* Scene events */
-
-  (0, _events.on)(_events.EV_CONVOEND, function () {
-    return sceneStateMachine.pop();
-  });
   /* Primary loop */
 
   return (0, _kontra.GameLoop)({
@@ -7614,7 +7611,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51746" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55554" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

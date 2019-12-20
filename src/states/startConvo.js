@@ -7,19 +7,17 @@ import onPush from "../input/onPush";
 export default ({
   id,
   startId,
-  currentActors,
   onEntry = () => { },
   onExit = () => { }
 }) => {
 
-  console.log("Start convo:");
+  console.log("Start convo.");
 
   let isComplete = false;
 
   const dataKey = "assets/gameData/conversationData.json";
   const conversationData = dataAssets[dataKey];
 
-  // This is all very confusing, can it be simplified please?
   const conversationController = ConversationIterator({
     conversationData,
     onChatComplete: exitId => {
@@ -41,8 +39,7 @@ export default ({
 
       const { mode, ...rest } = !conversationController.isRunning() ?
         conversationController.start(startId, {
-          startId,
-          currentActors
+          startId
         }) : conversationController.goToNext();
 
       if (mode === MODES.NEXTNODE) {

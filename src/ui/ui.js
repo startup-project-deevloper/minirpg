@@ -1,42 +1,17 @@
 import m from "mithril";
+import { typeWriter } from "./effects";
 
+let mounted = false;
 let isTyping = false;
 let name = "";
 let text = "";
 let choices = [];
-
-const typeWriter = ({ text, onStart = () => { }, onTyped = str => { }, onFinished = () => { } }) => {
-  let animId = "";
-  let str = "";
-
-  onStart();
-
-  const t = (s = "", i = 0) => {
-    if (i > text.length) {
-      cancelAnimationFrame(animId);
-      onFinished();
-      return;
-    }
-
-    str = s + text.charAt(i);
-
-    i += 1;
-    onTyped(str);
-
-    requestAnimationFrame(() => t(str, i));
-  };
-
-  return {
-    start: () => (animId = requestAnimationFrame(() => t()))
-  };
-};
 
 const primeGlobals = props => {
   name = props.name;
   text = "";
   choices = [];
 
-  // Apparently this needs to be forced (will double check)
   m.redraw();
 }
 
@@ -92,8 +67,6 @@ const Shell = ({ attrs }) => {
     }
   };
 };
-
-let mounted = false;
 
 export default {
   isBusy: () => isTyping,

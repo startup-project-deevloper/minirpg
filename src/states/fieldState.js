@@ -1,12 +1,10 @@
-import { keyPressed } from "kontra";
 import onPush from "../input/onPush";
 
 export default ({
   id,
-  sprites,
   reactionManager,
-  onEntry = () => {},
-  onExit = () => {}
+  onEntry = () => { },
+  onExit = () => { }
 }) => {
   let isComplete = false;
   let interactionCooldown = false;
@@ -20,7 +18,7 @@ export default ({
         /* Not all things will have a reaction set, plus they might expect
         different properties to be passed in future. */
         if (reactionData) {
-          reactionData.reactionEvent(firstAvailable, sprites);
+          reactionData.reactionEvent([firstAvailable, origin]);
         }
       } else {
         interactionCooldown = false;

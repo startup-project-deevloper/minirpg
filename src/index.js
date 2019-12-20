@@ -15,8 +15,7 @@ import {
   allOff,
   on,
   emit,
-  EV_SCENECHANGE,
-  EV_CONVOEND
+  EV_SCENECHANGE
 } from "./common/events";
 
 /* States for global use */
@@ -102,24 +101,22 @@ const FieldScene = ({ areaId, playerStartId }) => {
     },
     {
       type: ENTITY_TYPE.NPC,
-      reactionEvent: (firstAvailable, sprites) =>
+      reactionEvent: actorsInvolved =>
         sceneStateMachine.push(
           startConvo({
             id: "conversation",
             startId: "m1",
-            currentActors: sprites,
-            // I don't think you want to disable every single sprite...
-            onExit: () => sprites.map(spr => (spr.movementDisabled = false)),
-            onEntry: () => sprites.map(spr => (spr.movementDisabled = true))
-          }),
-          {
-            currentActors: sprites.find(spr => spr.id === firstAvailable.id)
-          }
+            onExit: () => {
+              actorsInvolved.map(spr => (spr.movementDisabled = false));
+              sceneStateMachine.pop();
+            },
+            onEntry: () => actorsInvolved.map(spr => (spr.movementDisabled = true))
+          })
         )
     }
   ]);
 
-  /* Bootstrap some states for when the scene loads */
+  /* Start game within FieldState */
   sceneStateMachine.push(
     fieldState({
       id: "field",
@@ -129,6 +126,7 @@ const FieldScene = ({ areaId, playerStartId }) => {
     })
   );
 
+  /* Open up the first scene with a fade */
   screenEffectsStateMachine.push(
     curtainState({
       id: "curtain",
@@ -136,9 +134,6 @@ const FieldScene = ({ areaId, playerStartId }) => {
       direction: 1
     })
   );
-
-  /* Scene events */
-  on(EV_CONVOEND, () => sceneStateMachine.pop());
 
   /* Primary loop */
   return GameLoop({
