@@ -19,7 +19,7 @@ import {
 } from "./common/events";
 
 /* States for global use */
-import startConvo from "./states/startConvo";
+import startConvo from "./states/startConvoState";
 import fieldState from "./states/fieldState";
 import curtainState from "./states/curtainState";
 
@@ -42,7 +42,7 @@ ctx.scale(3, 3);
 /* Primary field scene (playerStartId is optional) */
 const FieldScene = ({ areaId, playerStartId }) => {
   /* World creation */
-  const { createWorld, saveEntityState } = WorldManager();
+  const { createWorld, saveEntityState, getAllEntitiesOfType } = WorldManager();
   const { loadedEntities, tileEngine } = createWorld({ areaId });
 
   /* Main states creation */
@@ -106,6 +106,7 @@ const FieldScene = ({ areaId, playerStartId }) => {
           startConvo({
             id: "conversation",
             startId: "m1",
+            // I feel these might be better done within the state... perhaps the same elsewhere too.
             onExit: () => actors.map(spr => (spr.movementDisabled = false)),
             onEntry: () => actors.map(spr => (spr.movementDisabled = true))
           })
@@ -113,13 +114,15 @@ const FieldScene = ({ areaId, playerStartId }) => {
     }
   ]);
 
+  // TODO: Can we please not have to pass everything in like this? It's a bit too coupled.
   /* Start game within FieldState */
   sceneStateMachine.push(
     fieldState({
       id: "field",
       sprites,
       tileEngine,
-      reactionManager
+      reactionManager,
+      getAllEntitiesOfType
     })
   );
 

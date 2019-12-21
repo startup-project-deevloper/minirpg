@@ -4272,6 +4272,7 @@ var _default = function _default(_ref) {
   var sprite = (0, _kontra.Sprite)({
     type: type,
     id: id,
+    assetId: assetId,
     name: name,
     x: x,
     y: y,
@@ -6959,7 +6960,7 @@ var _default = function _default(key) {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/states/startConvo.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs"}],"src/states/startConvoState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7076,13 +7077,100 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","../ui/ui":"src/ui/ui.js","../common/events":"src/common/events.js","../common/conversationIterator":"src/common/conversationIterator.js","../input/onPush":"src/input/onPush.js"}],"src/states/fieldState.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../ui/ui":"src/ui/ui.js","../common/events":"src/common/events.js","../common/conversationIterator":"src/common/conversationIterator.js","../input/onPush":"src/input/onPush.js"}],"src/ui/inventory.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
+
+var _kontra = require("kontra");
+
+var _mithril = _interopRequireDefault(require("mithril"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var mounted = false;
+/* still deciding how to work the UI either with
+sngular instances of mithril or otherwise. */
+
+var Shell = function Shell(_ref) {
+  var attrs = _ref.attrs;
+  var dataKey = "assets/gameData/entityData.json";
+  var itemsInData = _kontra.dataAssets[dataKey];
+  return {
+    oninit: function oninit() {
+      return console.log("Opened inventory.");
+    },
+    view: function view() {
+      return (0, _mithril.default)("div", {
+        class: "uiShell"
+      }, [(0, _mithril.default)("dl", {
+        class: "itemListing"
+      }, attrs.items.map(function (item) {
+        var assetData = itemsInData.find(function (_ref2) {
+          var id = _ref2.id;
+          return id === item.assetId;
+        });
+        return (0, _mithril.default)("dd", {
+          class: "itemNode",
+          onclick: function onclick() {
+            return attrs.onItemSelected(_objectSpread({}, item, {
+              assetData: assetData
+            }));
+          }
+        }, assetData.name);
+      })), (0, _mithril.default)("div", {
+        class: "choiceWindow"
+      }, (0, _mithril.default)("button", {
+        class: "choiceBox",
+        onclick: function onclick() {
+          return attrs.onInventoryClosed();
+        }
+      }, "Close"))]);
+    }
+  };
+};
+
+var _default = {
+  isBusy: function isBusy() {
+    return mounted;
+  },
+  mount: function mount() {
+    var attrs = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    mounted = true;
+
+    _mithril.default.mount(document.getElementById("ui"), {
+      view: function view() {
+        return (0, _mithril.default)(Shell, attrs);
+      }
+    });
+  },
+  unmount: function unmount() {
+    mounted = false;
+
+    _mithril.default.mount(document.getElementById("ui"), null);
+  }
+};
+exports.default = _default;
+},{"kontra":"node_modules/kontra/kontra.mjs","mithril":"node_modules/mithril/index.js"}],"src/states/fieldState.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _inventory = _interopRequireDefault(require("../ui/inventory"));
+
+var _consts = require("../common/consts");
 
 var _onPush = _interopRequireDefault(require("../input/onPush"));
 
@@ -7091,6 +7179,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var _default = function _default(_ref) {
   var id = _ref.id,
       reactionManager = _ref.reactionManager,
+      _ref$getAllEntitiesOf = _ref.getAllEntitiesOfType,
+      getAllEntitiesOfType = _ref$getAllEntitiesOf === void 0 ? function () {} : _ref$getAllEntitiesOf,
       _ref$onEntry = _ref.onEntry,
       onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
       _ref$onExit = _ref.onExit,
@@ -7121,6 +7211,27 @@ var _default = function _default(_ref) {
       }
     }
   });
+  /* Technically, the inventory should only be openable in the field (or battle, but that's
+  out of this scope). Note: You might want the inventory to be a whole new state, but doing
+  it this way means you can overlay it across the game whilst you play. Whatever you need
+  basically. You might even want to life this to the index like the other reactions, in fact
+  that might make more sense. */
+
+  var onInventoryOpened = (0, _onPush.default)("i", function () {
+    if (_inventory.default.isBusy()) return;
+    /* Get you a list of all items that are being held in data */
+
+    _inventory.default.mount({
+      items: getAllEntitiesOfType(_consts.ENTITY_TYPE.PICKUP),
+      onInventoryClosed: function onInventoryClosed() {
+        return _inventory.default.unmount();
+      },
+      onItemSelected: function onItemSelected(itemData) {
+        console.log(itemData);
+      }
+    }); // Don't forget to unmount it when it's done also!
+
+  });
   return {
     id: id,
     isComplete: function isComplete() {
@@ -7130,7 +7241,9 @@ var _default = function _default(_ref) {
       return onEntry();
     },
     update: function update(props) {
-      return onInteractionPushed(props);
+      // TODO: Careful these don't conflict and do weird things (inventory in convo, etc, do not want!)
+      onInteractionPushed(props);
+      onInventoryOpened();
     },
     exit: function exit() {
       return onExit();
@@ -7139,7 +7252,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"../input/onPush":"src/input/onPush.js"}],"src/states/curtainState.js":[function(require,module,exports) {
+},{"../ui/inventory":"src/ui/inventory.js","../common/consts":"src/common/consts.js","../input/onPush":"src/input/onPush.js"}],"src/states/curtainState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7228,27 +7341,44 @@ var _default = function _default() {
   var worldData = _kontra.dataAssets[dataKey];
   var entitiesInStore = (0, _kontra.getStoreItem)("entities");
 
-  var getEntityFromStore = function getEntityFromStore(id) {
+  var _getEntityFromStore = function getEntityFromStore(id) {
     return entitiesInStore ? entitiesInStore.find(function (e) {
       return e.id === id;
     }) : null;
   };
 
   return {
+    getAllEntitiesOfType: function getAllEntitiesOfType(type) {
+      var existingEntities = (0, _kontra.getStoreItem)("entities");
+      return existingEntities ? existingEntities.filter(function (ent) {
+        return ent.type === type;
+      }) : [];
+    },
+    getAllEntities: function getAllEntities() {
+      return (0, _kontra.getStoreItem)("entities");
+    },
+    getEntityFromStore: function getEntityFromStore(id) {
+      return _getEntityFromStore(id);
+    },
     resetEntityStates: function resetEntityStates() {
       return (0, _kontra.setStoreItem)("entities", []);
     },
     saveEntityState: function saveEntityState(entityData) {
       var id = entityData.id,
+          assetId = entityData.assetId,
+          type = entityData.type,
           ttl = entityData.ttl;
       var existingEntities = (0, _kontra.getStoreItem)("entities");
       (0, _kontra.setStoreItem)("entities", existingEntities ? existingEntities.filter(function (ent) {
         return ent.id !== id;
       }).concat([{
         id: id,
+        type: type,
         ttl: ttl
       }]) : [{
         id: id,
+        assetId: assetId,
+        type: type,
         ttl: ttl
       }]);
     },
@@ -7268,7 +7398,9 @@ var _default = function _default() {
         tileEngine: tileEngine,
         loadedEntities: entities.map(function (entity) {
           var id = entity.id;
-          var exists = getEntityFromStore(id);
+
+          var exists = _getEntityFromStore(id);
+
           return !exists || exists && exists.ttl > 0 ? (0, _entity.default)(_objectSpread({}, entity, {
             tileEngine: tileEngine
           })) : null;
@@ -7357,7 +7489,7 @@ var _consts = require("./common/consts");
 
 var _events = require("./common/events");
 
-var _startConvo = _interopRequireDefault(require("./states/startConvo"));
+var _startConvoState = _interopRequireDefault(require("./states/startConvoState"));
 
 var _fieldState = _interopRequireDefault(require("./states/fieldState"));
 
@@ -7407,7 +7539,8 @@ var FieldScene = function FieldScene(_ref) {
   /* World creation */
   var _WorldManager = (0, _worldManager.default)(),
       createWorld = _WorldManager.createWorld,
-      saveEntityState = _WorldManager.saveEntityState;
+      saveEntityState = _WorldManager.saveEntityState,
+      getAllEntitiesOfType = _WorldManager.getAllEntitiesOfType;
 
   var _createWorld = createWorld({
     areaId: areaId
@@ -7473,9 +7606,10 @@ var FieldScene = function FieldScene(_ref) {
     type: _consts.ENTITY_TYPE.NPC,
     reactionEvent: function reactionEvent(interactible) {
       var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-      return sceneStateMachine.push((0, _startConvo.default)({
+      return sceneStateMachine.push((0, _startConvoState.default)({
         id: "conversation",
         startId: "m1",
+        // I feel these might be better done within the state... perhaps the same elsewhere too.
         onExit: function onExit() {
           return actors.map(function (spr) {
             return spr.movementDisabled = false;
@@ -7488,14 +7622,16 @@ var FieldScene = function FieldScene(_ref) {
         }
       }));
     }
-  }]);
+  }]); // TODO: Can we please not have to pass everything in like this? It's a bit too coupled.
+
   /* Start game within FieldState */
 
   sceneStateMachine.push((0, _fieldState.default)({
     id: "field",
     sprites: sprites,
     tileEngine: tileEngine,
-    reactionManager: reactionManager
+    reactionManager: reactionManager,
+    getAllEntitiesOfType: getAllEntitiesOfType
   }));
   /* Open up the first scene with a fade */
 
@@ -7573,7 +7709,7 @@ TODO: Can we also const the dataKeys across the board plz. */
     return sceneManager.loadScene(_objectSpread({}, props));
   });
 });
-},{"kontra":"node_modules/kontra/kontra.mjs","./sprites/entity":"src/sprites/entity.js","./common/helpers":"src/common/helpers.js","./common/consts":"src/common/consts.js","./common/events":"src/common/events.js","./states/startConvo":"src/states/startConvo.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js","./managers/sceneManager":"src/managers/sceneManager.js","./managers/worldManager":"src/managers/worldManager.js","./managers/reactionManager":"src/managers/reactionManager.js","./managers/stateManager":"src/managers/stateManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./sprites/entity":"src/sprites/entity.js","./common/helpers":"src/common/helpers.js","./common/consts":"src/common/consts.js","./common/events":"src/common/events.js","./states/startConvoState":"src/states/startConvoState.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js","./managers/sceneManager":"src/managers/sceneManager.js","./managers/worldManager":"src/managers/worldManager.js","./managers/reactionManager":"src/managers/reactionManager.js","./managers/stateManager":"src/managers/stateManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -7601,7 +7737,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58407" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64778" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

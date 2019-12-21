@@ -41,30 +41,28 @@ const Shell = ({ attrs }) => {
   // I'd start looking at multiple UI components rather than just in here.
   return {
     oninit: () => console.log("UI initialized."),
-    view: () => {
-      return m("div", { class: "uiShell" }, text &&
-        m("div", { class: "dialogueBoxOuter" }, [
-          m("div", { class: "dialogue" }, [
-            m("span", name ? `${name}:` : ""),
-            m("span", name ? `"${text}"` : text),
-            m(
-              "div",
-              { class: "choiceWindow" },
-              choices.map(choice => {
-                return m(
-                  "button",
-                  {
-                    class: "choiceBox",
-                    onclick: () => attrs.onChoiceSelected(choice)
-                  },
-                  choice.text
-                );
-              })
-            ),
-            isTyping ? "" : m("span", { class: "arrow" })
-          ])
-        ]));
-    }
+    view: () => m("div", { class: "uiShell" }, text &&
+      m("div", { class: "dialogueBoxOuter" }, [
+        m("div", { class: "dialogue" }, [
+          m("span", name ? `${name}:` : ""),
+          m("span", name ? `"${text}"` : text),
+          m(
+            "div",
+            { class: "choiceWindow" },
+            choices.map(choice => {
+              return m(
+                "button",
+                {
+                  class: "choiceBox",
+                  onclick: () => attrs.onChoiceSelected(choice)
+                },
+                choice.text
+              );
+            })
+          ),
+          isTyping ? "" : m("span", { class: "arrow" })
+        ])
+      ]))
   };
 };
 

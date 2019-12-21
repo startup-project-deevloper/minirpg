@@ -1,6 +1,7 @@
 [
     {
         "id": "player",
+        "name": "Incognito",
         "type": 99,
         "sheet": "assets/entityimages/little_devil.png",
         "frameWidth": 16,
@@ -31,6 +32,7 @@
     },
     {
         "id": "standard_npc",
+        "name": "Chras",
         "type": 1,
         "sheet": "assets/entityimages/little_orc.png",
         "frameWidth": 16,
@@ -61,6 +63,7 @@
     },
     {
         "id": "standard_potion",
+        "name": "Potion",
         "type": 0,
         "sheet": "assets/tileimages/test.png",
         "frameWidth": 16,
@@ -78,6 +81,7 @@
     },
     {
         "id": "standard_door",
+        "name": "Door",
         "type": 4,
         "sheet": "assets/tileimages/test.png",
         "frameWidth": 32,
@@ -106,6 +110,7 @@
     },
     {
         "id": "standard_entrance",
+        "name": "Entrance",
         "type": 6,
         "sheet": "assets/tileimages/test.png",
         "frameWidth": 16,

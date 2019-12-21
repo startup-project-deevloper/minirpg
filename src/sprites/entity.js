@@ -49,6 +49,7 @@ export default ({
   const sprite = Sprite({
     type,
     id,
+    assetId,
     name,
     x,
     y,

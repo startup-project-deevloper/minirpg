@@ -10,16 +10,22 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
     entitiesInStore ? entitiesInStore.find(e => e.id === id) : null;
 
   return {
+    getAllEntitiesOfType: type => {
+      const existingEntities = getStoreItem("entities");
+      return existingEntities ? existingEntities.filter(ent => ent.type === type) : [];
+    },
+    getAllEntities: () => getStoreItem("entities"),
+    getEntityFromStore: id => getEntityFromStore(id),
     resetEntityStates: () => setStoreItem("entities", []),
     saveEntityState: entityData => {
-      const { id, ttl } = entityData;
+      const { id, assetId, type, ttl } = entityData;
       const existingEntities = getStoreItem("entities");
 
       setStoreItem(
         "entities",
         existingEntities
-          ? existingEntities.filter(ent => ent.id !== id).concat([{ id, ttl }])
-          : [{ id, ttl }]
+          ? existingEntities.filter(ent => ent.id !== id).concat([{ id, type, ttl }])
+          : [{ id, assetId, type, ttl }]
       );
     },
     createWorld: ({ areaId }) => {
