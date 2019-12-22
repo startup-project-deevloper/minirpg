@@ -36,7 +36,7 @@ ctx.webkitImageSmoothingEnabled = false;
 ctx.mozImageSmoothingEnabled = false;
 ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
-ctx.scale(3, 3);
+ctx.scale(4, 4); // Upscale of supplied resolution in index (from 256). I'd suggest making this more robust.
 
 /* Primary field scene */
 const FieldScene = sceneProps => {
