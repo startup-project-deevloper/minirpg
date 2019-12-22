@@ -166,7 +166,6 @@ load(
   "assets/entityimages/little_orc.png",
   "assets/gameData/conversationData.json",
   "assets/gameData/entityData.json",
-  "assets/gameData/assetData.json",
   "assets/gameData/worldData.json"
 ).then(assets => {
   initKeys();
