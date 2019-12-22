@@ -17,7 +17,7 @@ const Shell = ({ attrs }) => {
                 m("dl",
                     { class: "itemListing" },
                     attrs.items.map(item => {
-                        const assetData = itemsInData.find(({ id }) => id === item.assetId);
+                        const assetData = itemsInData.find(({ id }) => id === item.id);
                         return m("dd", {
                             class: "itemNode",
                             onclick: () => attrs.onItemSelected({

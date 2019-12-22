@@ -1,43 +1,42 @@
+import { moveSprite, flipSprite } from "./spriteFunctions";
 import {
   Sprite,
-  imageAssets,
   dataAssets,
+  imageAssets,
   SpriteSheet,
   keyPressed
 } from "kontra";
-import { moveSprite, flipSprite } from "./spriteFunctions";
 
 export default ({
   id,
-  assetId,
   x,
   y,
   z = 1,
-  name,
-  tileEngine,
-  movementDisabled = false,
-  controlledByUser = false,
-  collidesWithTiles = true,
   customProperties = {},
-  dataKey = "assets/gameData/entityData.json"
+  collisionMethod = (layer, sprite) => { }
 }) => {
-  if (!id || !assetId) {
+  if (!id) {
     throw new Error(
       "Entity is fairly useless without an id, you should add one."
     );
   }
 
+  const dataKey = "assets/gameData/entityData.json";
   const entityData = dataAssets[dataKey];
 
   const {
-    animations,
+    name,
     type,
+    animations,
     frameWidth,
     frameHeight,
     sheet,
     collisionBodyOptions = null,
-    manualAnimation = false
-  } = entityData.find(ent => ent.id === assetId);
+    manualAnimation = false,
+    movementDisabled = false,
+    controlledByUser = false,
+    collidesWithTiles = true
+  } = entityData.find(ent => ent.id === id);
 
   let spriteSheet = SpriteSheet({
     image: imageAssets[sheet],
@@ -47,9 +46,8 @@ export default ({
   });
 
   const sprite = Sprite({
-    type,
     id,
-    assetId,
+    type,
     name,
     x,
     y,
@@ -87,16 +85,15 @@ export default ({
       /* Movement */
       const dir = controlledByUser
         ? {
-            x: keyPressed("a") ? -1 : keyPressed("d") ? 1 : 0,
-            y: keyPressed("w") ? -1 : keyPressed("s") ? 1 : 0
-          }
+          x: keyPressed("a") ? -1 : keyPressed("d") ? 1 : 0,
+          y: keyPressed("w") ? -1 : keyPressed("s") ? 1 : 0
+        }
         : { x: 0, y: 0 }; // AI (to add later)
 
       const { directionNormal } = moveSprite({
         dir: sprite.movementDisabled ? { x: 0, y: 0 } : dir,
         sprite,
-        checkCollision: sprite =>
-          tileEngine.layerCollidesWith("Collision", sprite)
+        checkCollision: sprite => collisionMethod("Collision", sprite)
       });
 
       // Flip the sprite on movement

@@ -18,34 +18,44 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
     getEntityFromStore: id => getEntityFromStore(id),
     resetEntityStates: () => setStoreItem("entities", []),
     saveEntityState: entityData => {
-      const { id, assetId, type, ttl } = entityData;
+      const { id, type, ttl } = entityData;
       const existingEntities = getStoreItem("entities");
 
       setStoreItem(
         "entities",
         existingEntities
           ? existingEntities.filter(ent => ent.id !== id).concat([{ id, type, ttl }])
-          : [{ id, assetId, type, ttl }]
+          : [{ id, type, ttl }]
       );
     },
-    createWorld: ({ areaId }) => {
+    createWorld: ({ areaId, playerStartId }) => {
       const { entities, mapKey } = worldData.find(x => x.id === areaId);
       const map = dataAssets[mapKey];
       const tileEngine = TileEngine(map);
 
+      const playerStart = entities.find(x => x.id === playerStartId);
+      const player = Entity({
+        id: "player",
+        x: playerStart.x,
+        y: playerStart.y,
+        collisionMethod: (layer, sprite) => tileEngine.layerCollidesWith(layer, sprite)
+      });
+
       return {
         mapKey,
         tileEngine,
-        loadedEntities: entities
+        player,
+        sprites: entities
           .map(entity => {
             const { id } = entity;
             const exists = getEntityFromStore(id);
 
             return !exists || (exists && exists.ttl > 0)
-              ? Entity({ ...entity, tileEngine })
+              ? Entity({ ...entity, collisionMethod: (layer, sprite) => tileEngine.layerCollidesWith(layer, sprite) })
               : null;
           })
           .filter(e => e)
+          .concat([player])
       };
     }
   };

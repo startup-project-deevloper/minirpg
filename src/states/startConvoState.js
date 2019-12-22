@@ -1,5 +1,5 @@
 import { setStoreItem, dataAssets } from "kontra";
-import UI from "../ui/ui";
+import dialogue from "../ui/dialogue";
 import { emit, EV_CONVOEND } from "../common/events";
 import ConversationIterator, { MODES } from "../common/conversationIterator";
 import onPush from "../input/onPush";
@@ -21,7 +21,7 @@ export default ({
   const conversationController = ConversationIterator({
     conversationData,
     onChatComplete: exitId => {
-      UI.unmount();
+      dialogue.unmount();
       emit(EV_CONVOEND, { exitId })
     },
     onChainProgress: lastNodeId => setStoreItem("progress", {
@@ -30,12 +30,12 @@ export default ({
   });
 
   const onDisplayText = ({ actor: name, text, choices }) =>
-    UI.callText({ name, text, choices });
+    dialogue.callText({ name, text, choices });
 
   const onInteractionPushed =
     onPush("e", () => {
 
-      if (UI.isBusy()) return;
+      if (dialogue.isBusy()) return;
 
       const { mode, ...rest } = !conversationController.isRunning() ?
         conversationController.start(startId, {
@@ -49,7 +49,7 @@ export default ({
       isComplete = mode === MODES.JUSTFINISHED || mode === MODES.COMPLETED;
     });
 
-  UI.mount({
+  dialogue.mount({
     onChoiceSelected: choice => {
       console.log("Selected:");
       console.log(choice);

@@ -8,7 +8,6 @@
 import { init, GameLoop, load, initKeys } from "kontra";
 
 /* Common utils, objects and events */
-import Entity from "./sprites/entity";
 import { circleCollision, sortByDist } from "./common/helpers";
 import { ENTITY_TYPE } from "./common/consts";
 import {
@@ -39,31 +38,16 @@ ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 ctx.scale(3, 3);
 
-/* Primary field scene (playerStartId is optional) */
-const FieldScene = ({ areaId, playerStartId }) => {
+/* Primary field scene */
+const FieldScene = sceneProps => {
   /* World creation */
   const { createWorld, saveEntityState, getAllEntitiesOfType } = WorldManager();
-  const { loadedEntities, tileEngine } = createWorld({ areaId });
+  const { sprites, player, tileEngine } = createWorld(sceneProps); console.log(sprites)
+  let spriteCache = sprites.filter(spr => spr.isAlive());
 
   /* Main states creation */
   const sceneStateMachine = StateMachine();
   const screenEffectsStateMachine = StateMachine();
-
-  /* All but the player are generated here */
-  const playerStart = loadedEntities.find(x => x.id === playerStartId);
-
-  const player = Entity({
-    x: playerStart ? playerStart.x : 128,
-    y: playerStart ? playerStart.y : 128,
-    name: "Player",
-    id: "player",
-    assetId: "player",
-    controlledByUser: true,
-    tileEngine
-  });
-
-  /* Sprites collection for easier render / updates */
-  let sprites = [player, ...loadedEntities];
 
   /* Decide what happens on different player interaction events (was separated, seemed pointless at this stage) */
   const reactionManager = ReactionManager([
@@ -74,7 +58,6 @@ const FieldScene = ({ areaId, playerStartId }) => {
       reactionEvent: (interactible, actors = []) => {
         // TODO: Entities should manage their own animations (same problem seen elsewhere)
         interactible.playAnimation("open");
-
         screenEffectsStateMachine.push(
           curtainState({
             id: "curtain",
@@ -139,19 +122,17 @@ const FieldScene = ({ areaId, playerStartId }) => {
   return GameLoop({
     update: () => {
       /* Add a flag to sprite to enable/disable collision checks */
-      let collisions = [];
-
       /* Check for anything dead (GC does the rest) */
-      sprites = sprites.filter(spr => spr.isAlive());
+      spriteCache = spriteCache.filter(spr => spr.isAlive());
 
       /* Player to useable collision */
       const playerCollidingWith = sortByDist(player, circleCollision(
         player,
-        sprites.filter(s => s.id !== "player")
+        spriteCache.filter(s => s.id !== "player")
       ));
 
       /* Update all sprites */
-      sprites.map(sprite => sprite.update());
+      spriteCache.map(sprite => sprite.update());
 
       // ...
       player.isColliding = playerCollidingWith.length > 0;
@@ -166,7 +147,7 @@ const FieldScene = ({ areaId, playerStartId }) => {
       tileEngine.render();
 
       /* Edit z-order based on 'y' then change render order */
-      sprites
+      spriteCache
         .sort((a, b) => Math.round(a.y - a.z) - Math.round(b.y - b.z))
         .forEach(sprite => sprite.render());
 
@@ -185,6 +166,7 @@ load(
   "assets/entityimages/little_orc.png",
   "assets/gameData/conversationData.json",
   "assets/gameData/entityData.json",
+  "assets/gameData/assetData.json",
   "assets/gameData/worldData.json"
 ).then(assets => {
   initKeys();
@@ -199,7 +181,7 @@ load(
   so long as you specify the right id for it. That being said, you do have to make sure
   both of them exist in the same context, otherwise you'll never get access to it.
   */
-  sceneManager.loadScene({ areaId: "area1", playerStartId: "saveGameStartLocation" });
+  sceneManager.loadScene({ areaId: "area1", playerStartId: "entrance" });
 
   on(EV_SCENECHANGE, props => sceneManager.loadScene({ ...props }));
 });

@@ -4141,216 +4141,7 @@ let kontra = {
 };
 var _default = kontra;
 exports.default = _default;
-},{}],"src/sprites/spriteFunctions.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.flipSprite = exports.moveSprite = void 0;
-
-var moveSprite = function moveSprite(_ref) {
-  var dir = _ref.dir,
-      sprite = _ref.sprite,
-      _ref$checkCollision = _ref.checkCollision,
-      checkCollision = _ref$checkCollision === void 0 ? function () {
-    return false;
-  } : _ref$checkCollision;
-
-  /* Normalise so you don't go super fast diagonally */
-  var dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
-  var directionNormal = {
-    x: dir.x !== 0 ? dir.x / dirLength : 0,
-    y: dir.y !== 0 ? dir.y / dirLength : 0
-  }; /// For collisions with tiles
-
-  var oldPos = {
-    x: sprite.x,
-    y: sprite.y
-  }; // Move X then check X (careful editing directly, might lead to issues with camera)
-
-  sprite.x += directionNormal.x; // Collider check (const layer names please)
-
-  var collidedWithX = checkCollision(sprite);
-
-  if (sprite.collidesWithTiles && collidedWithX) {
-    sprite.x = oldPos.x;
-    sprite.y = oldPos.y;
-  } // Update old pos ref
-
-
-  oldPos = {
-    x: sprite.x,
-    y: sprite.y
-  }; // Move Y then check Y (careful editing directly, might lead to issues with camera)
-
-  sprite.y += directionNormal.y; // Collider check against tiles
-
-  var collidedWithY = checkCollision(sprite);
-
-  if (sprite.collidesWithTiles && collidedWithY) {
-    sprite.x = oldPos.x;
-    sprite.y = oldPos.y;
-  }
-
-  return {
-    directionNormal: directionNormal
-  };
-};
-
-exports.moveSprite = moveSprite;
-
-var flipSprite = function flipSprite(_ref2) {
-  var direction = _ref2.direction,
-      sprite = _ref2.sprite;
-
-  if (direction.x < 0) {
-    sprite.width = -sprite.width;
-  } else if (direction.x > 0) {
-    sprite.width = sprite.width;
-  }
-};
-
-exports.flipSprite = flipSprite;
-},{}],"src/sprites/entity.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _kontra = require("kontra");
-
-var _spriteFunctions = require("./spriteFunctions");
-
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      assetId = _ref.assetId,
-      x = _ref.x,
-      y = _ref.y,
-      _ref$z = _ref.z,
-      z = _ref$z === void 0 ? 1 : _ref$z,
-      name = _ref.name,
-      tileEngine = _ref.tileEngine,
-      _ref$movementDisabled = _ref.movementDisabled,
-      movementDisabled = _ref$movementDisabled === void 0 ? false : _ref$movementDisabled,
-      _ref$controlledByUser = _ref.controlledByUser,
-      controlledByUser = _ref$controlledByUser === void 0 ? false : _ref$controlledByUser,
-      _ref$collidesWithTile = _ref.collidesWithTiles,
-      collidesWithTiles = _ref$collidesWithTile === void 0 ? true : _ref$collidesWithTile,
-      _ref$customProperties = _ref.customProperties,
-      customProperties = _ref$customProperties === void 0 ? {} : _ref$customProperties,
-      _ref$dataKey = _ref.dataKey,
-      dataKey = _ref$dataKey === void 0 ? "assets/gameData/entityData.json" : _ref$dataKey;
-
-  if (!id || !assetId) {
-    throw new Error("Entity is fairly useless without an id, you should add one.");
-  }
-
-  var entityData = _kontra.dataAssets[dataKey];
-
-  var _entityData$find = entityData.find(function (ent) {
-    return ent.id === assetId;
-  }),
-      animations = _entityData$find.animations,
-      type = _entityData$find.type,
-      frameWidth = _entityData$find.frameWidth,
-      frameHeight = _entityData$find.frameHeight,
-      sheet = _entityData$find.sheet,
-      _entityData$find$coll = _entityData$find.collisionBodyOptions,
-      collisionBodyOptions = _entityData$find$coll === void 0 ? null : _entityData$find$coll,
-      _entityData$find$manu = _entityData$find.manualAnimation,
-      manualAnimation = _entityData$find$manu === void 0 ? false : _entityData$find$manu;
-
-  var spriteSheet = (0, _kontra.SpriteSheet)({
-    image: _kontra.imageAssets[sheet],
-    frameWidth: frameWidth,
-    frameHeight: frameHeight,
-    animations: animations
-  });
-  var sprite = (0, _kontra.Sprite)({
-    type: type,
-    id: id,
-    assetId: assetId,
-    name: name,
-    x: x,
-    y: y,
-    z: z,
-    customProperties: customProperties,
-    radius: 1,
-    animations: spriteSheet.animations,
-    collidesWithTiles: collidesWithTiles,
-    controlledByUser: controlledByUser,
-    collisionBodyOptions: collisionBodyOptions,
-    manualAnimation: manualAnimation,
-    movementDisabled: movementDisabled,
-    update: function update() {
-      /* Attacking */
-      if ((0, _kontra.keyPressed)("q")) {}
-      /*
-      For attacking, going full throttle with a turn-based system is quite a lot
-      to handle. For now it'd be easier to settle for arcade sort of attacks and
-      being clever with patterns / interaction such as seen on Zelda.
-        So that said, what general idea is this:
-      - Hitbox appears, probably with an animation in sync with it
-      - Collision picked up when hitbox hits whatever the thing is
-      - The thing that's hit get informed of the hit, and as to what actually
-      hit it. If the thing is hostile (no friendly-fire), we search for the item in
-      question and run against its stats.
-      - It's a lot to calculate on the hit, but it has to be done at some point. After
-      that the damage animation plays on the target, and so on. Let the entity handle
-      what happens to it under circumstances such as if it's locked in animation, etc.
-      - The attacker can just worry about its self and what it's doing with attack and
-      animations.
-      */
-
-      /* Movement */
-
-
-      var dir = controlledByUser ? {
-        x: (0, _kontra.keyPressed)("a") ? -1 : (0, _kontra.keyPressed)("d") ? 1 : 0,
-        y: (0, _kontra.keyPressed)("w") ? -1 : (0, _kontra.keyPressed)("s") ? 1 : 0
-      } : {
-        x: 0,
-        y: 0
-      }; // AI (to add later)
-
-      var _moveSprite = (0, _spriteFunctions.moveSprite)({
-        dir: sprite.movementDisabled ? {
-          x: 0,
-          y: 0
-        } : dir,
-        sprite: sprite,
-        checkCollision: function checkCollision(sprite) {
-          return tileEngine.layerCollidesWith("Collision", sprite);
-        }
-      }),
-          directionNormal = _moveSprite.directionNormal; // Flip the sprite on movement
-
-
-      (0, _spriteFunctions.flipSprite)({
-        direction: directionNormal,
-        sprite: sprite
-      }); // Do some animations
-
-      var isMoving = directionNormal.x !== 0 || directionNormal.y !== 0;
-
-      if (!sprite.manualAnimation) {
-        sprite.playAnimation(isMoving ? "walk" : "idle");
-      } // Call this to ensure animations are player
-
-
-      sprite.advance();
-    }
-  });
-  console.log("=> Sprite generated:", sprite.name, sprite.id);
-  console.log(sprite);
-  return sprite;
-};
-
-exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","./spriteFunctions":"src/sprites/spriteFunctions.js"}],"src/common/events.js":[function(require,module,exports) {
+},{}],"src/common/events.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6667,7 +6458,7 @@ var typeWriter = function typeWriter(_ref) {
 };
 
 exports.typeWriter = typeWriter;
-},{}],"src/ui/ui.js":[function(require,module,exports) {
+},{}],"src/ui/dialogue.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6970,7 +6761,7 @@ exports.default = void 0;
 
 var _kontra = require("kontra");
 
-var _ui = _interopRequireDefault(require("../ui/ui"));
+var _dialogue = _interopRequireDefault(require("../ui/dialogue"));
 
 var _events = require("../common/events");
 
@@ -7002,7 +6793,7 @@ var _default = function _default(_ref) {
   var conversationController = (0, _conversationIterator.default)({
     conversationData: conversationData,
     onChatComplete: function onChatComplete(exitId) {
-      _ui.default.unmount();
+      _dialogue.default.unmount();
 
       (0, _events.emit)(_events.EV_CONVOEND, {
         exitId: exitId
@@ -7019,7 +6810,7 @@ var _default = function _default(_ref) {
     var name = _ref2.actor,
         text = _ref2.text,
         choices = _ref2.choices;
-    return _ui.default.callText({
+    return _dialogue.default.callText({
       name: name,
       text: text,
       choices: choices
@@ -7027,7 +6818,7 @@ var _default = function _default(_ref) {
   };
 
   var onInteractionPushed = (0, _onPush.default)("e", function () {
-    if (_ui.default.isBusy()) return;
+    if (_dialogue.default.isBusy()) return;
 
     var _ref3 = !conversationController.isRunning() ? conversationController.start(startId, {
       startId: startId
@@ -7042,7 +6833,7 @@ var _default = function _default(_ref) {
     _isComplete = mode === _conversationIterator.MODES.JUSTFINISHED || mode === _conversationIterator.MODES.COMPLETED;
   });
 
-  _ui.default.mount({
+  _dialogue.default.mount({
     onChoiceSelected: function onChoiceSelected(choice) {
       console.log("Selected:");
       console.log(choice);
@@ -7077,7 +6868,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","../ui/ui":"src/ui/ui.js","../common/events":"src/common/events.js","../common/conversationIterator":"src/common/conversationIterator.js","../input/onPush":"src/input/onPush.js"}],"src/ui/inventory.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../ui/dialogue":"src/ui/dialogue.js","../common/events":"src/common/events.js","../common/conversationIterator":"src/common/conversationIterator.js","../input/onPush":"src/input/onPush.js"}],"src/ui/inventory.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7117,7 +6908,7 @@ var Shell = function Shell(_ref) {
       }, attrs.items.map(function (item) {
         var assetData = itemsInData.find(function (_ref2) {
           var id = _ref2.id;
-          return id === item.assetId;
+          return id === item.id;
         });
         return (0, _mithril.default)("dd", {
           class: "itemNode",
@@ -7313,7 +7104,214 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{}],"src/managers/worldManager.js":[function(require,module,exports) {
+},{}],"src/sprites/spriteFunctions.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.flipSprite = exports.moveSprite = void 0;
+
+var moveSprite = function moveSprite(_ref) {
+  var dir = _ref.dir,
+      sprite = _ref.sprite,
+      _ref$checkCollision = _ref.checkCollision,
+      checkCollision = _ref$checkCollision === void 0 ? function () {
+    return false;
+  } : _ref$checkCollision;
+
+  /* Normalise so you don't go super fast diagonally */
+  var dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
+  var directionNormal = {
+    x: dir.x !== 0 ? dir.x / dirLength : 0,
+    y: dir.y !== 0 ? dir.y / dirLength : 0
+  }; /// For collisions with tiles
+
+  var oldPos = {
+    x: sprite.x,
+    y: sprite.y
+  }; // Move X then check X (careful editing directly, might lead to issues with camera)
+
+  sprite.x += directionNormal.x; // Collider check (const layer names please)
+
+  var collidedWithX = checkCollision(sprite);
+
+  if (sprite.collidesWithTiles && collidedWithX) {
+    sprite.x = oldPos.x;
+    sprite.y = oldPos.y;
+  } // Update old pos ref
+
+
+  oldPos = {
+    x: sprite.x,
+    y: sprite.y
+  }; // Move Y then check Y (careful editing directly, might lead to issues with camera)
+
+  sprite.y += directionNormal.y; // Collider check against tiles
+
+  var collidedWithY = checkCollision(sprite);
+
+  if (sprite.collidesWithTiles && collidedWithY) {
+    sprite.x = oldPos.x;
+    sprite.y = oldPos.y;
+  }
+
+  return {
+    directionNormal: directionNormal
+  };
+};
+
+exports.moveSprite = moveSprite;
+
+var flipSprite = function flipSprite(_ref2) {
+  var direction = _ref2.direction,
+      sprite = _ref2.sprite;
+
+  if (direction.x < 0) {
+    sprite.width = -sprite.width;
+  } else if (direction.x > 0) {
+    sprite.width = sprite.width;
+  }
+};
+
+exports.flipSprite = flipSprite;
+},{}],"src/sprites/entity.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _spriteFunctions = require("./spriteFunctions");
+
+var _kontra = require("kontra");
+
+var _default = function _default(_ref) {
+  var id = _ref.id,
+      x = _ref.x,
+      y = _ref.y,
+      _ref$z = _ref.z,
+      z = _ref$z === void 0 ? 1 : _ref$z,
+      _ref$customProperties = _ref.customProperties,
+      customProperties = _ref$customProperties === void 0 ? {} : _ref$customProperties,
+      _ref$collisionMethod = _ref.collisionMethod,
+      collisionMethod = _ref$collisionMethod === void 0 ? function (layer, sprite) {} : _ref$collisionMethod;
+
+  if (!id) {
+    throw new Error("Entity is fairly useless without an id, you should add one.");
+  }
+
+  var dataKey = "assets/gameData/entityData.json";
+  var entityData = _kontra.dataAssets[dataKey];
+
+  var _entityData$find = entityData.find(function (ent) {
+    return ent.id === id;
+  }),
+      name = _entityData$find.name,
+      type = _entityData$find.type,
+      animations = _entityData$find.animations,
+      frameWidth = _entityData$find.frameWidth,
+      frameHeight = _entityData$find.frameHeight,
+      sheet = _entityData$find.sheet,
+      _entityData$find$coll = _entityData$find.collisionBodyOptions,
+      collisionBodyOptions = _entityData$find$coll === void 0 ? null : _entityData$find$coll,
+      _entityData$find$manu = _entityData$find.manualAnimation,
+      manualAnimation = _entityData$find$manu === void 0 ? false : _entityData$find$manu,
+      _entityData$find$move = _entityData$find.movementDisabled,
+      movementDisabled = _entityData$find$move === void 0 ? false : _entityData$find$move,
+      _entityData$find$cont = _entityData$find.controlledByUser,
+      controlledByUser = _entityData$find$cont === void 0 ? false : _entityData$find$cont,
+      _entityData$find$coll2 = _entityData$find.collidesWithTiles,
+      collidesWithTiles = _entityData$find$coll2 === void 0 ? true : _entityData$find$coll2;
+
+  var spriteSheet = (0, _kontra.SpriteSheet)({
+    image: _kontra.imageAssets[sheet],
+    frameWidth: frameWidth,
+    frameHeight: frameHeight,
+    animations: animations
+  });
+  var sprite = (0, _kontra.Sprite)({
+    id: id,
+    type: type,
+    name: name,
+    x: x,
+    y: y,
+    z: z,
+    customProperties: customProperties,
+    radius: 1,
+    animations: spriteSheet.animations,
+    collidesWithTiles: collidesWithTiles,
+    controlledByUser: controlledByUser,
+    collisionBodyOptions: collisionBodyOptions,
+    manualAnimation: manualAnimation,
+    movementDisabled: movementDisabled,
+    update: function update() {
+      /* Attacking */
+      if ((0, _kontra.keyPressed)("q")) {}
+      /*
+      For attacking, going full throttle with a turn-based system is quite a lot
+      to handle. For now it'd be easier to settle for arcade sort of attacks and
+      being clever with patterns / interaction such as seen on Zelda.
+        So that said, what general idea is this:
+      - Hitbox appears, probably with an animation in sync with it
+      - Collision picked up when hitbox hits whatever the thing is
+      - The thing that's hit get informed of the hit, and as to what actually
+      hit it. If the thing is hostile (no friendly-fire), we search for the item in
+      question and run against its stats.
+      - It's a lot to calculate on the hit, but it has to be done at some point. After
+      that the damage animation plays on the target, and so on. Let the entity handle
+      what happens to it under circumstances such as if it's locked in animation, etc.
+      - The attacker can just worry about its self and what it's doing with attack and
+      animations.
+      */
+
+      /* Movement */
+
+
+      var dir = controlledByUser ? {
+        x: (0, _kontra.keyPressed)("a") ? -1 : (0, _kontra.keyPressed)("d") ? 1 : 0,
+        y: (0, _kontra.keyPressed)("w") ? -1 : (0, _kontra.keyPressed)("s") ? 1 : 0
+      } : {
+        x: 0,
+        y: 0
+      }; // AI (to add later)
+
+      var _moveSprite = (0, _spriteFunctions.moveSprite)({
+        dir: sprite.movementDisabled ? {
+          x: 0,
+          y: 0
+        } : dir,
+        sprite: sprite,
+        checkCollision: function checkCollision(sprite) {
+          return collisionMethod("Collision", sprite);
+        }
+      }),
+          directionNormal = _moveSprite.directionNormal; // Flip the sprite on movement
+
+
+      (0, _spriteFunctions.flipSprite)({
+        direction: directionNormal,
+        sprite: sprite
+      }); // Do some animations
+
+      var isMoving = directionNormal.x !== 0 || directionNormal.y !== 0;
+
+      if (!sprite.manualAnimation) {
+        sprite.playAnimation(isMoving ? "walk" : "idle");
+      } // Call this to ensure animations are player
+
+
+      sprite.advance();
+    }
+  });
+  console.log("=> Sprite generated:", sprite.name, sprite.id);
+  console.log(sprite);
+  return sprite;
+};
+
+exports.default = _default;
+},{"./spriteFunctions":"src/sprites/spriteFunctions.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/managers/worldManager.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7365,7 +7363,6 @@ var _default = function _default() {
     },
     saveEntityState: function saveEntityState(entityData) {
       var id = entityData.id,
-          assetId = entityData.assetId,
           type = entityData.type,
           ttl = entityData.ttl;
       var existingEntities = (0, _kontra.getStoreItem)("entities");
@@ -7377,13 +7374,13 @@ var _default = function _default() {
         ttl: ttl
       }]) : [{
         id: id,
-        assetId: assetId,
         type: type,
         ttl: ttl
       }]);
     },
     createWorld: function createWorld(_ref) {
-      var areaId = _ref.areaId;
+      var areaId = _ref.areaId,
+          playerStartId = _ref.playerStartId;
 
       var _worldData$find = worldData.find(function (x) {
         return x.id === areaId;
@@ -7393,20 +7390,34 @@ var _default = function _default() {
 
       var map = _kontra.dataAssets[mapKey];
       var tileEngine = (0, _kontra.TileEngine)(map);
+      var playerStart = entities.find(function (x) {
+        return x.id === playerStartId;
+      });
+      var player = (0, _entity.default)({
+        id: "player",
+        x: playerStart.x,
+        y: playerStart.y,
+        collisionMethod: function collisionMethod(layer, sprite) {
+          return tileEngine.layerCollidesWith(layer, sprite);
+        }
+      });
       return {
         mapKey: mapKey,
         tileEngine: tileEngine,
-        loadedEntities: entities.map(function (entity) {
+        player: player,
+        sprites: entities.map(function (entity) {
           var id = entity.id;
 
           var exists = _getEntityFromStore(id);
 
           return !exists || exists && exists.ttl > 0 ? (0, _entity.default)(_objectSpread({}, entity, {
-            tileEngine: tileEngine
+            collisionMethod: function collisionMethod(layer, sprite) {
+              return tileEngine.layerCollidesWith(layer, sprite);
+            }
           })) : null;
         }).filter(function (e) {
           return e;
-        })
+        }).concat([player])
       };
     }
   };
@@ -7481,8 +7492,6 @@ exports.default = _default;
 
 var _kontra = require("kontra");
 
-var _entity = _interopRequireDefault(require("./sprites/entity"));
-
 var _helpers = require("./common/helpers");
 
 var _consts = require("./common/consts");
@@ -7511,14 +7520,6 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
-
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
-
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
-
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
-
 /* Canvas initialization */
 var _init = (0, _kontra.init)(),
     canvas = _init.canvas;
@@ -7530,45 +7531,28 @@ ctx.mozImageSmoothingEnabled = false;
 ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 ctx.scale(3, 3);
-/* Primary field scene (playerStartId is optional) */
+/* Primary field scene */
 
-var FieldScene = function FieldScene(_ref) {
-  var areaId = _ref.areaId,
-      playerStartId = _ref.playerStartId;
-
+var FieldScene = function FieldScene(sceneProps) {
   /* World creation */
   var _WorldManager = (0, _worldManager.default)(),
       createWorld = _WorldManager.createWorld,
       saveEntityState = _WorldManager.saveEntityState,
       getAllEntitiesOfType = _WorldManager.getAllEntitiesOfType;
 
-  var _createWorld = createWorld({
-    areaId: areaId
-  }),
-      loadedEntities = _createWorld.loadedEntities,
+  var _createWorld = createWorld(sceneProps),
+      sprites = _createWorld.sprites,
+      player = _createWorld.player,
       tileEngine = _createWorld.tileEngine;
-  /* Main states creation */
 
+  console.log(sprites);
+  var spriteCache = sprites.filter(function (spr) {
+    return spr.isAlive();
+  });
+  /* Main states creation */
 
   var sceneStateMachine = (0, _stateManager.default)();
   var screenEffectsStateMachine = (0, _stateManager.default)();
-  /* All but the player are generated here */
-
-  var playerStart = loadedEntities.find(function (x) {
-    return x.id === playerStartId;
-  });
-  var player = (0, _entity.default)({
-    x: playerStart ? playerStart.x : 128,
-    y: playerStart ? playerStart.y : 128,
-    name: "Player",
-    id: "player",
-    assetId: "player",
-    controlledByUser: true,
-    tileEngine: tileEngine
-  });
-  /* Sprites collection for easier render / updates */
-
-  var sprites = [player].concat(_toConsumableArray(loadedEntities));
   /* Decide what happens on different player interaction events (was separated, seemed pointless at this stage) */
 
   var reactionManager = (0, _reactionManager.default)([{
@@ -7645,20 +7629,19 @@ var FieldScene = function FieldScene(_ref) {
   return (0, _kontra.GameLoop)({
     update: function update() {
       /* Add a flag to sprite to enable/disable collision checks */
-      var collisions = [];
-      /* Check for anything dead (GC does the rest) */
 
-      sprites = sprites.filter(function (spr) {
+      /* Check for anything dead (GC does the rest) */
+      spriteCache = spriteCache.filter(function (spr) {
         return spr.isAlive();
       });
       /* Player to useable collision */
 
-      var playerCollidingWith = (0, _helpers.sortByDist)(player, (0, _helpers.circleCollision)(player, sprites.filter(function (s) {
+      var playerCollidingWith = (0, _helpers.sortByDist)(player, (0, _helpers.circleCollision)(player, spriteCache.filter(function (s) {
         return s.id !== "player";
       })));
       /* Update all sprites */
 
-      sprites.map(function (sprite) {
+      spriteCache.map(function (sprite) {
         return sprite.update();
       }); // ...
 
@@ -7674,7 +7657,7 @@ var FieldScene = function FieldScene(_ref) {
       tileEngine.render();
       /* Edit z-order based on 'y' then change render order */
 
-      sprites.sort(function (a, b) {
+      spriteCache.sort(function (a, b) {
         return Math.round(a.y - a.z) - Math.round(b.y - b.z);
       }).forEach(function (sprite) {
         return sprite.render();
@@ -7687,7 +7670,7 @@ var FieldScene = function FieldScene(_ref) {
 TODO: Can we also const the dataKeys across the board plz. */
 
 
-(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json").then(function (assets) {
+(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/assetData.json", "assets/gameData/worldData.json").then(function (assets) {
   (0, _kontra.initKeys)(); // Hook up player start todo
 
   var sceneManager = (0, _sceneManager.default)({
@@ -7703,13 +7686,13 @@ TODO: Can we also const the dataKeys across the board plz. */
 
   sceneManager.loadScene({
     areaId: "area1",
-    playerStartId: "saveGameStartLocation"
+    playerStartId: "entrance"
   });
   (0, _events.on)(_events.EV_SCENECHANGE, function (props) {
     return sceneManager.loadScene(_objectSpread({}, props));
   });
 });
-},{"kontra":"node_modules/kontra/kontra.mjs","./sprites/entity":"src/sprites/entity.js","./common/helpers":"src/common/helpers.js","./common/consts":"src/common/consts.js","./common/events":"src/common/events.js","./states/startConvoState":"src/states/startConvoState.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js","./managers/sceneManager":"src/managers/sceneManager.js","./managers/worldManager":"src/managers/worldManager.js","./managers/reactionManager":"src/managers/reactionManager.js","./managers/stateManager":"src/managers/stateManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./common/helpers":"src/common/helpers.js","./common/consts":"src/common/consts.js","./common/events":"src/common/events.js","./states/startConvoState":"src/states/startConvoState.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js","./managers/sceneManager":"src/managers/sceneManager.js","./managers/worldManager":"src/managers/worldManager.js","./managers/reactionManager":"src/managers/reactionManager.js","./managers/stateManager":"src/managers/stateManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -7737,7 +7720,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64778" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60824" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

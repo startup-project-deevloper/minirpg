@@ -1,13 +1,15 @@
 [
     {
         "id": "player",
-        "name": "Incognito",
+        "name": "Player",
+        "description": "This is you. The player.",
         "type": 99,
         "sheet": "assets/entityimages/little_devil.png",
         "frameWidth": 16,
         "frameHeight": 16,
         "collisionBodyOptions": null,
         "manualAnimation": false,
+        "controlledByUser": true,
         "animations": {
             "idle": {
                 "frames": [
@@ -31,8 +33,9 @@
         }
     },
     {
-        "id": "standard_npc",
-        "name": "Chras",
+        "id": "daryl",
+        "name": "Daryl",
+        "description": "This is Daryl. Daryl likes Cheese and a clean pair of slacks.",
         "type": 1,
         "sheet": "assets/entityimages/little_orc.png",
         "frameWidth": 16,
@@ -62,8 +65,9 @@
         }
     },
     {
-        "id": "standard_potion",
+        "id": "potion",
         "name": "Potion",
+        "description": "Restores health on use.",
         "type": 0,
         "sheet": "assets/tileimages/test.png",
         "frameWidth": 16,
@@ -80,8 +84,9 @@
         }
     },
     {
-        "id": "standard_door",
+        "id": "door",
         "name": "Door",
+        "description": "A door to another area.",
         "type": 4,
         "sheet": "assets/tileimages/test.png",
         "frameWidth": 32,
@@ -109,8 +114,9 @@
         }
     },
     {
-        "id": "standard_entrance",
+        "id": "entrance",
         "name": "Entrance",
+        "description": "Used to indicate the player's spawn position at doors or other location points.",
         "type": 6,
         "sheet": "assets/tileimages/test.png",
         "frameWidth": 16,
