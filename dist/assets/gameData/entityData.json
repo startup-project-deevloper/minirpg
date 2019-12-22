@@ -70,6 +70,7 @@
         "description": "Restores health on use.",
         "type": 0,
         "sheet": "assets/tileimages/test.png",
+        "thumb": "assets/entityimages/grass-tile.png",
         "frameWidth": 16,
         "frameHeight": 16,
         "collisionBodyOptions": null,

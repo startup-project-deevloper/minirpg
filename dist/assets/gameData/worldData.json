@@ -1,8 +1,7 @@
 [
     {
-        "id": "area1",
+        "areaId": "area1",
         "mapKey": "assets/tiledata/test",
-        "playerStartId": "playerStartLocation1",
         "entities": [
             {
                 "x": 120,
@@ -29,7 +28,7 @@
         ]
     },
     {
-        "id": "area2",
+        "areaId": "area2",
         "mapKey": "assets/tiledata/test2",
         "entities": [
             {
@@ -49,7 +48,13 @@
                 "customProperties": {}
             },
             {
-                "x": 120,
+                "x": 110,
+                "y": 136,
+                "id": "potion",
+                "customProperties": {}
+            },
+            {
+                "x": 130,
                 "y": 136,
                 "id": "potion",
                 "customProperties": {}

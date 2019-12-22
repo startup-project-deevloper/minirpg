@@ -5,6 +5,7 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
   const { dataKey } = options;
   const worldData = dataAssets[dataKey];
 
+  // TODO: Move these commands out of here and in to some sort of helper layer.
   const entitiesInStore = getStoreItem("entities");
   const getEntityFromStore = id =>
     entitiesInStore ? entitiesInStore.find(e => e.id === id) : null;
@@ -17,19 +18,20 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
     getAllEntities: () => getStoreItem("entities"),
     getEntityFromStore: id => getEntityFromStore(id),
     resetEntityStates: () => setStoreItem("entities", []),
-    saveEntityState: entityData => {
+    savePickup: entityData => {
       const { id, type, ttl } = entityData;
       const existingEntities = getStoreItem("entities");
+      const existingEntity = existingEntities ? existingEntities.find(x => x.id === id) : null;
 
       setStoreItem(
         "entities",
         existingEntities
-          ? existingEntities.filter(ent => ent.id !== id).concat([{ id, type, ttl }])
-          : [{ id, type, ttl }]
+          ? existingEntities.filter(ent => ent.id !== id).concat([{ id, type, ttl, qty: existingEntity.qty + 1 }])
+          : [{ id, type, ttl, qty: 1 }]
       );
     },
     createWorld: ({ areaId, playerStartId }) => {
-      const { entities, mapKey } = worldData.find(x => x.id === areaId);
+      const { entities, mapKey } = worldData.find(x => x.areaId === areaId);
       const map = dataAssets[mapKey];
       const tileEngine = TileEngine(map);
 
@@ -47,6 +49,9 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
         player,
         sprites: entities
           .map(entity => {
+            /* Check if item exists in store as it may have been destroyed
+            or collected. TODO: Move the pickup check out of here, it's a bit
+            confusing alongside other field entity types. */
             const { id } = entity;
             const exists = getEntityFromStore(id);
 

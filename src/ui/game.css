@@ -128,6 +128,18 @@ p {
   background: #f5eac8;
 }
 
+.itemNode {
+  width: 25%;
+  padding: 16px;
+  margin: 8px;
+  cursor: pointer;
+  border: 1px solid #555;
+}
+
+.itemNode:hover {
+  border: 1px solid #888;
+}
+
 @keyframes arrow_anim {
   from {
     margin-top: 58px;

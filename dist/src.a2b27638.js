@@ -6882,18 +6882,13 @@ var _mithril = _interopRequireDefault(require("mithril"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 var mounted = false;
 /* still deciding how to work the UI either with
 sngular instances of mithril or otherwise. */
 
 var Shell = function Shell(_ref) {
   var attrs = _ref.attrs;
+  var entitiesInStore = (0, _kontra.getStoreItem)("entities");
   var dataKey = "assets/gameData/entityData.json";
   var itemsInData = _kontra.dataAssets[dataKey];
   return {
@@ -6903,21 +6898,30 @@ var Shell = function Shell(_ref) {
     view: function view() {
       return (0, _mithril.default)("div", {
         class: "uiShell"
+      }, [(0, _mithril.default)("div", {
+        class: "dialogueBoxOuter"
+      }, [(0, _mithril.default)("div", {
+        class: "dialogue"
       }, [(0, _mithril.default)("dl", {
         class: "itemListing"
       }, attrs.items.map(function (item) {
-        var assetData = itemsInData.find(function (_ref2) {
+        var data = itemsInData.find(function (_ref2) {
           var id = _ref2.id;
           return id === item.id;
         });
+        var storedItem = entitiesInStore.find(function (_ref3) {
+          var id = _ref3.id;
+          return id === item.id;
+        });
+        var qty = storedItem ? storedItem.qty : 0;
         return (0, _mithril.default)("dd", {
           class: "itemNode",
           onclick: function onclick() {
-            return attrs.onItemSelected(_objectSpread({}, item, {
-              assetData: assetData
-            }));
+            return attrs.onItemSelected(data);
           }
-        }, assetData.name);
+        }, [(0, _mithril.default)("img", {
+          src: data.thumb
+        }), (0, _mithril.default)("h4", "".concat(data.name, ": x").concat(qty)), (0, _mithril.default)("h5", data.description)]);
       })), (0, _mithril.default)("div", {
         class: "choiceWindow"
       }, (0, _mithril.default)("button", {
@@ -6925,7 +6929,7 @@ var Shell = function Shell(_ref) {
         onclick: function onclick() {
           return attrs.onInventoryClosed();
         }
-      }, "Close"))]);
+      }, "Close"))])])]);
     }
   };
 };
@@ -7336,7 +7340,8 @@ var _default = function _default() {
     dataKey: "assets/gameData/worldData.json"
   };
   var dataKey = options.dataKey;
-  var worldData = _kontra.dataAssets[dataKey];
+  var worldData = _kontra.dataAssets[dataKey]; // TODO: Move these commands out of here and in to some sort of helper layer.
+
   var entitiesInStore = (0, _kontra.getStoreItem)("entities");
 
   var _getEntityFromStore = function getEntityFromStore(id) {
@@ -7361,21 +7366,26 @@ var _default = function _default() {
     resetEntityStates: function resetEntityStates() {
       return (0, _kontra.setStoreItem)("entities", []);
     },
-    saveEntityState: function saveEntityState(entityData) {
+    savePickup: function savePickup(entityData) {
       var id = entityData.id,
           type = entityData.type,
           ttl = entityData.ttl;
       var existingEntities = (0, _kontra.getStoreItem)("entities");
+      var existingEntity = existingEntities ? existingEntities.find(function (x) {
+        return x.id === id;
+      }) : null;
       (0, _kontra.setStoreItem)("entities", existingEntities ? existingEntities.filter(function (ent) {
         return ent.id !== id;
       }).concat([{
         id: id,
         type: type,
-        ttl: ttl
+        ttl: ttl,
+        qty: existingEntity.qty + 1
       }]) : [{
         id: id,
         type: type,
-        ttl: ttl
+        ttl: ttl,
+        qty: 1
       }]);
     },
     createWorld: function createWorld(_ref) {
@@ -7383,7 +7393,7 @@ var _default = function _default() {
           playerStartId = _ref.playerStartId;
 
       var _worldData$find = worldData.find(function (x) {
-        return x.id === areaId;
+        return x.areaId === areaId;
       }),
           entities = _worldData$find.entities,
           mapKey = _worldData$find.mapKey;
@@ -7406,6 +7416,9 @@ var _default = function _default() {
         tileEngine: tileEngine,
         player: player,
         sprites: entities.map(function (entity) {
+          /* Check if item exists in store as it may have been destroyed
+          or collected. TODO: Move the pickup check out of here, it's a bit
+          confusing alongside other field entity types. */
           var id = entity.id;
 
           var exists = _getEntityFromStore(id);
@@ -7537,7 +7550,7 @@ var FieldScene = function FieldScene(sceneProps) {
   /* World creation */
   var _WorldManager = (0, _worldManager.default)(),
       createWorld = _WorldManager.createWorld,
-      saveEntityState = _WorldManager.saveEntityState,
+      savePickup = _WorldManager.savePickup,
       getAllEntitiesOfType = _WorldManager.getAllEntitiesOfType;
 
   var _createWorld = createWorld(sceneProps),
@@ -7545,7 +7558,6 @@ var FieldScene = function FieldScene(sceneProps) {
       player = _createWorld.player,
       tileEngine = _createWorld.tileEngine;
 
-  console.log(sprites);
   var spriteCache = sprites.filter(function (spr) {
     return spr.isAlive();
   });
@@ -7584,7 +7596,7 @@ var FieldScene = function FieldScene(sceneProps) {
     reactionEvent: function reactionEvent(interactible) {
       var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
       interactible.ttl = 0;
-      saveEntityState(interactible);
+      savePickup(interactible);
     }
   }, {
     type: _consts.ENTITY_TYPE.NPC,

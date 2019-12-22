@@ -41,8 +41,8 @@ ctx.scale(3, 3);
 /* Primary field scene */
 const FieldScene = sceneProps => {
   /* World creation */
-  const { createWorld, saveEntityState, getAllEntitiesOfType } = WorldManager();
-  const { sprites, player, tileEngine } = createWorld(sceneProps); console.log(sprites)
+  const { createWorld, savePickup, getAllEntitiesOfType } = WorldManager();
+  const { sprites, player, tileEngine } = createWorld(sceneProps);
   let spriteCache = sprites.filter(spr => spr.isAlive());
 
   /* Main states creation */
@@ -79,7 +79,7 @@ const FieldScene = sceneProps => {
       type: ENTITY_TYPE.PICKUP,
       reactionEvent: (interactible, actors = []) => {
         interactible.ttl = 0;
-        saveEntityState(interactible);
+        savePickup(interactible);
       }
     },
     {
