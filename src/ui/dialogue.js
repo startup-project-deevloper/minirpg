@@ -38,9 +38,15 @@ const callText = (props) => {
 };
 
 const Shell = ({ attrs }) => {
-  // I'd start looking at multiple UI components rather than just in here.
   return {
-    oninit: () => console.log("UI initialized."),
+    oninit: () => mounted = true,
+    onremove: () => {
+      mounted = false;
+      isTyping = false;
+      name = "";
+      text = "";
+      choices = [];
+    },
     view: () => m("div", { class: "uiShell" }, text &&
       m("div", { class: "dialogueBoxOuter" }, [
         m("div", { class: "dialogue" }, [
@@ -68,22 +74,11 @@ const Shell = ({ attrs }) => {
 
 export default {
   isBusy: () => isTyping,
-  mount: (attrs = {}) => {
-    mounted = true;
-
+  mount: (attrs = {}) =>
     m.mount(document.getElementById("ui"), {
       view: () => m(Shell, attrs)
-    })
-  },
-  unmount: () => {
-    mounted = false;
-    isTyping = false;
-    name = "";
-    text = "";
-    choices = [];
-
-    m.mount(document.getElementById("ui"), null);
-  },
+    }),
+  unmount: () => m.mount(document.getElementById("ui"), null),
   callText: props => {
     if (!mounted) return;
 

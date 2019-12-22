@@ -11,12 +11,13 @@ const Shell = ({ attrs }) => {
     const itemsInData = dataAssets[dataKey];
 
     return {
-        oninit: () => console.log("Opened inventory."),
+        oninit: () => mounted = true,
+        onremove: () => mounted = false,
         view: () =>
             m("div", { class: "uiShell" }, [
                 m("div", { class: "dialogueBoxOuter" }, [
                     m("div", { class: "dialogue" }, [
-                        m("dl",
+                        attrs.items.length ? m("dl",
                             { class: "itemListing" },
                             attrs.items.map(item => {
                                 const data = itemsInData.find(({ id }) => id === item.id);
@@ -32,7 +33,7 @@ const Shell = ({ attrs }) => {
                                     m("h5", data.description)
                                 ])
                             })
-                        ),
+                        ) : m("p", "No items."),
                         m("div",
                             { class: "choiceWindow" },
                             m(
@@ -53,13 +54,9 @@ const Shell = ({ attrs }) => {
 export default {
     isBusy: () => mounted,
     mount: (attrs = {}) => {
-        mounted = true;
         m.mount(document.getElementById("ui"), {
             view: () => m(Shell, attrs)
         })
     },
-    unmount: () => {
-        mounted = false;
-        m.mount(document.getElementById("ui"), null);
-    },
+    unmount: () => m.mount(document.getElementById("ui"), null)
 }

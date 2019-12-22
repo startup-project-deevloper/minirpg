@@ -6520,10 +6520,16 @@ var _callText = function callText(props) {
 
 var Shell = function Shell(_ref) {
   var attrs = _ref.attrs;
-  // I'd start looking at multiple UI components rather than just in here.
   return {
     oninit: function oninit() {
-      return console.log("UI initialized.");
+      return mounted = true;
+    },
+    onremove: function onremove() {
+      mounted = false;
+      isTyping = false;
+      name = "";
+      text = "";
+      choices = [];
     },
     view: function view() {
       return (0, _mithril.default)("div", {
@@ -6554,22 +6560,14 @@ var _default = {
   },
   mount: function mount() {
     var attrs = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    mounted = true;
-
-    _mithril.default.mount(document.getElementById("ui"), {
+    return _mithril.default.mount(document.getElementById("ui"), {
       view: function view() {
         return (0, _mithril.default)(Shell, attrs);
       }
     });
   },
   unmount: function unmount() {
-    mounted = false;
-    isTyping = false;
-    name = "";
-    text = "";
-    choices = [];
-
-    _mithril.default.mount(document.getElementById("ui"), null);
+    return _mithril.default.mount(document.getElementById("ui"), null);
   },
   callText: function callText(props) {
     if (!mounted) return;
@@ -6893,7 +6891,10 @@ var Shell = function Shell(_ref) {
   var itemsInData = _kontra.dataAssets[dataKey];
   return {
     oninit: function oninit() {
-      return console.log("Opened inventory.");
+      return mounted = true;
+    },
+    onremove: function onremove() {
+      return mounted = false;
     },
     view: function view() {
       return (0, _mithril.default)("div", {
@@ -6902,7 +6903,7 @@ var Shell = function Shell(_ref) {
         class: "dialogueBoxOuter"
       }, [(0, _mithril.default)("div", {
         class: "dialogue"
-      }, [(0, _mithril.default)("dl", {
+      }, [attrs.items.length ? (0, _mithril.default)("dl", {
         class: "itemListing"
       }, attrs.items.map(function (item) {
         var data = itemsInData.find(function (_ref2) {
@@ -6922,7 +6923,7 @@ var Shell = function Shell(_ref) {
         }, [(0, _mithril.default)("img", {
           src: data.thumb
         }), (0, _mithril.default)("h4", "".concat(data.name, ": x").concat(qty)), (0, _mithril.default)("h5", data.description)]);
-      })), (0, _mithril.default)("div", {
+      })) : (0, _mithril.default)("p", "No items."), (0, _mithril.default)("div", {
         class: "choiceWindow"
       }, (0, _mithril.default)("button", {
         class: "choiceBox",
@@ -6940,7 +6941,6 @@ var _default = {
   },
   mount: function mount() {
     var attrs = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    mounted = true;
 
     _mithril.default.mount(document.getElementById("ui"), {
       view: function view() {
@@ -6949,9 +6949,7 @@ var _default = {
     });
   },
   unmount: function unmount() {
-    mounted = false;
-
-    _mithril.default.mount(document.getElementById("ui"), null);
+    return _mithril.default.mount(document.getElementById("ui"), null);
   }
 };
 exports.default = _default;
@@ -7732,7 +7730,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60824" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52358" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
