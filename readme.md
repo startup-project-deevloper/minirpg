@@ -1,5 +1,5 @@
 ## The Challenge:
-Create a really small RPG, try to aim for under 56kb (built).
+Create a really small RPG, try to aim for under 100kb (built).
 
 ### It must have:
 - Movement [Done]
