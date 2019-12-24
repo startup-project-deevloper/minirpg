@@ -28,15 +28,25 @@ import WorldManager from "./managers/worldManager";
 import ReactionManager from "./managers/reactionManager";
 import StateMachine from "./managers/stateManager";
 
+/* Screen size (16:9) */
+const resolution = {
+  width: 1024,
+  height: 576,
+  scale: 4
+}
+
 /* Canvas initialization */
 const { canvas } = init();
+canvas.width = resolution.width;
+canvas.height = resolution.height;
+
 const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 ctx.webkitImageSmoothingEnabled = false;
 ctx.mozImageSmoothingEnabled = false;
 ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
-ctx.scale(4, 4); // Upscale of supplied resolution in index (from 256). I'd suggest making this more robust.
+ctx.scale(resolution.scale, resolution.scale); // Upscale of supplied resolution in index (from 256). I'd suggest making this more robust.
 
 /* Primary field scene */
 const FieldScene = sceneProps => {
@@ -118,6 +128,8 @@ const FieldScene = sceneProps => {
     })
   );
 
+  let sx = 1;
+
   /* Primary loop */
   return GameLoop({
     update: () => {
@@ -142,6 +154,14 @@ const FieldScene = sceneProps => {
         origin: player,
         collisions: playerCollidingWith
       });
+
+      // ...
+      // tileEngine.sx -= sx;
+      // console.log(tileEngine.sx)
+
+      // if (tileEngine.sx <= 0 || tileEngine.sx >= 256) {
+      //   sx = -sx;
+      // }
     },
     render: () => {
       tileEngine.render();

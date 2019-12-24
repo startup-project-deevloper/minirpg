@@ -43,6 +43,9 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
         collisionMethod: (layer, sprite) => tileEngine.layerCollidesWith(layer, sprite)
       });
 
+      /* Add the player to the tile engine to sync with the camera */
+      tileEngine.addObject(player);
+      
       return {
         mapKey,
         tileEngine,
@@ -54,6 +57,9 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
             confusing alongside other field entity types. */
             const { id } = entity;
             const exists = getEntityFromStore(id);
+
+            /* Add to the tile engine so we can sync move the camera around */
+            //tileEngine.addObject(entity);
 
             return !exists || (exists && exists.ttl > 0)
               ? Entity({ ...entity, collisionMethod: (layer, sprite) => tileEngine.layerCollidesWith(layer, sprite) })

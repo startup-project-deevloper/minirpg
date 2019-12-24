@@ -110,8 +110,8 @@ export default ({
     }
   });
 
-  console.log("=> Sprite generated:", sprite.name, sprite.id);
-  console.log(sprite);
+  // console.log("=> Sprite generated:", sprite.name, sprite.id);
+  // console.log(sprite);
 
   return sprite;
 };

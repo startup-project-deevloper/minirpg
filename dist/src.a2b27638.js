@@ -7306,9 +7306,9 @@ var _default = function _default(_ref) {
 
       sprite.advance();
     }
-  });
-  console.log("=> Sprite generated:", sprite.name, sprite.id);
-  console.log(sprite);
+  }); // console.log("=> Sprite generated:", sprite.name, sprite.id);
+  // console.log(sprite);
+
   return sprite;
 };
 
@@ -7409,6 +7409,9 @@ var _default = function _default() {
           return tileEngine.layerCollidesWith(layer, sprite);
         }
       });
+      /* Add the player to the tile engine to sync with the camera */
+
+      tileEngine.addObject(player);
       return {
         mapKey: mapKey,
         tileEngine: tileEngine,
@@ -7420,6 +7423,9 @@ var _default = function _default() {
           var id = entity.id;
 
           var exists = _getEntityFromStore(id);
+          /* Add to the tile engine so we can sync move the camera around */
+          //tileEngine.addObject(entity);
+
 
           return !exists || exists && exists.ttl > 0 ? (0, _entity.default)(_objectSpread({}, entity, {
             collisionMethod: function collisionMethod(layer, sprite) {
@@ -7531,17 +7537,27 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-/* Canvas initialization */
+/* Screen size (16:9) */
+var resolution = {
+  width: 1024,
+  height: 576,
+  scale: 4
+  /* Canvas initialization */
+
+};
+
 var _init = (0, _kontra.init)(),
     canvas = _init.canvas;
 
+canvas.width = resolution.width;
+canvas.height = resolution.height;
 var ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 ctx.webkitImageSmoothingEnabled = false;
 ctx.mozImageSmoothingEnabled = false;
 ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
-ctx.scale(4, 4); // Upscale of supplied resolution in index (from 256). I'd suggest making this more robust.
+ctx.scale(resolution.scale, resolution.scale); // Upscale of supplied resolution in index (from 256). I'd suggest making this more robust.
 
 /* Primary field scene */
 
@@ -7635,6 +7651,7 @@ var FieldScene = function FieldScene(sceneProps) {
     ctx: ctx,
     direction: 1
   }));
+  var sx = 1;
   /* Primary loop */
 
   return (0, _kontra.GameLoop)({
@@ -7662,7 +7679,12 @@ var FieldScene = function FieldScene(sceneProps) {
       sceneStateMachine.update({
         origin: player,
         collisions: playerCollidingWith
-      });
+      }); // ...
+      // tileEngine.sx -= sx;
+      // console.log(tileEngine.sx)
+      // if (tileEngine.sx <= 0 || tileEngine.sx >= 256) {
+      //   sx = -sx;
+      // }
     },
     render: function render() {
       tileEngine.render();
@@ -7731,7 +7753,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61396" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64184" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
