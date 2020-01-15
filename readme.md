@@ -13,3 +13,6 @@ Create a really small RPG, try to aim for under 100kb (built).
 - Advanced inventory that does something useful
 - Reputation (based on conversations)
 - Sound & music
+
+### You can view it online at:
+https://minrpg-e981a4.netlify.com/
