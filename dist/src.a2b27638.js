@@ -7694,12 +7694,12 @@ var FieldScene = function FieldScene(sceneProps) {
       }); /// Under serious testing
       // What's the significance of 64? Starting pos of player? Doesn't seem to matter... why?
 
-      if (tileEngine.mapheight > resolution.height) {
-        tileEngine.sy = player.y - 64;
+      if (tileEngine.mapwidth > resolution.width) {
+        tileEngine.sx = player.x;
       }
 
-      if (tileEngine.mapwidth > resolution.width) {
-        tileEngine.sx = player.x - 120;
+      if (tileEngine.mapheight > resolution.height) {
+        tileEngine.sy = player.y;
       }
     },
     render: function render() {
@@ -7776,7 +7776,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54574" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59794" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
