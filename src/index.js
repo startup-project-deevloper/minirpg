@@ -2,6 +2,7 @@
 * Asset Pack:
 * https://pixel-poem.itch.io/dungeon-assetpuck
 * https://0x72.itch.io/dungeontileset-ii
+* http://www.photonstorm.com/phaser/pixel-perfect-scaling-a-phaser-game
 */
 
 /* Libs */
@@ -10,12 +11,7 @@ import { init, GameLoop, load, initKeys } from "kontra";
 /* Common utils, objects and events */
 import { circleCollision, sortByDist } from "./common/helpers";
 import { ENTITY_TYPE } from "./common/consts";
-import {
-  allOff,
-  on,
-  emit,
-  EV_SCENECHANGE
-} from "./common/events";
+import { allOff, on, emit, EV_SCENECHANGE } from "./common/events";
 
 /* States for global use */
 import startConvo from "./states/startConvoState";
@@ -30,29 +26,35 @@ import StateMachine from "./managers/stateManager";
 
 /* Screen size (16:9) */
 const resolution = {
-  width: 1024,
-  height: 576,
+  width: 256,
+  height: 192,
   scale: 4
-}
+};
 
 /* Canvas initialization */
-const { canvas } = init();
-canvas.width = resolution.width;
-canvas.height = resolution.height;
+// Make absolutely sure we have to use two canvases (I'm not convinced)
+const { canvas: gameCanvas } = init("gameCanvas");
+const scaledCanvas = document.getElementById("scaledCanvas");
 
-const ctx = canvas.getContext("2d");
+/* Our 'scaled' canvas (leaves original unchanged) */
+scaledCanvas.width = resolution.width * resolution.scale;
+scaledCanvas.height = resolution.height * resolution.scale;
+
+/* Remove smoothing */
+const gameCanvasCtx = gameCanvas.getContext("2d");
+const ctx = scaledCanvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 ctx.webkitImageSmoothingEnabled = false;
 ctx.mozImageSmoothingEnabled = false;
 ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
-ctx.scale(resolution.scale, resolution.scale); // Upscale of supplied resolution in index (from 256). I'd suggest making this more robust.
 
 /* Primary field scene */
 const FieldScene = sceneProps => {
   /* World creation */
   const { createWorld, savePickup, getAllEntitiesOfType } = WorldManager();
   const { sprites, player, tileEngine } = createWorld(sceneProps);
+
   let spriteCache = sprites.filter(spr => spr.isAlive());
 
   /* Main states creation */
@@ -72,7 +74,7 @@ const FieldScene = sceneProps => {
           curtainState({
             id: "curtain",
             ctx,
-            direction: -1,
+            direction: 1,
             onFadeComplete: () => {
               allOff([EV_SCENECHANGE]);
               /* Player start becomes part of the collider data so we attempt to use that. */
@@ -124,11 +126,9 @@ const FieldScene = sceneProps => {
     curtainState({
       id: "curtain",
       ctx,
-      direction: 1
+      direction: -1
     })
   );
-
-  let sx = 1;
 
   /* Primary loop */
   return GameLoop({
@@ -138,10 +138,10 @@ const FieldScene = sceneProps => {
       spriteCache = spriteCache.filter(spr => spr.isAlive());
 
       /* Player to useable collision */
-      const playerCollidingWith = sortByDist(player, circleCollision(
+      const playerCollidingWith = sortByDist(
         player,
-        spriteCache.filter(s => s.id !== "player")
-      ));
+        circleCollision(player, spriteCache.filter(s => s.id !== "player"))
+      );
 
       /* Update all sprites */
       spriteCache.map(sprite => sprite.update());
@@ -155,15 +155,18 @@ const FieldScene = sceneProps => {
         collisions: playerCollidingWith
       });
 
-      // ...
-      // tileEngine.sx -= sx;
-      // console.log(tileEngine.sx)
+      /// Under serious testing
+      // What's the significance of 64? Starting pos of player? Doesn't seem to matter... why?
+      if (tileEngine.mapheight > resolution.height) {
+        tileEngine.sy = player.y - 64;
+      }
 
-      // if (tileEngine.sx <= 0 || tileEngine.sx >= 256) {
-      //   sx = -sx;
-      // }
+      if (tileEngine.mapwidth > resolution.width) {
+        tileEngine.sx = player.x - 120;
+      }
     },
     render: () => {
+      /* Instruct tileEngine to update its frame */
       tileEngine.render();
 
       /* Edit z-order based on 'y' then change render order */
@@ -171,7 +174,21 @@ const FieldScene = sceneProps => {
         .sort((a, b) => Math.round(a.y - a.z) - Math.round(b.y - b.z))
         .forEach(sprite => sprite.render());
 
+      /* Update any screen effects that are running */
       screenEffectsStateMachine.update();
+
+      /* Project the actual game canvas on to the scaled canvas */
+      ctx.drawImage(
+        gameCanvas,
+        0,
+        0,
+        resolution.width,
+        resolution.height,
+        0,
+        0,
+        scaledCanvas.width,
+        scaledCanvas.height
+      );
     }
   });
 };
@@ -190,6 +207,7 @@ load(
 ).then(assets => {
   initKeys();
 
+  /// Note: There's now a scene manager in kontra that can be used
   // Hook up player start todo
   const sceneManager = SceneManager({ sceneObject: FieldScene });
 

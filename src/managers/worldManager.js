@@ -13,7 +13,9 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
   return {
     getAllEntitiesOfType: type => {
       const existingEntities = getStoreItem("entities");
-      return existingEntities ? existingEntities.filter(ent => ent.type === type) : [];
+      return existingEntities
+        ? existingEntities.filter(ent => ent.type === type)
+        : [];
     },
     getAllEntities: () => getStoreItem("entities"),
     getEntityFromStore: id => getEntityFromStore(id),
@@ -21,12 +23,16 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
     savePickup: entityData => {
       const { id, type, ttl } = entityData;
       const existingEntities = getStoreItem("entities");
-      const existingEntity = existingEntities ? existingEntities.find(x => x.id === id) : null;
+      const existingEntity = existingEntities
+        ? existingEntities.find(x => x.id === id)
+        : null;
 
       setStoreItem(
         "entities",
         existingEntities
-          ? existingEntities.filter(ent => ent.id !== id).concat([{ id, type, ttl, qty: existingEntity.qty + 1 }])
+          ? existingEntities
+              .filter(ent => ent.id !== id)
+              .concat([{ id, type, ttl, qty: existingEntity.qty + 1 }])
           : [{ id, type, ttl, qty: 1 }]
       );
     },
@@ -40,12 +46,12 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
         id: "player",
         x: playerStart.x,
         y: playerStart.y,
-        collisionMethod: (layer, sprite) => tileEngine.layerCollidesWith(layer, sprite)
+        collisionMethod: (layer, sprite) =>
+          tileEngine.layerCollidesWith(layer, sprite)
       });
 
-      /* Add the player to the tile engine to sync with the camera */
       tileEngine.addObject(player);
-      
+
       return {
         mapKey,
         tileEngine,
@@ -58,12 +64,19 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
             const { id } = entity;
             const exists = getEntityFromStore(id);
 
-            /* Add to the tile engine so we can sync move the camera around */
-            //tileEngine.addObject(entity);
+            const ent =
+              !exists || (exists && exists.ttl > 0)
+                ? Entity({
+                    ...entity,
+                    collisionMethod: (layer, sprite) =>
+                      tileEngine.layerCollidesWith(layer, sprite)
+                  })
+                : null;
 
-            return !exists || (exists && exists.ttl > 0)
-              ? Entity({ ...entity, collisionMethod: (layer, sprite) => tileEngine.layerCollidesWith(layer, sprite) })
-              : null;
+            /* May wish to add a flag if you want to add it to tilemap or not */
+            if (ent) tileEngine.addObject(ent);
+
+            return ent;
           })
           .filter(e => e)
           .concat([player])

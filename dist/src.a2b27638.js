@@ -7063,8 +7063,11 @@ var _default = function _default(_ref) {
   // https://stackoverflow.com/questions/19258169/fadein-fadeout-in-html5-canvas
   var _isComplete = false;
   var alpha = direction < 0 ? 1 : 0,
-      delta = 0.05;
-  ctx.globalAlpha = direction < 0 ? 1 : 0;
+      delta = 0.05; //ctx.globalAlpha = direction < 0 ? 1 : 0;
+  // Under heavy testing
+
+  var curtainEl = document.getElementById("curtain");
+  curtainEl.style.opacity = direction < 0 ? 1 : 0;
   return {
     id: id,
     isComplete: function isComplete() {
@@ -7073,12 +7076,19 @@ var _default = function _default(_ref) {
     enter: function enter(props) {},
     update: function update() {
       _isComplete = direction > 0 && alpha >= 1 || direction < 0 && alpha <= -1;
-      alpha = direction < 0 ? alpha - delta : alpha + delta;
-      ctx.clearRect(0, 0, ctx.width, ctx.height);
-      ctx.globalAlpha = _isComplete ? Math.round(alpha) : alpha;
+      alpha = direction < 0 ? alpha - delta : alpha + delta; //ctx.clearRect(0, 0, ctx.width, ctx.height);
+      //ctx.globalAlpha = isComplete ? Math.round(alpha) : alpha;
+
+      curtainEl.style.opacity = _isComplete ? Math.round(alpha) : alpha;
     },
     exit: function exit() {
-      ctx.globalAlpha = direction < 0 ? 0 : 1;
+      //ctx.globalAlpha = direction < 0 ? 0 : 1;
+      curtainEl.style.opacity = direction < 0 ? 0 : 1;
+
+      if (direction === 0) {
+        curtainEl.remove();
+      }
+
       onFadeComplete();
     }
   };
@@ -7409,8 +7419,6 @@ var _default = function _default() {
           return tileEngine.layerCollidesWith(layer, sprite);
         }
       });
-      /* Add the player to the tile engine to sync with the camera */
-
       tileEngine.addObject(player);
       return {
         mapKey: mapKey,
@@ -7423,15 +7431,16 @@ var _default = function _default() {
           var id = entity.id;
 
           var exists = _getEntityFromStore(id);
-          /* Add to the tile engine so we can sync move the camera around */
-          //tileEngine.addObject(entity);
 
-
-          return !exists || exists && exists.ttl > 0 ? (0, _entity.default)(_objectSpread({}, entity, {
+          var ent = !exists || exists && exists.ttl > 0 ? (0, _entity.default)(_objectSpread({}, entity, {
             collisionMethod: function collisionMethod(layer, sprite) {
               return tileEngine.layerCollidesWith(layer, sprite);
             }
           })) : null;
+          /* May wish to add a flag if you want to add it to tilemap or not */
+
+          if (ent) tileEngine.addObject(ent);
+          return ent;
         }).filter(function (e) {
           return e;
         }).concat([player])
@@ -7539,26 +7548,30 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
 /* Screen size (16:9) */
 var resolution = {
-  width: 1024,
-  height: 576,
+  width: 256,
+  height: 192,
   scale: 4
-  /* Canvas initialization */
-
 };
+/* Canvas initialization */
+// Make absolutely sure we have to use two canvases (I'm not convinced)
 
-var _init = (0, _kontra.init)(),
-    canvas = _init.canvas;
+var _init = (0, _kontra.init)("gameCanvas"),
+    gameCanvas = _init.canvas;
 
-canvas.width = resolution.width;
-canvas.height = resolution.height;
-var ctx = canvas.getContext("2d");
+var scaledCanvas = document.getElementById("scaledCanvas");
+/* Our 'scaled' canvas (leaves original unchanged) */
+
+scaledCanvas.width = resolution.width * resolution.scale;
+scaledCanvas.height = resolution.height * resolution.scale;
+/* Remove smoothing */
+
+var gameCanvasCtx = gameCanvas.getContext("2d");
+var ctx = scaledCanvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 ctx.webkitImageSmoothingEnabled = false;
 ctx.mozImageSmoothingEnabled = false;
 ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
-ctx.scale(resolution.scale, resolution.scale); // Upscale of supplied resolution in index (from 256). I'd suggest making this more robust.
-
 /* Primary field scene */
 
 var FieldScene = function FieldScene(sceneProps) {
@@ -7594,7 +7607,7 @@ var FieldScene = function FieldScene(sceneProps) {
       screenEffectsStateMachine.push((0, _curtainState.default)({
         id: "curtain",
         ctx: ctx,
-        direction: -1,
+        direction: 1,
         onFadeComplete: function onFadeComplete() {
           (0, _events.allOff)([_events.EV_SCENECHANGE]);
           /* Player start becomes part of the collider data so we attempt to use that. */
@@ -7649,9 +7662,8 @@ var FieldScene = function FieldScene(sceneProps) {
   screenEffectsStateMachine.push((0, _curtainState.default)({
     id: "curtain",
     ctx: ctx,
-    direction: 1
+    direction: -1
   }));
-  var sx = 1;
   /* Primary loop */
 
   return (0, _kontra.GameLoop)({
@@ -7679,14 +7691,19 @@ var FieldScene = function FieldScene(sceneProps) {
       sceneStateMachine.update({
         origin: player,
         collisions: playerCollidingWith
-      }); // ...
-      // tileEngine.sx -= sx;
-      // console.log(tileEngine.sx)
-      // if (tileEngine.sx <= 0 || tileEngine.sx >= 256) {
-      //   sx = -sx;
-      // }
+      }); /// Under serious testing
+      // What's the significance of 64? Starting pos of player? Doesn't seem to matter... why?
+
+      if (tileEngine.mapheight > resolution.height) {
+        tileEngine.sy = player.y - 64;
+      }
+
+      if (tileEngine.mapwidth > resolution.width) {
+        tileEngine.sx = player.x - 120;
+      }
     },
     render: function render() {
+      /* Instruct tileEngine to update its frame */
       tileEngine.render();
       /* Edit z-order based on 'y' then change render order */
 
@@ -7695,7 +7712,12 @@ var FieldScene = function FieldScene(sceneProps) {
       }).forEach(function (sprite) {
         return sprite.render();
       });
+      /* Update any screen effects that are running */
+
       screenEffectsStateMachine.update();
+      /* Project the actual game canvas on to the scaled canvas */
+
+      ctx.drawImage(gameCanvas, 0, 0, resolution.width, resolution.height, 0, 0, scaledCanvas.width, scaledCanvas.height);
     }
   });
 };
@@ -7704,7 +7726,8 @@ TODO: Can we also const the dataKeys across the board plz. */
 
 
 (0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json").then(function (assets) {
-  (0, _kontra.initKeys)(); // Hook up player start todo
+  (0, _kontra.initKeys)(); /// Note: There's now a scene manager in kontra that can be used
+  // Hook up player start todo
 
   var sceneManager = (0, _sceneManager.default)({
     sceneObject: FieldScene
@@ -7753,7 +7776,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57710" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54574" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
