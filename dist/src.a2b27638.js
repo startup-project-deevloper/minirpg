@@ -7550,7 +7550,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 var resolution = {
   width: 256,
   height: 192,
-  scale: 4
+  scale: 3
 };
 /* Canvas initialization */
 // Make absolutely sure we have to use two canvases (I'm not convinced)
@@ -7559,13 +7559,27 @@ var _init = (0, _kontra.init)("gameCanvas"),
     gameCanvas = _init.canvas;
 
 var scaledCanvas = document.getElementById("scaledCanvas");
-/* Our 'scaled' canvas (leaves original unchanged) */
+var rootElement = document.getElementById("root");
+/* Set correct scales to be universal */
+
+gameCanvas.width = resolution.width;
+gameCanvas.height = resolution.height;
+/* Scaled canvas works in the same way only we multiply to zoom it in */
 
 scaledCanvas.width = resolution.width * resolution.scale;
 scaledCanvas.height = resolution.height * resolution.scale;
+/* Apply to root element also */
+
+rootElement.style.width = resolution.width * resolution.scale + 'px';
+rootElement.style.height = resolution.height * resolution.scale + 'px';
 /* Remove smoothing */
 
 var gameCanvasCtx = gameCanvas.getContext("2d");
+gameCanvasCtx.imageSmoothingEnabled = false;
+gameCanvasCtx.webkitImageSmoothingEnabled = false;
+gameCanvasCtx.mozImageSmoothingEnabled = false;
+gameCanvasCtx.msImageSmoothingEnabled = false;
+gameCanvasCtx.oImageSmoothingEnabled = false;
 var ctx = scaledCanvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 ctx.webkitImageSmoothingEnabled = false;
@@ -7699,7 +7713,7 @@ var FieldScene = function FieldScene(sceneProps) {
       }
 
       if (tileEngine.mapheight > resolution.height) {
-        tileEngine.sy = player.y;
+        tileEngine.sy = player.y - 120;
       }
     },
     render: function render() {
@@ -7776,7 +7790,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59794" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54347" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

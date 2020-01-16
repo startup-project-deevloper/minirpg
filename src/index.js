@@ -28,20 +28,35 @@ import StateMachine from "./managers/stateManager";
 const resolution = {
   width: 256,
   height: 192,
-  scale: 4
+  scale: 3
 };
 
 /* Canvas initialization */
 // Make absolutely sure we have to use two canvases (I'm not convinced)
 const { canvas: gameCanvas } = init("gameCanvas");
 const scaledCanvas = document.getElementById("scaledCanvas");
+const rootElement = document.getElementById("root");
 
-/* Our 'scaled' canvas (leaves original unchanged) */
+/* Set correct scales to be universal */
+gameCanvas.width = resolution.width;
+gameCanvas.height = resolution.height;
+
+/* Scaled canvas works in the same way only we multiply to zoom it in */
 scaledCanvas.width = resolution.width * resolution.scale;
 scaledCanvas.height = resolution.height * resolution.scale;
 
+/* Apply to root element also */
+rootElement.style.width = resolution.width * resolution.scale + 'px';
+rootElement.style.height = resolution.height * resolution.scale + 'px';
+
 /* Remove smoothing */
 const gameCanvasCtx = gameCanvas.getContext("2d");
+gameCanvasCtx.imageSmoothingEnabled = false;
+gameCanvasCtx.webkitImageSmoothingEnabled = false;
+gameCanvasCtx.mozImageSmoothingEnabled = false;
+gameCanvasCtx.msImageSmoothingEnabled = false;
+gameCanvasCtx.oImageSmoothingEnabled = false;
+
 const ctx = scaledCanvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 ctx.webkitImageSmoothingEnabled = false;
@@ -162,7 +177,7 @@ const FieldScene = sceneProps => {
       }
 
       if (tileEngine.mapheight > resolution.height) {
-        tileEngine.sy = player.y;
+        tileEngine.sy = player.y - 120;
       }
     },
     render: () => {
