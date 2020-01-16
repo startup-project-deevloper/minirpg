@@ -5,8 +5,14 @@
         "entities": [
             {
                 "x": 120,
-                "y": 160,
+                "y": 180,
                 "id": "daryl",
+                "customProperties": {}
+            },
+            {
+                "x": 90,
+                "y": 130,
+                "id": "sagani",
                 "customProperties": {}
             },
             {

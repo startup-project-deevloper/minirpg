@@ -65,6 +65,38 @@
         }
     },
     {
+        "id": "sagani",
+        "name": "Sagani",
+        "description": "Sagani is here to train you and make your day a lot harder (triggers fight after convo, not same as enemy type where you just have to run in to the battle area).",
+        "type": 1,
+        "sheet": "assets/entityimages/little_orc.png",
+        "frameWidth": 16,
+        "frameHeight": 16,
+        "collisionBodyOptions": null,
+        "manualAnimation": false,
+        "animations": {
+            "idle": {
+                "frames": [
+                    0,
+                    1,
+                    2,
+                    3
+                ],
+                "frameRate": 8
+            },
+            "walk": {
+                "frames": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7
+                ],
+                "frameRate": 16
+            }
+        }
+    },
+    {
         "id": "potion",
         "name": "Potion",
         "description": "Restores health on use.",
