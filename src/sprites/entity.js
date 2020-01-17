@@ -78,6 +78,7 @@ export default ({
       });
     },
     moveTo: ({ x, y }, onDestinationReached = null) => {
+      // Look at: https://www.khanacademy.org/computing/computer-programming/programming-natural-simulations/programming-angular-movement/a/pointing-towards-movement
       /* Direct moveTo (naive approach) */
       targetDestination = {
         x,
