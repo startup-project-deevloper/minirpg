@@ -8,6 +8,15 @@ export const uniqueId = (pre = "") =>
 
 export const between = (v, a, b) => v > a && v < b;
 
+export const getNormal = dir => {
+  const dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
+
+  return {
+    x: dir.x !== 0 ? dir.x / dirLength : 0,
+    y: dir.y !== 0 ? dir.y / dirLength : 0
+  };
+};
+
 export const vmulti = (vec, v) => {
   let x = 0;
   let y = 0;

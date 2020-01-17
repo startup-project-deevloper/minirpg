@@ -67,8 +67,8 @@
     {
         "id": "sagani",
         "name": "Sagani",
-        "description": "Sagani is here to train you and make your day a lot harder (triggers fight after convo, not same as enemy type where you just have to run in to the battle area).",
-        "type": 1,
+        "description": "Sagani is here to train you and make your day a lot harder.",
+        "type": 2,
         "sheet": "assets/entityimages/little_orc.png",
         "frameWidth": 16,
         "frameHeight": 16,
@@ -160,6 +160,25 @@
             "idle": {
                 "frames": [
                     86
+                ],
+                "frameRate": 1
+            }
+        }
+    },
+    {
+        "id": "battleMarker",
+        "name": "Battle Marker",
+        "description": "Used to indicate a point on the map where an entity can stand to attack.",
+        "type": 7,
+        "sheet": "assets/tileimages/test.png",
+        "frameWidth": 16,
+        "frameHeight": 16,
+        "collisionBodyOptions": null,
+        "manualAnimation": false,
+        "animations": {
+            "idle": {
+                "frames": [
+                    100
                 ],
                 "frameRate": 1
             }

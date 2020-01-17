@@ -1,3 +1,5 @@
+import { getNormal } from "../common/helpers";
+
 export const moveSprite = ({
   dir,
   sprite,
@@ -6,12 +8,7 @@ export const moveSprite = ({
   }
 }) => {
   /* Normalise so you don't go super fast diagonally */
-  const dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
-
-  const directionNormal = {
-    x: dir.x !== 0 ? dir.x / dirLength : 0,
-    y: dir.y !== 0 ? dir.y / dirLength : 0
-  };
+  const directionNormal = getNormal(dir);
 
   /// For collisions with tiles
   let oldPos = {

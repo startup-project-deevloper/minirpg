@@ -16,6 +16,7 @@ import { allOff, on, emit, EV_SCENECHANGE } from "./common/events";
 /* States for global use */
 import startConvo from "./states/startConvoState";
 import fieldState from "./states/fieldState";
+import battleState from "./states/battleState";
 import curtainState from "./states/curtainState";
 
 /* Game managers */
@@ -46,8 +47,8 @@ scaledCanvas.width = resolution.width * resolution.scale;
 scaledCanvas.height = resolution.height * resolution.scale;
 
 /* Apply to root element also */
-rootElement.style.width = resolution.width * resolution.scale + 'px';
-rootElement.style.height = resolution.height * resolution.scale + 'px';
+rootElement.style.width = resolution.width * resolution.scale + "px";
+rootElement.style.height = resolution.height * resolution.scale + "px";
 
 /* Remove smoothing */
 const gameCanvasCtx = gameCanvas.getContext("2d");
@@ -66,11 +67,14 @@ ctx.oImageSmoothingEnabled = false;
 
 /* Primary field scene */
 const FieldScene = sceneProps => {
-  /* World creation */
-  const { createWorld, savePickup, getAllEntitiesOfType } = WorldManager();
+  /* World creation (can we not have entities just in store, it's a bit confusing) */
+  const { createWorld, savePickup, getAllEntitiesOfType, resetEntityStates } = WorldManager();
   const { sprites, player, tileEngine } = createWorld(sceneProps);
 
   let spriteCache = sprites.filter(spr => spr.isAlive());
+
+  // Temporary
+  // resetEntityStates();
 
   /* Main states creation */
   const sceneStateMachine = StateMachine();
@@ -103,13 +107,6 @@ const FieldScene = sceneProps => {
       }
     },
     {
-      type: ENTITY_TYPE.PICKUP,
-      reactionEvent: (interactible, actors = []) => {
-        interactible.ttl = 0;
-        savePickup(interactible);
-      }
-    },
-    {
       type: ENTITY_TYPE.NPC,
       reactionEvent: (interactible, actors = []) =>
         sceneStateMachine.push(
@@ -117,10 +114,33 @@ const FieldScene = sceneProps => {
             id: "conversation",
             startId: "m1",
             // I feel these might be better done within the state... perhaps the same elsewhere too.
-            onExit: () => actors.map(spr => (spr.movementDisabled = false)),
-            onEntry: () => actors.map(spr => (spr.movementDisabled = true))
+            onEntry: () => actors.map(spr => spr.disableMovement()),
+            onExit: () => actors.map(spr => spr.enableMovement())
           })
         )
+    },
+    {
+      type: ENTITY_TYPE.ENEMY,
+      reactionEvent: (interactible, actors = []) =>
+        sceneStateMachine.push(
+          battleState({
+            id: "battle",
+            actors,
+            markers: spriteCache.filter(
+              x => x.type === ENTITY_TYPE.BATTLE_MARKER
+            ),
+            // I feel these might be better done within the state... perhaps the same elsewhere too.
+            onEntry: () => actors.map(spr => spr.disableMovement()),
+            onExit: () => actors.map(spr => spr.enableMovement())
+          })
+        )
+    },
+    {
+      type: ENTITY_TYPE.PICKUP,
+      reactionEvent: (interactible, actors = []) => {
+        interactible.ttl = 0;
+        savePickup(interactible);
+      }
     }
   ]);
 

@@ -30,6 +30,20 @@
                 "z": 10,
                 "id": "entrance",
                 "customProperties": {}
+            },
+            {
+                "x": 90,
+                "y": 97,
+                "z": 10,
+                "id": "battleMarker",
+                "customProperties": {}
+            },
+            {
+                "x": 150,
+                "y": 97,
+                "z": 10,
+                "id": "battleMarker",
+                "customProperties": {}
             }
         ]
     },

@@ -1,4 +1,5 @@
 import { moveSprite, flipSprite } from "./spriteFunctions";
+import { uniqueId, dist, getNormal } from "../common/helpers";
 import {
   Sprite,
   dataAssets,
@@ -13,7 +14,7 @@ export default ({
   y,
   z = 1,
   customProperties = {},
-  collisionMethod = (layer, sprite) => { }
+  collisionMethod = (layer, sprite) => {}
 }) => {
   if (!id) {
     throw new Error(
@@ -33,7 +34,6 @@ export default ({
     sheet,
     collisionBodyOptions = null,
     manualAnimation = false,
-    movementDisabled = false,
     controlledByUser = false,
     collidesWithTiles = true
   } = entityData.find(ent => ent.id === id);
@@ -45,7 +45,14 @@ export default ({
     animations
   });
 
+  let dir = { x: 0, y: 0 }; // AI (to add later)
+  let targetDestination = null;
+  let movementDisabled = false;
+  let destinationReachedCallback = null;
+
+  /* Id should really be named 'class' since its re-used. */
   const sprite = Sprite({
+    instId: uniqueId(id),
     id,
     type,
     name,
@@ -59,39 +66,58 @@ export default ({
     controlledByUser,
     collisionBodyOptions,
     manualAnimation,
-    movementDisabled,
+    enableMovement: () => (movementDisabled = false),
+    disableMovement: () => (movementDisabled = true),
+    lookAt: ({ x, y }) => {
+      flipSprite({
+        direction: {
+          x: sprite.x > x ? -1 : 1,
+          y: sprite.y > y ? -1 : 1
+        },
+        sprite
+      });
+    },
+    moveTo: ({ x, y }, onDestinationReached = null) => {
+      /* Direct moveTo (naive approach) */
+      targetDestination = {
+        x,
+        y
+      };
+
+      destinationReachedCallback = onDestinationReached;
+    },
     update: () => {
-      /* Attacking */
-      if (keyPressed("q")) {
-        /*
-        For attacking, going full throttle with a turn-based system is quite a lot
-        to handle. For now it'd be easier to settle for arcade sort of attacks and
-        being clever with patterns / interaction such as seen on Zelda.
-
-        So that said, what general idea is this:
-        - Hitbox appears, probably with an animation in sync with it
-        - Collision picked up when hitbox hits whatever the thing is
-        - The thing that's hit get informed of the hit, and as to what actually
-        hit it. If the thing is hostile (no friendly-fire), we search for the item in
-        question and run against its stats.
-        - It's a lot to calculate on the hit, but it has to be done at some point. After
-        that the damage animation plays on the target, and so on. Let the entity handle
-        what happens to it under circumstances such as if it's locked in animation, etc.
-        - The attacker can just worry about its self and what it's doing with attack and
-        animations.
-        */
-      }
-
       /* Movement */
-      const dir = controlledByUser
-        ? {
+      if (targetDestination !== null) {
+        /* You could also stick pathfinding in here or in AI when it's implemented */
+        dir = {
+          x: sprite.x > targetDestination.x ? -1 : 1,
+          y: sprite.y > targetDestination.y ? -1 : 1
+        };
+
+        if (dist(sprite, targetDestination) < 1) {
+          targetDestination = null;
+
+          if (destinationReachedCallback != null) {
+            destinationReachedCallback();
+            destinationReachedCallback = null;
+          }
+        }
+      } else if (controlledByUser && targetDestination == null) {
+        dir = {
           x: keyPressed("a") ? -1 : keyPressed("d") ? 1 : 0,
           y: keyPressed("w") ? -1 : keyPressed("s") ? 1 : 0
-        }
-        : { x: 0, y: 0 }; // AI (to add later)
+        };
+      } else {
+        dir = {
+          x: 0,
+          y: 0
+        };
+      }
 
       const { directionNormal } = moveSprite({
-        dir: sprite.movementDisabled ? { x: 0, y: 0 } : dir,
+        dir:
+          movementDisabled && targetDestination === null ? { x: 0, y: 0 } : dir,
         sprite,
         checkCollision: sprite => collisionMethod("Collision", sprite)
       });

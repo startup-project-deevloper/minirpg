@@ -4201,7 +4201,7 @@ exports.emit = emit;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.debug = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.between = exports.uniqueId = void 0;
+exports.debug = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.getNormal = exports.between = exports.uniqueId = void 0;
 
 var _events = require("../common/events");
 
@@ -4219,6 +4219,16 @@ var between = function between(v, a, b) {
 };
 
 exports.between = between;
+
+var getNormal = function getNormal(dir) {
+  var dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
+  return {
+    x: dir.x !== 0 ? dir.x / dirLength : 0,
+    y: dir.y !== 0 ? dir.y / dirLength : 0
+  };
+};
+
+exports.getNormal = getNormal;
 
 var vmulti = function vmulti(vec, v) {
   var x = 0;
@@ -4308,6 +4318,7 @@ var ENTITY_TYPE = {
   DOOR: 4,
   CONTAINER: 5,
   ENTRANCE: 6,
+  BATTLE_MARKER: 7,
   PLAYER: 99
 };
 exports.ENTITY_TYPE = ENTITY_TYPE;
@@ -7045,7 +7056,67 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"../ui/inventory":"src/ui/inventory.js","../common/consts":"src/common/consts.js","../input/onPush":"src/input/onPush.js"}],"src/states/curtainState.js":[function(require,module,exports) {
+},{"../ui/inventory":"src/ui/inventory.js","../common/consts":"src/common/consts.js","../input/onPush":"src/input/onPush.js"}],"src/states/battleState.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _helpers = require("../common/helpers");
+
+var _default = function _default(_ref) {
+  var id = _ref.id,
+      actors = _ref.actors,
+      markers = _ref.markers,
+      _ref$onEntry = _ref.onEntry,
+      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
+      _ref$onExit = _ref.onExit,
+      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
+  var _isComplete = false;
+  var unoccupied = [].concat(markers);
+  /* Find closest un-occupied battle point for each actor and get it to move to it */
+
+  actors.forEach(function (actor) {
+    var nearestMarker = (0, _helpers.sortByDist)(actor, unoccupied)[0];
+    unoccupied = unoccupied.filter(function (x) {
+      return x.instId !== nearestMarker.instId;
+    });
+    actor.moveTo(nearestMarker, function () {
+      /* Naively get the actors to look at each other, doesn't care who right now */
+      actor.lookAt(actors.find(function (x) {
+        return x.instId !== actor.instId;
+      }));
+    });
+  });
+  if (actors.length !== markers.length) throw "Marker and Actor length mismatch.";
+  /* At battle end, just get everyone to return to following the player, should be on field state */
+  // ...
+
+  setTimeout(function () {
+    return _isComplete = true;
+  }, 3000);
+  return {
+    id: id,
+    isComplete: function isComplete() {
+      return _isComplete;
+    },
+    enter: function enter(props) {
+      return onEntry();
+    },
+    update: function update() {
+      console.log("Battle state active.");
+    },
+    exit: function exit() {
+      console.log("Battle state complete.");
+      onExit();
+    }
+  };
+};
+
+exports.default = _default;
+},{"../common/helpers":"src/common/helpers.js"}],"src/states/curtainState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7124,6 +7195,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.flipSprite = exports.moveSprite = void 0;
 
+var _helpers = require("../common/helpers");
+
 var moveSprite = function moveSprite(_ref) {
   var dir = _ref.dir,
       sprite = _ref.sprite,
@@ -7133,11 +7206,7 @@ var moveSprite = function moveSprite(_ref) {
   } : _ref$checkCollision;
 
   /* Normalise so you don't go super fast diagonally */
-  var dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
-  var directionNormal = {
-    x: dir.x !== 0 ? dir.x / dirLength : 0,
-    y: dir.y !== 0 ? dir.y / dirLength : 0
-  }; /// For collisions with tiles
+  var directionNormal = (0, _helpers.getNormal)(dir); /// For collisions with tiles
 
   var oldPos = {
     x: sprite.x,
@@ -7187,7 +7256,7 @@ var flipSprite = function flipSprite(_ref2) {
 };
 
 exports.flipSprite = flipSprite;
-},{}],"src/sprites/entity.js":[function(require,module,exports) {
+},{"../common/helpers":"src/common/helpers.js"}],"src/sprites/entity.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7196,6 +7265,8 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = void 0;
 
 var _spriteFunctions = require("./spriteFunctions");
+
+var _helpers = require("../common/helpers");
 
 var _kontra = require("kontra");
 
@@ -7230,8 +7301,6 @@ var _default = function _default(_ref) {
       collisionBodyOptions = _entityData$find$coll === void 0 ? null : _entityData$find$coll,
       _entityData$find$manu = _entityData$find.manualAnimation,
       manualAnimation = _entityData$find$manu === void 0 ? false : _entityData$find$manu,
-      _entityData$find$move = _entityData$find.movementDisabled,
-      movementDisabled = _entityData$find$move === void 0 ? false : _entityData$find$move,
       _entityData$find$cont = _entityData$find.controlledByUser,
       controlledByUser = _entityData$find$cont === void 0 ? false : _entityData$find$cont,
       _entityData$find$coll2 = _entityData$find.collidesWithTiles,
@@ -7243,7 +7312,18 @@ var _default = function _default(_ref) {
     frameHeight: frameHeight,
     animations: animations
   });
+  var dir = {
+    x: 0,
+    y: 0
+  }; // AI (to add later)
+
+  var targetDestination = null;
+  var movementDisabled = false;
+  var destinationReachedCallback = null;
+  /* Id should really be named 'class' since its re-used. */
+
   var sprite = (0, _kontra.Sprite)({
+    instId: (0, _helpers.uniqueId)(id),
     id: id,
     type: type,
     name: name,
@@ -7257,40 +7337,66 @@ var _default = function _default(_ref) {
     controlledByUser: controlledByUser,
     collisionBodyOptions: collisionBodyOptions,
     manualAnimation: manualAnimation,
-    movementDisabled: movementDisabled,
+    enableMovement: function enableMovement() {
+      return movementDisabled = false;
+    },
+    disableMovement: function disableMovement() {
+      return movementDisabled = true;
+    },
+    lookAt: function lookAt(_ref2) {
+      var x = _ref2.x,
+          y = _ref2.y;
+      (0, _spriteFunctions.flipSprite)({
+        direction: {
+          x: sprite.x > x ? -1 : 1,
+          y: sprite.y > y ? -1 : 1
+        },
+        sprite: sprite
+      });
+    },
+    moveTo: function moveTo(_ref3) {
+      var x = _ref3.x,
+          y = _ref3.y;
+      var onDestinationReached = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+      /* Direct moveTo (naive approach) */
+      targetDestination = {
+        x: x,
+        y: y
+      };
+      destinationReachedCallback = onDestinationReached;
+    },
     update: function update() {
-      /* Attacking */
-      if ((0, _kontra.keyPressed)("q")) {}
-      /*
-      For attacking, going full throttle with a turn-based system is quite a lot
-      to handle. For now it'd be easier to settle for arcade sort of attacks and
-      being clever with patterns / interaction such as seen on Zelda.
-        So that said, what general idea is this:
-      - Hitbox appears, probably with an animation in sync with it
-      - Collision picked up when hitbox hits whatever the thing is
-      - The thing that's hit get informed of the hit, and as to what actually
-      hit it. If the thing is hostile (no friendly-fire), we search for the item in
-      question and run against its stats.
-      - It's a lot to calculate on the hit, but it has to be done at some point. After
-      that the damage animation plays on the target, and so on. Let the entity handle
-      what happens to it under circumstances such as if it's locked in animation, etc.
-      - The attacker can just worry about its self and what it's doing with attack and
-      animations.
-      */
-
       /* Movement */
+      if (targetDestination !== null) {
+        /* You could also stick pathfinding in here or in AI when it's implemented */
+        dir = {
+          x: sprite.x > targetDestination.x ? -1 : 1,
+          y: sprite.y > targetDestination.y ? -1 : 1
+        };
 
+        if ((0, _helpers.dist)(sprite, targetDestination) < 1) {
+          targetDestination = null;
 
-      var dir = controlledByUser ? {
-        x: (0, _kontra.keyPressed)("a") ? -1 : (0, _kontra.keyPressed)("d") ? 1 : 0,
-        y: (0, _kontra.keyPressed)("w") ? -1 : (0, _kontra.keyPressed)("s") ? 1 : 0
-      } : {
-        x: 0,
-        y: 0
-      }; // AI (to add later)
+          if (destinationReachedCallback != null) {
+            destinationReachedCallback();
+            destinationReachedCallback = null;
+          }
+        }
+      } else if (controlledByUser && targetDestination == null) {
+        dir = {
+          x: (0, _kontra.keyPressed)("a") ? -1 : (0, _kontra.keyPressed)("d") ? 1 : 0,
+          y: (0, _kontra.keyPressed)("w") ? -1 : (0, _kontra.keyPressed)("s") ? 1 : 0
+        };
+      } else {
+        dir = {
+          x: 0,
+          y: 0
+        };
+      }
 
       var _moveSprite = (0, _spriteFunctions.moveSprite)({
-        dir: sprite.movementDisabled ? {
+        dir: movementDisabled && targetDestination === null ? {
           x: 0,
           y: 0
         } : dir,
@@ -7323,7 +7429,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"./spriteFunctions":"src/sprites/spriteFunctions.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/managers/worldManager.js":[function(require,module,exports) {
+},{"./spriteFunctions":"src/sprites/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/managers/worldManager.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7382,13 +7488,15 @@ var _default = function _default() {
       var existingEntity = existingEntities ? existingEntities.find(function (x) {
         return x.id === id;
       }) : null;
+      /* This needs cleaning up */
+
       (0, _kontra.setStoreItem)("entities", existingEntities ? existingEntities.filter(function (ent) {
         return ent.id !== id;
       }).concat([{
         id: id,
         type: type,
         ttl: ttl,
-        qty: existingEntity.qty + 1
+        qty: existingEntity ? existingEntity.qty + 1 : 1
       }]) : [{
         id: id,
         type: type,
@@ -7528,6 +7636,8 @@ var _startConvoState = _interopRequireDefault(require("./states/startConvoState"
 
 var _fieldState = _interopRequireDefault(require("./states/fieldState"));
 
+var _battleState = _interopRequireDefault(require("./states/battleState"));
+
 var _curtainState = _interopRequireDefault(require("./states/curtainState"));
 
 var _sceneManager = _interopRequireDefault(require("./managers/sceneManager"));
@@ -7570,8 +7680,8 @@ scaledCanvas.width = resolution.width * resolution.scale;
 scaledCanvas.height = resolution.height * resolution.scale;
 /* Apply to root element also */
 
-rootElement.style.width = resolution.width * resolution.scale + 'px';
-rootElement.style.height = resolution.height * resolution.scale + 'px';
+rootElement.style.width = resolution.width * resolution.scale + "px";
+rootElement.style.height = resolution.height * resolution.scale + "px";
 /* Remove smoothing */
 
 var gameCanvasCtx = gameCanvas.getContext("2d");
@@ -7589,11 +7699,12 @@ ctx.oImageSmoothingEnabled = false;
 /* Primary field scene */
 
 var FieldScene = function FieldScene(sceneProps) {
-  /* World creation */
+  /* World creation (can we not have entities just in store, it's a bit confusing) */
   var _WorldManager = (0, _worldManager.default)(),
       createWorld = _WorldManager.createWorld,
       savePickup = _WorldManager.savePickup,
-      getAllEntitiesOfType = _WorldManager.getAllEntitiesOfType;
+      getAllEntitiesOfType = _WorldManager.getAllEntitiesOfType,
+      resetEntityStates = _WorldManager.resetEntityStates;
 
   var _createWorld = createWorld(sceneProps),
       sprites = _createWorld.sprites,
@@ -7602,7 +7713,9 @@ var FieldScene = function FieldScene(sceneProps) {
 
   var spriteCache = sprites.filter(function (spr) {
     return spr.isAlive();
-  });
+  }); // Temporary
+  // resetEntityStates();
+
   /* Main states creation */
 
   var sceneStateMachine = (0, _stateManager.default)();
@@ -7634,13 +7747,6 @@ var FieldScene = function FieldScene(sceneProps) {
       }));
     }
   }, {
-    type: _consts.ENTITY_TYPE.PICKUP,
-    reactionEvent: function reactionEvent(interactible) {
-      var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-      interactible.ttl = 0;
-      savePickup(interactible);
-    }
-  }, {
     type: _consts.ENTITY_TYPE.NPC,
     reactionEvent: function reactionEvent(interactible) {
       var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
@@ -7648,17 +7754,47 @@ var FieldScene = function FieldScene(sceneProps) {
         id: "conversation",
         startId: "m1",
         // I feel these might be better done within the state... perhaps the same elsewhere too.
-        onExit: function onExit() {
-          return actors.map(function (spr) {
-            return spr.movementDisabled = false;
-          });
-        },
         onEntry: function onEntry() {
           return actors.map(function (spr) {
-            return spr.movementDisabled = true;
+            return spr.disableMovement();
+          });
+        },
+        onExit: function onExit() {
+          return actors.map(function (spr) {
+            return spr.enableMovement();
           });
         }
       }));
+    }
+  }, {
+    type: _consts.ENTITY_TYPE.ENEMY,
+    reactionEvent: function reactionEvent(interactible) {
+      var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+      return sceneStateMachine.push((0, _battleState.default)({
+        id: "battle",
+        actors: actors,
+        markers: spriteCache.filter(function (x) {
+          return x.type === _consts.ENTITY_TYPE.BATTLE_MARKER;
+        }),
+        // I feel these might be better done within the state... perhaps the same elsewhere too.
+        onEntry: function onEntry() {
+          return actors.map(function (spr) {
+            return spr.disableMovement();
+          });
+        },
+        onExit: function onExit() {
+          return actors.map(function (spr) {
+            return spr.enableMovement();
+          });
+        }
+      }));
+    }
+  }, {
+    type: _consts.ENTITY_TYPE.PICKUP,
+    reactionEvent: function reactionEvent(interactible) {
+      var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+      interactible.ttl = 0;
+      savePickup(interactible);
     }
   }]); // TODO: Can we please not have to pass everything in like this? It's a bit too coupled.
 
@@ -7762,7 +7898,7 @@ TODO: Can we also const the dataKeys across the board plz. */
     return sceneManager.loadScene(_objectSpread({}, props));
   });
 });
-},{"kontra":"node_modules/kontra/kontra.mjs","./common/helpers":"src/common/helpers.js","./common/consts":"src/common/consts.js","./common/events":"src/common/events.js","./states/startConvoState":"src/states/startConvoState.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js","./managers/sceneManager":"src/managers/sceneManager.js","./managers/worldManager":"src/managers/worldManager.js","./managers/reactionManager":"src/managers/reactionManager.js","./managers/stateManager":"src/managers/stateManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./common/helpers":"src/common/helpers.js","./common/consts":"src/common/consts.js","./common/events":"src/common/events.js","./states/startConvoState":"src/states/startConvoState.js","./states/fieldState":"src/states/fieldState.js","./states/battleState":"src/states/battleState.js","./states/curtainState":"src/states/curtainState.js","./managers/sceneManager":"src/managers/sceneManager.js","./managers/worldManager":"src/managers/worldManager.js","./managers/reactionManager":"src/managers/reactionManager.js","./managers/stateManager":"src/managers/stateManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -7790,7 +7926,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52036" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52704" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

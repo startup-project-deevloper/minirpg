@@ -27,12 +27,20 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
         ? existingEntities.find(x => x.id === id)
         : null;
 
+      /* This needs cleaning up */
       setStoreItem(
         "entities",
         existingEntities
           ? existingEntities
               .filter(ent => ent.id !== id)
-              .concat([{ id, type, ttl, qty: existingEntity.qty + 1 }])
+              .concat([
+                {
+                  id,
+                  type,
+                  ttl,
+                  qty: existingEntity ? existingEntity.qty + 1 : 1
+                }
+              ])
           : [{ id, type, ttl, qty: 1 }]
       );
     },
