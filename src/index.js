@@ -16,7 +16,6 @@ import { allOff, on, emit, EV_SCENECHANGE } from "./common/events";
 /* States for global use */
 import startConvo from "./states/startConvoState";
 import fieldState from "./states/fieldState";
-import battleState from "./states/battleState";
 import curtainState from "./states/curtainState";
 
 /* Game managers */
@@ -68,7 +67,12 @@ ctx.oImageSmoothingEnabled = false;
 /* Primary field scene */
 const FieldScene = sceneProps => {
   /* World creation (can we not have entities just in store, it's a bit confusing) */
-  const { createWorld, savePickup, getAllEntitiesOfType, resetEntityStates } = WorldManager();
+  const {
+    createWorld,
+    savePickup,
+    getAllEntitiesOfType,
+    resetEntityStates
+  } = WorldManager();
   const { sprites, player, tileEngine } = createWorld(sceneProps);
 
   let spriteCache = sprites.filter(spr => spr.isAlive());
@@ -113,22 +117,6 @@ const FieldScene = sceneProps => {
           startConvo({
             id: "conversation",
             startId: "m1",
-            // I feel these might be better done within the state... perhaps the same elsewhere too.
-            onEntry: () => actors.map(spr => spr.disableMovement()),
-            onExit: () => actors.map(spr => spr.enableMovement())
-          })
-        )
-    },
-    {
-      type: ENTITY_TYPE.ENEMY,
-      reactionEvent: (interactible, actors = []) =>
-        sceneStateMachine.push(
-          battleState({
-            id: "battle",
-            actors,
-            markers: spriteCache.filter(
-              x => x.type === ENTITY_TYPE.BATTLE_MARKER
-            ),
             // I feel these might be better done within the state... perhaps the same elsewhere too.
             onEntry: () => actors.map(spr => spr.disableMovement()),
             onExit: () => actors.map(spr => spr.enableMovement())

@@ -1,5 +1,5 @@
 import { moveSprite, flipSprite } from "./spriteFunctions";
-import { uniqueId, dist, getNormal } from "../common/helpers";
+import { uniqueId, dist } from "../common/helpers";
 import {
   Sprite,
   dataAssets,
@@ -66,6 +66,10 @@ export default ({
     controlledByUser,
     collisionBodyOptions,
     manualAnimation,
+    onAttacked: () => {
+      // Push an internal state for damage effect (whatever that's going to be)
+      console.log(id);
+    },
     enableMovement: () => (movementDisabled = false),
     disableMovement: () => (movementDisabled = true),
     lookAt: ({ x, y }) => {

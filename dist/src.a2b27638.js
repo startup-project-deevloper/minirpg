@@ -7015,6 +7015,18 @@ var _default = function _default(_ref) {
       }
     }
   });
+  var onAttackPushed = (0, _onPush.default)("space", function (_ref3) {
+    var origin = _ref3.origin,
+        _ref3$collisions = _ref3.collisions,
+        collisions = _ref3$collisions === void 0 ? [] : _ref3$collisions;
+    collisions.map(function (col) {
+      if (typeof col.onAttacked === "function") {
+        col.onAttacked({
+          origin: origin
+        });
+      }
+    });
+  });
   /* Technically, the inventory should only be openable in the field (or battle, but that's
   out of this scope). Note: You might want the inventory to be a whole new state, but doing
   it this way means you can overlay it across the game whilst you play. Whatever you need
@@ -7047,6 +7059,7 @@ var _default = function _default(_ref) {
     update: function update(props) {
       // TODO: Careful these don't conflict and do weird things (inventory in convo, etc, do not want!)
       onInteractionPushed(props);
+      onAttackPushed(props);
       onInventoryOpened();
     },
     exit: function exit() {
@@ -7056,67 +7069,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"../ui/inventory":"src/ui/inventory.js","../common/consts":"src/common/consts.js","../input/onPush":"src/input/onPush.js"}],"src/states/battleState.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _helpers = require("../common/helpers");
-
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      actors = _ref.actors,
-      markers = _ref.markers,
-      _ref$onEntry = _ref.onEntry,
-      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
-      _ref$onExit = _ref.onExit,
-      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
-  var _isComplete = false;
-  var unoccupied = [].concat(markers);
-  /* Find closest un-occupied battle point for each actor and get it to move to it */
-
-  actors.forEach(function (actor) {
-    var nearestMarker = (0, _helpers.sortByDist)(actor, unoccupied)[0];
-    unoccupied = unoccupied.filter(function (x) {
-      return x.instId !== nearestMarker.instId;
-    });
-    actor.moveTo(nearestMarker, function () {
-      /* Naively get the actors to look at each other, doesn't care who right now */
-      actor.lookAt(actors.find(function (x) {
-        return x.instId !== actor.instId;
-      }));
-    });
-  });
-  if (actors.length !== markers.length) throw "Marker and Actor length mismatch.";
-  /* At battle end, just get everyone to return to following the player, should be on field state */
-  // ...
-
-  setTimeout(function () {
-    return _isComplete = true;
-  }, 3000);
-  return {
-    id: id,
-    isComplete: function isComplete() {
-      return _isComplete;
-    },
-    enter: function enter(props) {
-      return onEntry();
-    },
-    update: function update() {
-      console.log("Battle state active.");
-    },
-    exit: function exit() {
-      console.log("Battle state complete.");
-      onExit();
-    }
-  };
-};
-
-exports.default = _default;
-},{"../common/helpers":"src/common/helpers.js"}],"src/states/curtainState.js":[function(require,module,exports) {
+},{"../ui/inventory":"src/ui/inventory.js","../common/consts":"src/common/consts.js","../input/onPush":"src/input/onPush.js"}],"src/states/curtainState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7337,6 +7290,10 @@ var _default = function _default(_ref) {
     controlledByUser: controlledByUser,
     collisionBodyOptions: collisionBodyOptions,
     manualAnimation: manualAnimation,
+    onAttacked: function onAttacked() {
+      // Push an internal state for damage effect (whatever that's going to be)
+      console.log(id);
+    },
     enableMovement: function enableMovement() {
       return movementDisabled = false;
     },
@@ -7358,6 +7315,7 @@ var _default = function _default(_ref) {
       var x = _ref3.x,
           y = _ref3.y;
       var onDestinationReached = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+      // Look at: https://www.khanacademy.org/computing/computer-programming/programming-natural-simulations/programming-angular-movement/a/pointing-towards-movement
 
       /* Direct moveTo (naive approach) */
       targetDestination = {
@@ -7636,8 +7594,6 @@ var _startConvoState = _interopRequireDefault(require("./states/startConvoState"
 
 var _fieldState = _interopRequireDefault(require("./states/fieldState"));
 
-var _battleState = _interopRequireDefault(require("./states/battleState"));
-
 var _curtainState = _interopRequireDefault(require("./states/curtainState"));
 
 var _sceneManager = _interopRequireDefault(require("./managers/sceneManager"));
@@ -7767,29 +7723,6 @@ var FieldScene = function FieldScene(sceneProps) {
       }));
     }
   }, {
-    type: _consts.ENTITY_TYPE.ENEMY,
-    reactionEvent: function reactionEvent(interactible) {
-      var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-      return sceneStateMachine.push((0, _battleState.default)({
-        id: "battle",
-        actors: actors,
-        markers: spriteCache.filter(function (x) {
-          return x.type === _consts.ENTITY_TYPE.BATTLE_MARKER;
-        }),
-        // I feel these might be better done within the state... perhaps the same elsewhere too.
-        onEntry: function onEntry() {
-          return actors.map(function (spr) {
-            return spr.disableMovement();
-          });
-        },
-        onExit: function onExit() {
-          return actors.map(function (spr) {
-            return spr.enableMovement();
-          });
-        }
-      }));
-    }
-  }, {
     type: _consts.ENTITY_TYPE.PICKUP,
     reactionEvent: function reactionEvent(interactible) {
       var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
@@ -7898,7 +7831,7 @@ TODO: Can we also const the dataKeys across the board plz. */
     return sceneManager.loadScene(_objectSpread({}, props));
   });
 });
-},{"kontra":"node_modules/kontra/kontra.mjs","./common/helpers":"src/common/helpers.js","./common/consts":"src/common/consts.js","./common/events":"src/common/events.js","./states/startConvoState":"src/states/startConvoState.js","./states/fieldState":"src/states/fieldState.js","./states/battleState":"src/states/battleState.js","./states/curtainState":"src/states/curtainState.js","./managers/sceneManager":"src/managers/sceneManager.js","./managers/worldManager":"src/managers/worldManager.js","./managers/reactionManager":"src/managers/reactionManager.js","./managers/stateManager":"src/managers/stateManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./common/helpers":"src/common/helpers.js","./common/consts":"src/common/consts.js","./common/events":"src/common/events.js","./states/startConvoState":"src/states/startConvoState.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js","./managers/sceneManager":"src/managers/sceneManager.js","./managers/worldManager":"src/managers/worldManager.js","./managers/reactionManager":"src/managers/reactionManager.js","./managers/stateManager":"src/managers/stateManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -7926,7 +7859,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52704" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64181" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
