@@ -77,7 +77,7 @@ const FieldScene = sceneProps => {
 
   let spriteCache = sprites.filter(spr => spr.isAlive());
 
-  // Temporary
+  // Temporary: Use this to erase storage data
   // resetEntityStates();
 
   /* Main states creation */
@@ -92,7 +92,7 @@ const FieldScene = sceneProps => {
       what you want it to be. This needs to be made a bit more robust. */
       reactionEvent: (interactible, actors = []) => {
         // TODO: Entities should manage their own animations (same problem seen elsewhere)
-        interactible.playAnimation("open");
+        //interactible.playAnimation("default");
         screenEffectsStateMachine.push(
           curtainState({
             id: "curtain",
@@ -160,7 +160,7 @@ const FieldScene = sceneProps => {
       /* Check for anything dead (GC does the rest) */
       spriteCache = spriteCache.filter(spr => spr.isAlive());
 
-      /* Player to useable collision */
+      /* Player to useable collision with other entities (not tiles) */
       const playerCollidingWith = sortByDist(
         player,
         circleCollision(player, spriteCache.filter(s => s.id !== "player"))
@@ -179,14 +179,22 @@ const FieldScene = sceneProps => {
       });
 
       /// Under serious testing
-      // What's the significance of 64? Starting pos of player? Doesn't seem to matter... why?
-      if (tileEngine.mapwidth > resolution.width) {
-        tileEngine.sx = player.x;
-      }
+      /*
+      Take your map width and height. Say it's 128x128.
+      
+      If player is:
+      x greater than 36 or x less than map width minus 36
+      y greater than 36 or y less than map height minus 36
+      */
+      const pad = 48;
 
-      if (tileEngine.mapheight > resolution.height) {
-        tileEngine.sy = player.y - 120;
-      }
+      //if (tileEngine.mapwidth > resolution.width) {
+        tileEngine.sx = player.x - (resolution.width / 2)
+      //}
+
+      //if (player.y > pad) {
+        tileEngine.sy = player.y - (resolution.height / 2) //player.y - 120;
+      //}
     },
     render: () => {
       /* Instruct tileEngine to update its frame */
@@ -222,6 +230,7 @@ load(
   "assets/tileimages/test.png",
   "assets/tiledata/test.json",
   "assets/tiledata/test2.json",
+  "assets/tiledata/test3.json",
   "assets/entityimages/little_devil.png",
   "assets/entityimages/little_orc.png",
   "assets/gameData/conversationData.json",
@@ -241,7 +250,7 @@ load(
   so long as you specify the right id for it. That being said, you do have to make sure
   both of them exist in the same context, otherwise you'll never get access to it.
   */
-  sceneManager.loadScene({ areaId: "area1", playerStartId: "entrance" });
+  sceneManager.loadScene({ areaId: "area1", playerStartId: "area1_entrance" });
 
   on(EV_SCENECHANGE, props => sceneManager.loadScene({ ...props }));
 });

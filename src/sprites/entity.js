@@ -1,3 +1,6 @@
+import StateMachine from "../managers/stateManager";
+import damagedState from "../states/damagedState";
+import healthyState from "../states/healthyState";
 import { moveSprite, flipSprite } from "./spriteFunctions";
 import { uniqueId, dist } from "../common/helpers";
 import {
@@ -22,6 +25,8 @@ export default ({
     );
   }
 
+  const entityStateMachine = StateMachine();
+
   const dataKey = "assets/gameData/entityData.json";
   const entityData = dataAssets[dataKey];
 
@@ -45,6 +50,7 @@ export default ({
     animations
   });
 
+  /* These are passable to states so they can act accordingly */
   let dir = { x: 0, y: 0 }; // AI (to add later)
   let targetDestination = null;
   let movementDisabled = false;
@@ -92,6 +98,9 @@ export default ({
       destinationReachedCallback = onDestinationReached;
     },
     update: () => {
+
+      entityStateMachine.update();
+
       /* Movement */
       if (targetDestination !== null) {
         /* You could also stick pathfinding in here or in AI when it's implemented */

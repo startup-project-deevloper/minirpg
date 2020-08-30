@@ -31,16 +31,14 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
       setStoreItem(
         "entities",
         existingEntities
-          ? existingEntities
-              .filter(ent => ent.id !== id)
-              .concat([
-                {
-                  id,
-                  type,
-                  ttl,
-                  qty: existingEntity ? existingEntity.qty + 1 : 1
-                }
-              ])
+          ? existingEntities.filter(ent => ent.id !== id).concat([
+              {
+                id,
+                type,
+                ttl,
+                qty: existingEntity ? existingEntity.qty + 1 : 1
+              }
+            ])
           : [{ id, type, ttl, qty: 1 }]
       );
     },
@@ -49,13 +47,38 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
       const map = dataAssets[mapKey];
       const tileEngine = TileEngine(map);
 
-      const playerStart = entities.find(x => x.id === playerStartId);
+      console.log(areaId, playerStartId)
+      console.log(entities)
+      
+      const playerStart = entities.find(
+        x => x.customProperties.playerStartId === playerStartId
+      );
+
       const player = Entity({
         id: "player",
         x: playerStart.x,
         y: playerStart.y,
-        collisionMethod: (layer, sprite) =>
-          tileEngine.layerCollidesWith(layer, sprite)
+        collisionMethod: (layer, sprite) => {
+          // If 16x16
+          const spriteBody = {
+            x: 2,
+            y: 8,
+            width: 11,
+            height: 8
+          };
+
+          const t = {
+            width: spriteBody.width,
+            height: spriteBody.height,
+            x: sprite.x + spriteBody.x,
+            y: sprite.y + spriteBody.y,
+            anchor: sprite.anchor
+          };
+
+          const r = tileEngine.layerCollidesWith(layer, t);
+          return r;
+        }
+        // tileEngine.layerCollidesWith(layer, sprite)
       });
 
       tileEngine.addObject(player);

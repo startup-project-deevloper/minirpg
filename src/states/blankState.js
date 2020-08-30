@@ -4,12 +4,8 @@ export default ({ id, cache, onEntry = () => {}, onExit = () => {} }) => {
   return {
     id,
     isComplete: () => isComplete,
-    enter: props => {
-      onEntry();
-    },
+    enter: props => onEntry(),
     update: () => {},
-    exit: () => {
-      onExit();
-    }
+    exit: () => onExit()
   };
 };

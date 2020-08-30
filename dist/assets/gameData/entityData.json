@@ -147,6 +147,25 @@
         }
     },
     {
+        "id": "ladder",
+        "name": "Ladder",
+        "description": "A ladder to another area.",
+        "type": 4,
+        "sheet": "assets/tileimages/test.png",
+        "frameWidth": 16,
+        "frameHeight": 16,
+        "collisionBodyOptions": null,
+        "manualAnimation": false,
+        "animations": {
+            "idle": {
+                "frames": [
+                    39
+                ],
+                "frameRate": 1
+            }
+        }
+    },
+    {
         "id": "entrance",
         "name": "Entrance",
         "description": "Used to indicate the player's spawn position at doors or other location points.",

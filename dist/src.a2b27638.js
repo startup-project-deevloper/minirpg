@@ -4205,7 +4205,7 @@ exports.debug = exports.circleCollision = exports.sortByDist = exports.dist = ex
 
 var _events = require("../common/events");
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 var uniqueId = function uniqueId() {
   var pre = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -6650,7 +6650,7 @@ var _default = function _default(_ref) {
     _isRunning = true;
     _isComplete = false;
     onChatStarted(queriedNode, props);
-    return _objectSpread({}, displayNode(queriedNode), {
+    return _objectSpread(_objectSpread({}, displayNode(queriedNode)), {}, {
       mode: MODES.NEXTNODE
     });
   };
@@ -6659,7 +6659,7 @@ var _default = function _default(_ref) {
     var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
     var queriedNode = queryNode(query);
     onChatNext(queriedNode, props);
-    return _objectSpread({}, displayNode(queriedNode), {
+    return _objectSpread(_objectSpread({}, displayNode(queriedNode)), {}, {
       mode: MODES.NEXTNODE
     });
   };
@@ -6686,10 +6686,9 @@ var _default = function _default(_ref) {
         choices = _currentNode.choices,
         actions = _currentNode.actions; // Wait if choices are presented.
 
-    if (choices.length) return _objectSpread({}, currentNode, {
-      mode: MODES.AWAITINGINPUT // TODO: Consts please.
-
-    });
+    if (choices.length) return _objectSpread(_objectSpread({}, currentNode), {}, {
+      mode: MODES.AWAITINGINPUT
+    }); // TODO: Consts please.
 
     if (actions.some(function (action) {
       return action === "endConversation";
@@ -6709,12 +6708,12 @@ var _default = function _default(_ref) {
       _isComplete = true;
       onChatComplete(id);
       console.log("End reached, close the convo.");
-      return _objectSpread({}, currentNode, {
+      return _objectSpread(_objectSpread({}, currentNode), {}, {
         mode: MODES.JUSTFINISHED
       });
     }
 
-    return _objectSpread({}, goToExact(to, props), {
+    return _objectSpread(_objectSpread({}, goToExact(to, props)), {}, {
       mode: MODES.NEXTNODE
     });
   };
@@ -7140,6 +7139,113 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
+},{}],"src/managers/stateManager.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _default = function _default() {
+  var states = [];
+
+  var top = function top(arr) {
+    return arr[arr.length - 1];
+  };
+
+  return {
+    push: function push(state, props) {
+      if (!states.some(function (s) {
+        return s.id === state.id;
+      })) {
+        states.push(state);
+        top(states).enter(props);
+      }
+    },
+    update: function update(props) {
+      var currentState = top(states);
+      if (!currentState) return;
+      currentState.update(props);
+
+      if (currentState.isComplete()) {
+        currentState.exit();
+        states.pop();
+      }
+    },
+    pop: function pop() {
+      var currentState = top(states);
+      currentState.exit();
+      states.pop();
+    }
+  };
+};
+
+exports.default = _default;
+},{}],"src/states/damagedState.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _default = function _default(_ref) {
+  var id = _ref.id,
+      cache = _ref.cache,
+      _ref$onEntry = _ref.onEntry,
+      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
+      _ref$onExit = _ref.onExit,
+      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
+  var _isComplete = false;
+  return {
+    id: id,
+    isComplete: function isComplete() {
+      return _isComplete;
+    },
+    enter: function enter(props) {
+      return onEntry();
+    },
+    update: function update() {},
+    exit: function exit() {
+      return onExit();
+    }
+  };
+};
+
+exports.default = _default;
+},{}],"src/states/healthyState.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _default = function _default(_ref) {
+  var id = _ref.id,
+      cache = _ref.cache,
+      _ref$onEntry = _ref.onEntry,
+      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
+      _ref$onExit = _ref.onExit,
+      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
+  var _isComplete = false;
+  return {
+    id: id,
+    isComplete: function isComplete() {
+      return _isComplete;
+    },
+    enter: function enter(props) {
+      return onEntry();
+    },
+    update: function update() {},
+    exit: function exit() {
+      return onExit();
+    }
+  };
+};
+
+exports.default = _default;
 },{}],"src/sprites/spriteFunctions.js":[function(require,module,exports) {
 "use strict";
 
@@ -7217,11 +7323,19 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
+var _stateManager = _interopRequireDefault(require("../managers/stateManager"));
+
+var _damagedState = _interopRequireDefault(require("../states/damagedState"));
+
+var _healthyState = _interopRequireDefault(require("../states/healthyState"));
+
 var _spriteFunctions = require("./spriteFunctions");
 
 var _helpers = require("../common/helpers");
 
 var _kontra = require("kontra");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _default = function _default(_ref) {
   var id = _ref.id,
@@ -7238,6 +7352,7 @@ var _default = function _default(_ref) {
     throw new Error("Entity is fairly useless without an id, you should add one.");
   }
 
+  var entityStateMachine = (0, _stateManager.default)();
   var dataKey = "assets/gameData/entityData.json";
   var entityData = _kontra.dataAssets[dataKey];
 
@@ -7265,6 +7380,8 @@ var _default = function _default(_ref) {
     frameHeight: frameHeight,
     animations: animations
   });
+  /* These are passable to states so they can act accordingly */
+
   var dir = {
     x: 0,
     y: 0
@@ -7325,7 +7442,9 @@ var _default = function _default(_ref) {
       destinationReachedCallback = onDestinationReached;
     },
     update: function update() {
+      entityStateMachine.update();
       /* Movement */
+
       if (targetDestination !== null) {
         /* You could also stick pathfinding in here or in AI when it's implemented */
         dir = {
@@ -7387,7 +7506,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"./spriteFunctions":"src/sprites/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/managers/worldManager.js":[function(require,module,exports) {
+},{"../managers/stateManager":"src/managers/stateManager.js","../states/damagedState":"src/states/damagedState.js","../states/healthyState":"src/states/healthyState.js","./spriteFunctions":"src/sprites/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/managers/worldManager.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7474,16 +7593,34 @@ var _default = function _default() {
 
       var map = _kontra.dataAssets[mapKey];
       var tileEngine = (0, _kontra.TileEngine)(map);
+      console.log(areaId, playerStartId);
+      console.log(entities);
       var playerStart = entities.find(function (x) {
-        return x.id === playerStartId;
+        return x.customProperties.playerStartId === playerStartId;
       });
       var player = (0, _entity.default)({
         id: "player",
         x: playerStart.x,
         y: playerStart.y,
         collisionMethod: function collisionMethod(layer, sprite) {
-          return tileEngine.layerCollidesWith(layer, sprite);
-        }
+          // If 16x16
+          var spriteBody = {
+            x: 2,
+            y: 8,
+            width: 11,
+            height: 8
+          };
+          var t = {
+            width: spriteBody.width,
+            height: spriteBody.height,
+            x: sprite.x + spriteBody.x,
+            y: sprite.y + spriteBody.y,
+            anchor: sprite.anchor
+          };
+          var r = tileEngine.layerCollidesWith(layer, t);
+          return r;
+        } // tileEngine.layerCollidesWith(layer, sprite)
+
       });
       tileEngine.addObject(player);
       return {
@@ -7498,7 +7635,7 @@ var _default = function _default() {
 
           var exists = _getEntityFromStore(id);
 
-          var ent = !exists || exists && exists.ttl > 0 ? (0, _entity.default)(_objectSpread({}, entity, {
+          var ent = !exists || exists && exists.ttl > 0 ? (0, _entity.default)(_objectSpread(_objectSpread({}, entity), {}, {
             collisionMethod: function collisionMethod(layer, sprite) {
               return tileEngine.layerCollidesWith(layer, sprite);
             }
@@ -7531,49 +7668,6 @@ var _default = function _default() {
       return reactions.find(function (reaction) {
         return reaction.type === type;
       });
-    }
-  };
-};
-
-exports.default = _default;
-},{}],"src/managers/stateManager.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _default = function _default() {
-  var states = [];
-
-  var top = function top(arr) {
-    return arr[arr.length - 1];
-  };
-
-  return {
-    push: function push(state, props) {
-      if (!states.some(function (s) {
-        return s.id === state.id;
-      })) {
-        states.push(state);
-        top(states).enter(props);
-      }
-    },
-    update: function update(props) {
-      var currentState = top(states);
-      if (!currentState) return;
-      currentState.update(props);
-
-      if (currentState.isComplete()) {
-        currentState.exit();
-        states.pop();
-      }
-    },
-    pop: function pop() {
-      var currentState = top(states);
-      currentState.exit();
-      states.pop();
     }
   };
 };
@@ -7669,7 +7763,7 @@ var FieldScene = function FieldScene(sceneProps) {
 
   var spriteCache = sprites.filter(function (spr) {
     return spr.isAlive();
-  }); // Temporary
+  }); // Temporary: Use this to erase storage data
   // resetEntityStates();
 
   /* Main states creation */
@@ -7686,7 +7780,7 @@ var FieldScene = function FieldScene(sceneProps) {
     reactionEvent: function reactionEvent(interactible) {
       var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
       // TODO: Entities should manage their own animations (same problem seen elsewhere)
-      interactible.playAnimation("open");
+      //interactible.playAnimation("default");
       screenEffectsStateMachine.push((0, _curtainState.default)({
         id: "curtain",
         ctx: ctx,
@@ -7757,7 +7851,7 @@ var FieldScene = function FieldScene(sceneProps) {
       spriteCache = spriteCache.filter(function (spr) {
         return spr.isAlive();
       });
-      /* Player to useable collision */
+      /* Player to useable collision with other entities (not tiles) */
 
       var playerCollidingWith = (0, _helpers.sortByDist)(player, (0, _helpers.circleCollision)(player, spriteCache.filter(function (s) {
         return s.id !== "player";
@@ -7775,15 +7869,22 @@ var FieldScene = function FieldScene(sceneProps) {
         origin: player,
         collisions: playerCollidingWith
       }); /// Under serious testing
-      // What's the significance of 64? Starting pos of player? Doesn't seem to matter... why?
 
-      if (tileEngine.mapwidth > resolution.width) {
-        tileEngine.sx = player.x;
-      }
+      /*
+      Take your map width and height. Say it's 128x128.
+      
+      If player is:
+      x greater than 36 or x less than map width minus 36
+      y greater than 36 or y less than map height minus 36
+      */
 
-      if (tileEngine.mapheight > resolution.height) {
-        tileEngine.sy = player.y - 120;
-      }
+      var pad = 48; //if (tileEngine.mapwidth > resolution.width) {
+
+      tileEngine.sx = player.x - resolution.width / 2; //}
+      //if (player.y > pad) {
+
+      tileEngine.sy = player.y - resolution.height / 2; //player.y - 120;
+      //}
     },
     render: function render() {
       /* Instruct tileEngine to update its frame */
@@ -7808,7 +7909,7 @@ var FieldScene = function FieldScene(sceneProps) {
 TODO: Can we also const the dataKeys across the board plz. */
 
 
-(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json").then(function (assets) {
+(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/tiledata/test3.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json").then(function (assets) {
   (0, _kontra.initKeys)(); /// Note: There's now a scene manager in kontra that can be used
   // Hook up player start todo
 
@@ -7825,7 +7926,7 @@ TODO: Can we also const the dataKeys across the board plz. */
 
   sceneManager.loadScene({
     areaId: "area1",
-    playerStartId: "entrance"
+    playerStartId: "area1_entrance"
   });
   (0, _events.on)(_events.EV_SCENECHANGE, function (props) {
     return sceneManager.loadScene(_objectSpread({}, props));
@@ -7859,7 +7960,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64181" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51025" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

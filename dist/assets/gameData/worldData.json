@@ -21,7 +21,7 @@
                 "id": "door",
                 "customProperties": {
                     "goesTo": "area2",
-                    "playerStartId": "entrance"
+                    "playerStartId": "area2_entrance"
                 }
             },
             {
@@ -29,7 +29,9 @@
                 "y": 64,
                 "z": 10,
                 "id": "entrance",
-                "customProperties": {}
+                "customProperties": {
+                    "playerStartId": "area1_entrance"
+                }
             },
             {
                 "x": 90,
@@ -57,7 +59,7 @@
                 "id": "door",
                 "customProperties": {
                     "goesTo": "area1",
-                    "playerStartId": "entrance"
+                    "playerStartId": "area1_entrance"
                 }
             },
             {
@@ -65,7 +67,27 @@
                 "y": 64,
                 "z": 10,
                 "id": "entrance",
-                "customProperties": {}
+                "customProperties": {
+                    "playerStartId": "area2_entrance"
+                }
+            },
+            {
+                "x": 64,
+                "y": 112,
+                "z": 10,
+                "id": "entrance",
+                "customProperties": {
+                    "playerStartId": "area2_entrance2"
+                }
+            },
+            {
+                "x": 64,
+                "y": 96,
+                "id": "ladder",
+                "customProperties": {
+                    "goesTo": "area3",
+                    "playerStartId": "area3_entrance"
+                }
             },
             {
                 "x": 110,
@@ -78,6 +100,30 @@
                 "y": 136,
                 "id": "potion",
                 "customProperties": {}
+            }
+        ]
+    },
+    {
+        "areaId": "area3",
+        "mapKey": "assets/tiledata/test3",
+        "entities": [
+            {
+                "x": 128,
+                "y": 64,
+                "id": "ladder",
+                "customProperties": {
+                    "goesTo": "area2",
+                    "playerStartId": "area2_entrance2"
+                }
+            },
+            {
+                "x": 128,
+                "y": 78,
+                "z": 10,
+                "id": "entrance",
+                "customProperties": {
+                    "playerStartId": "area3_entrance"
+                }
             }
         ]
     }
