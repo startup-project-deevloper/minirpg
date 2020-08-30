@@ -54,6 +54,12 @@
         "mapKey": "assets/tiledata/test2",
         "entities": [
             {
+                "x": 82,
+                "y": 92,
+                "id": "bob",
+                "customProperties": {}
+            },
+            {
                 "x": 112,
                 "y": 48,
                 "id": "door",

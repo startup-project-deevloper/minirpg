@@ -2,7 +2,7 @@ import StateMachine from "../managers/stateManager";
 import damagedState from "../states/damagedState";
 import healthyState from "../states/healthyState";
 import { moveSprite, flipSprite } from "./spriteFunctions";
-import { uniqueId, dist } from "../common/helpers";
+import { uniqueId, dist, getRandomIntInclusive } from "../common/helpers";
 import {
   Sprite,
   dataAssets,
@@ -11,6 +11,11 @@ import {
   keyPressed
 } from "kontra";
 
+// Really important TODO: Split sprites out so they aren't sharing the same
+// properties. Do you really need a ladder to animate for example? Just give it
+// a 'static' flag or no animations full stop.
+// TODO: Can we make sure we don't use the 'controlled by user' nonsense in the data anymore. What
+// if I want to use a different entity for the player?
 export default ({
   id,
   x,
@@ -40,6 +45,7 @@ export default ({
     collisionBodyOptions = null,
     manualAnimation = false,
     controlledByUser = false,
+    controlledByAI = false,
     collidesWithTiles = true
   } = entityData.find(ent => ent.id === id);
 
@@ -54,7 +60,8 @@ export default ({
   let dir = { x: 0, y: 0 }; // AI (to add later)
   let targetDestination = null;
   let movementDisabled = false;
-  let destinationReachedCallback = null;
+
+  let stopThinking = false;
 
   /* Id should really be named 'class' since its re-used. */
   const sprite = Sprite({
@@ -70,6 +77,7 @@ export default ({
     animations: spriteSheet.animations,
     collidesWithTiles,
     controlledByUser,
+    controlledByAI,
     collisionBodyOptions,
     manualAnimation,
     onAttacked: () => {
@@ -87,42 +95,48 @@ export default ({
         sprite
       });
     },
-    moveTo: ({ x, y }, onDestinationReached = null) => {
-      // Look at: https://www.khanacademy.org/computing/computer-programming/programming-natural-simulations/programming-angular-movement/a/pointing-towards-movement
-      /* Direct moveTo (naive approach) */
-      targetDestination = {
-        x,
-        y
-      };
-
-      destinationReachedCallback = onDestinationReached;
-    },
     update: () => {
-
       entityStateMachine.update();
 
-      /* Movement */
-      if (targetDestination !== null) {
+      /* Movement - Massively a work in progress - TODO: Sort out data and splitting out concerns of sprite types. 
+      targestDestination prop may or may not be an AI thing, as we might want to automatically move the player
+      to a location. So make sure it's accessible by all entities further up. */
+      if (targetDestination !== null && !stopThinking) {
         /* You could also stick pathfinding in here or in AI when it's implemented */
         dir = {
           x: sprite.x > targetDestination.x ? -1 : 1,
           y: sprite.y > targetDestination.y ? -1 : 1
         };
 
+        // Don't rely on this, it's just a test
         if (dist(sprite, targetDestination) < 1) {
-          targetDestination = null;
+          stopThinking = true;
+          const waitFor = getRandomIntInclusive(1000, 4000);
 
-          if (destinationReachedCallback != null) {
-            destinationReachedCallback();
-            destinationReachedCallback = null;
-          }
+          dir = { x: 0, y: 0 };
+
+          setTimeout(() => {
+            targetDestination = null;
+            stopThinking = false;
+          }, waitFor);
         }
       } else if (controlledByUser && targetDestination == null) {
         dir = {
           x: keyPressed("a") ? -1 : keyPressed("d") ? 1 : 0,
           y: keyPressed("w") ? -1 : keyPressed("s") ? 1 : 0
         };
+      } else if (controlledByAI) {
+        // Again I don't like the flag being like this. Should be a separate entity altogether really. but can test
+        // a roaming AI at least.
+        if (!targetDestination) {
+          targetDestination = {
+            x: getRandomIntInclusive(90, 120),
+            y: getRandomIntInclusive(90, 120)
+          };
+        }
       } else {
+        // This is literally just to stop things like ladders moving. It shouldn't be done this
+        // way at all so refactor all of this asap.
         dir = {
           x: 0,
           y: 0
@@ -141,6 +155,10 @@ export default ({
 
       // Do some animations
       const isMoving = directionNormal.x !== 0 || directionNormal.y !== 0;
+
+      if (sprite.id === "bob")
+        console.log(directionNormal)
+
       if (!sprite.manualAnimation) {
         sprite.playAnimation(isMoving ? "walk" : "idle");
       }

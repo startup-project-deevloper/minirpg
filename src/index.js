@@ -233,6 +233,7 @@ load(
   "assets/tiledata/test3.json",
   "assets/entityimages/little_devil.png",
   "assets/entityimages/little_orc.png",
+  "assets/entityimages/little_bob.png",
   "assets/gameData/conversationData.json",
   "assets/gameData/entityData.json",
   "assets/gameData/worldData.json"
@@ -250,7 +251,7 @@ load(
   so long as you specify the right id for it. That being said, you do have to make sure
   both of them exist in the same context, otherwise you'll never get access to it.
   */
-  sceneManager.loadScene({ areaId: "area1", playerStartId: "area1_entrance" });
+  sceneManager.loadScene({ areaId: "area2", playerStartId: "area2_entrance" });
 
   on(EV_SCENECHANGE, props => sceneManager.loadScene({ ...props }));
 });

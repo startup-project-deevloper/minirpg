@@ -4201,7 +4201,7 @@ exports.emit = emit;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.debug = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.getNormal = exports.between = exports.uniqueId = void 0;
+exports.debug = exports.getRandomIntInclusive = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.getNormal = exports.between = exports.uniqueId = void 0;
 
 var _events = require("../common/events");
 
@@ -4296,6 +4296,14 @@ var circleCollision = function circleCollision(collider, targets) {
 };
 
 exports.circleCollision = circleCollision;
+
+var getRandomIntInclusive = function getRandomIntInclusive(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive 
+};
+
+exports.getRandomIntInclusive = getRandomIntInclusive;
 
 var debug = function debug(o) {
   console.info(o);
@@ -7337,6 +7345,11 @@ var _kontra = require("kontra");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+// Really important TODO: Split sprites out so they aren't sharing the same
+// properties. Do you really need a ladder to animate for example? Just give it
+// a 'static' flag or no animations full stop.
+// TODO: Can we make sure we don't use the 'controlled by user' nonsense in the data anymore. What
+// if I want to use a different entity for the player?
 var _default = function _default(_ref) {
   var id = _ref.id,
       x = _ref.x,
@@ -7371,6 +7384,8 @@ var _default = function _default(_ref) {
       manualAnimation = _entityData$find$manu === void 0 ? false : _entityData$find$manu,
       _entityData$find$cont = _entityData$find.controlledByUser,
       controlledByUser = _entityData$find$cont === void 0 ? false : _entityData$find$cont,
+      _entityData$find$cont2 = _entityData$find.controlledByAI,
+      controlledByAI = _entityData$find$cont2 === void 0 ? false : _entityData$find$cont2,
       _entityData$find$coll2 = _entityData$find.collidesWithTiles,
       collidesWithTiles = _entityData$find$coll2 === void 0 ? true : _entityData$find$coll2;
 
@@ -7389,7 +7404,7 @@ var _default = function _default(_ref) {
 
   var targetDestination = null;
   var movementDisabled = false;
-  var destinationReachedCallback = null;
+  var stopThinking = false;
   /* Id should really be named 'class' since its re-used. */
 
   var sprite = (0, _kontra.Sprite)({
@@ -7405,6 +7420,7 @@ var _default = function _default(_ref) {
     animations: spriteSheet.animations,
     collidesWithTiles: collidesWithTiles,
     controlledByUser: controlledByUser,
+    controlledByAI: controlledByAI,
     collisionBodyOptions: collisionBodyOptions,
     manualAnimation: manualAnimation,
     onAttacked: function onAttacked() {
@@ -7428,44 +7444,48 @@ var _default = function _default(_ref) {
         sprite: sprite
       });
     },
-    moveTo: function moveTo(_ref3) {
-      var x = _ref3.x,
-          y = _ref3.y;
-      var onDestinationReached = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-      // Look at: https://www.khanacademy.org/computing/computer-programming/programming-natural-simulations/programming-angular-movement/a/pointing-towards-movement
-
-      /* Direct moveTo (naive approach) */
-      targetDestination = {
-        x: x,
-        y: y
-      };
-      destinationReachedCallback = onDestinationReached;
-    },
     update: function update() {
       entityStateMachine.update();
-      /* Movement */
+      /* Movement - Massively a work in progress - TODO: Sort out data and splitting out concerns of sprite types. 
+      targestDestination prop may or may not be an AI thing, as we might want to automatically move the player
+      to a location. So make sure it's accessible by all entities further up. */
 
-      if (targetDestination !== null) {
+      if (targetDestination !== null && !stopThinking) {
         /* You could also stick pathfinding in here or in AI when it's implemented */
         dir = {
           x: sprite.x > targetDestination.x ? -1 : 1,
           y: sprite.y > targetDestination.y ? -1 : 1
-        };
+        }; // Don't rely on this, it's just a test
 
         if ((0, _helpers.dist)(sprite, targetDestination) < 1) {
-          targetDestination = null;
-
-          if (destinationReachedCallback != null) {
-            destinationReachedCallback();
-            destinationReachedCallback = null;
-          }
+          stopThinking = true;
+          var waitFor = (0, _helpers.getRandomIntInclusive)(1000, 4000);
+          dir = {
+            x: 0,
+            y: 0
+          };
+          setTimeout(function () {
+            targetDestination = null;
+            stopThinking = false;
+          }, waitFor);
         }
       } else if (controlledByUser && targetDestination == null) {
         dir = {
           x: (0, _kontra.keyPressed)("a") ? -1 : (0, _kontra.keyPressed)("d") ? 1 : 0,
           y: (0, _kontra.keyPressed)("w") ? -1 : (0, _kontra.keyPressed)("s") ? 1 : 0
         };
+      } else if (controlledByAI) {
+        // Again I don't like the flag being like this. Should be a separate entity altogether really. but can test
+        // a roaming AI at least.
+        if (!targetDestination) {
+          targetDestination = {
+            x: (0, _helpers.getRandomIntInclusive)(90, 120),
+            y: (0, _helpers.getRandomIntInclusive)(90, 120)
+          };
+        }
       } else {
+        // This is literally just to stop things like ladders moving. It shouldn't be done this
+        // way at all so refactor all of this asap.
         dir = {
           x: 0,
           y: 0
@@ -7491,6 +7511,7 @@ var _default = function _default(_ref) {
       }); // Do some animations
 
       var isMoving = directionNormal.x !== 0 || directionNormal.y !== 0;
+      if (sprite.id === "bob") console.log(directionNormal);
 
       if (!sprite.manualAnimation) {
         sprite.playAnimation(isMoving ? "walk" : "idle");
@@ -7909,7 +7930,7 @@ var FieldScene = function FieldScene(sceneProps) {
 TODO: Can we also const the dataKeys across the board plz. */
 
 
-(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/tiledata/test3.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json").then(function (assets) {
+(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/tiledata/test3.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/entityimages/little_bob.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json").then(function (assets) {
   (0, _kontra.initKeys)(); /// Note: There's now a scene manager in kontra that can be used
   // Hook up player start todo
 
@@ -7925,8 +7946,8 @@ TODO: Can we also const the dataKeys across the board plz. */
   */
 
   sceneManager.loadScene({
-    areaId: "area1",
-    playerStartId: "area1_entrance"
+    areaId: "area2",
+    playerStartId: "area2_entrance"
   });
   (0, _events.on)(_events.EV_SCENECHANGE, function (props) {
     return sceneManager.loadScene(_objectSpread({}, props));
