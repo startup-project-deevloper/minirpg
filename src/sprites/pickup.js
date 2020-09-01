@@ -46,6 +46,7 @@ export default ({
     x,
     y,
     z,
+    anchor: { x: 0.5, y: 0.5 },
     customProperties,
     radius: 1,
     animations: spriteSheet.animations,

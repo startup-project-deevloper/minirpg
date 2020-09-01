@@ -1,10 +1,5 @@
 import { uniqueId } from "../common/helpers";
-import {
-  Sprite,
-  dataAssets,
-  imageAssets,
-  SpriteSheet
-} from "kontra";
+import { Sprite, imageAssets, SpriteSheet } from "kontra";
 
 export default ({
   id,
@@ -12,6 +7,7 @@ export default ({
   y,
   z = 1,
   customProperties = {},
+  entityData = null,
   collisionMethod = (layer, sprite) => {}
 }) => {
   if (!id) {
@@ -19,9 +15,6 @@ export default ({
       "Entity is fairly useless without an id, you should add one."
     );
   }
-
-  const dataKey = "assets/gameData/entityData.json";
-  const entityData = dataAssets[dataKey];
 
   const {
     name,
@@ -35,7 +28,7 @@ export default ({
     controlledByUser = false,
     controlledByAI = false,
     collidesWithTiles = true
-  } = entityData.find(ent => ent.id === id);
+  } = entityData;
 
   let spriteSheet = SpriteSheet({
     image: imageAssets[sheet],
@@ -53,6 +46,7 @@ export default ({
     x,
     y,
     z,
+    anchor: { x: 0.5, y: 0.5 },
     customProperties,
     radius: 1,
     animations: spriteSheet.animations,
