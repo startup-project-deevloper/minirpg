@@ -1,15 +1,19 @@
 ## The Challenge:
-Create a really small RPG, try to aim for under 56kb (built).
+Create a really small RPG, try to aim for under 100kb (built).
 
 ### It must have:
-- Movement [Done]
-- Conversations (with choices) [Done]
-- Interaction with things around the map [Done]
-- Super simple inventory [Done]
-- Animations [Done]
+- Movement [Y]
+- Conversations (with choices) [Y]
+- Interaction with things around the map [Y]
+- Super simple inventory [Y]
+- Animations [Y]
+- Combat [Partial]
+- Basic story [N]
 
 ### It doesn't need to have right now but nice in future:
-- Combat (that's a whole new kettle of fish)
+- Sound & music
 - Advanced inventory that does something useful
 - Reputation (based on conversations)
-- Sound & music
+
+### You can view it online at:
+https://minrpg-e981a4.netlify.com/

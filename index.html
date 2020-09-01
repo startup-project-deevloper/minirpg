@@ -8,10 +8,11 @@
 </head>
 
 <body>
-    <!-- Must be set here and in index.js (256 base * 3 scaleFactor = 768) -->
     <div id="root">
+        <div id="curtain"></div>
         <div id="ui"></div>
-        <canvas width="768" height="768"></canvas>
+        <canvas id="gameCanvas"></canvas>
+        <canvas id="scaledCanvas"></canvas>
     </div>
     <script src="src/index.js"></script>
 </body>

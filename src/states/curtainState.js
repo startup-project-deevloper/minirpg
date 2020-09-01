@@ -4,7 +4,11 @@ export default ({ id, ctx, direction = 1, onFadeComplete = () => {} }) => {
   let alpha = direction < 0 ? 1 : 0,
     delta = 0.05;
 
-  ctx.globalAlpha = direction < 0 ? 1 : 0;
+  //ctx.globalAlpha = direction < 0 ? 1 : 0;
+
+  // Under heavy testing
+  const curtainEl = document.getElementById("curtain");
+  curtainEl.style.opacity = direction < 0 ? 1 : 0;
 
   return {
     id,
@@ -16,11 +20,19 @@ export default ({ id, ctx, direction = 1, onFadeComplete = () => {} }) => {
 
       alpha = direction < 0 ? alpha - delta : alpha + delta;
 
-      ctx.clearRect(0, 0, ctx.width, ctx.height);
-      ctx.globalAlpha = isComplete ? Math.round(alpha) : alpha;
+      //ctx.clearRect(0, 0, ctx.width, ctx.height);
+      //ctx.globalAlpha = isComplete ? Math.round(alpha) : alpha;
+
+      curtainEl.style.opacity = isComplete ? Math.round(alpha) : alpha;
     },
     exit: () => {
-      ctx.globalAlpha = direction < 0 ? 0 : 1;
+      //ctx.globalAlpha = direction < 0 ? 0 : 1;
+      curtainEl.style.opacity = direction < 0 ? 0 : 1;
+
+      if (direction === 0) {
+        curtainEl.remove();
+      }
+
       onFadeComplete();
     }
   };

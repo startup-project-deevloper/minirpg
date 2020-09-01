@@ -6,5 +6,6 @@ export const ENTITY_TYPE = {
   DOOR: 4,
   CONTAINER: 5,
   ENTRANCE: 6,
+  BATTLE_MARKER: 7,
   PLAYER: 99
 };

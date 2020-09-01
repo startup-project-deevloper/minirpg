@@ -65,6 +65,71 @@
         }
     },
     {
+        "id": "sagani",
+        "name": "Sagani",
+        "description": "Sagani is here to train you and make your day a lot harder.",
+        "type": 1,
+        "sheet": "assets/entityimages/little_orc.png",
+        "frameWidth": 16,
+        "frameHeight": 16,
+        "collisionBodyOptions": null,
+        "manualAnimation": false,
+        "animations": {
+            "idle": {
+                "frames": [
+                    0,
+                    1,
+                    2,
+                    3
+                ],
+                "frameRate": 8
+            },
+            "walk": {
+                "frames": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7
+                ],
+                "frameRate": 16
+            }
+        }
+    },
+    {
+        "id": "bob",
+        "name": "Bob",
+        "description": "Bob just wants to be Bob.",
+        "type": 1,
+        "sheet": "assets/entityimages/little_bob.png",
+        "frameWidth": 16,
+        "frameHeight": 16,
+        "collisionBodyOptions": null,
+        "manualAnimation": false,
+        "controlledByAI": true,
+        "animations": {
+            "idle": {
+                "frames": [
+                    0,
+                    1,
+                    2,
+                    3
+                ],
+                "frameRate": 8
+            },
+            "walk": {
+                "frames": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7
+                ],
+                "frameRate": 16
+            }
+        }
+    },
+    {
         "id": "potion",
         "name": "Potion",
         "description": "Restores health on use.",
@@ -88,7 +153,7 @@
         "id": "door",
         "name": "Door",
         "description": "A door to another area.",
-        "type": 4,
+        "type": 0,
         "sheet": "assets/tileimages/test.png",
         "frameWidth": 32,
         "frameHeight": 16,
@@ -115,10 +180,29 @@
         }
     },
     {
+        "id": "ladder",
+        "name": "Ladder",
+        "description": "A ladder to another area.",
+        "type": 0,
+        "sheet": "assets/tileimages/test.png",
+        "frameWidth": 16,
+        "frameHeight": 16,
+        "collisionBodyOptions": null,
+        "manualAnimation": false,
+        "animations": {
+            "idle": {
+                "frames": [
+                    39
+                ],
+                "frameRate": 1
+            }
+        }
+    },
+    {
         "id": "entrance",
         "name": "Entrance",
         "description": "Used to indicate the player's spawn position at doors or other location points.",
-        "type": 6,
+        "type": 0,
         "sheet": "assets/tileimages/test.png",
         "frameWidth": 16,
         "frameHeight": 16,
@@ -128,6 +212,25 @@
             "idle": {
                 "frames": [
                     86
+                ],
+                "frameRate": 1
+            }
+        }
+    },
+    {
+        "id": "battleMarker",
+        "name": "Battle Marker",
+        "description": "Used to indicate a point on the map where an entity can stand to attack.",
+        "type": 0,
+        "sheet": "assets/tileimages/test.png",
+        "frameWidth": 16,
+        "frameHeight": 16,
+        "collisionBodyOptions": null,
+        "manualAnimation": false,
+        "animations": {
+            "idle": {
+                "frames": [
+                    100
                 ],
                 "frameRate": 1
             }

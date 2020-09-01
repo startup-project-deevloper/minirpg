@@ -2,20 +2,14 @@ import StateMachine from "../managers/stateManager";
 import damagedState from "../states/damagedState";
 import healthyState from "../states/healthyState";
 import { moveSprite, flipSprite } from "./spriteFunctions";
-import { uniqueId, dist } from "../common/helpers";
+import { uniqueId, dist, getRandomIntInclusive } from "../common/helpers";
 import {
   Sprite,
   dataAssets,
   imageAssets,
-  SpriteSheet,
-  keyPressed
+  SpriteSheet
 } from "kontra";
 
-// Really important TODO: Split sprites out so they aren't sharing the same
-// properties. Do you really need a ladder to animate for example? Just give it
-// a 'static' flag or no animations full stop.
-// TODO: Can we make sure we don't use the 'controlled by user' nonsense in the data anymore. What
-// if I want to use a different entity for the player?
 export default ({
   id,
   x,
@@ -61,6 +55,8 @@ export default ({
   let targetDestination = null;
   let movementDisabled = false;
 
+  let stopThinking = false;
+
   /* Id should really be named 'class' since its re-used. */
   const sprite = Sprite({
     instId: uniqueId(id),
@@ -96,27 +92,34 @@ export default ({
     update: () => {
       entityStateMachine.update();
 
-      /* Movement - Massively a work in progress - TODO: Sort out data and splitting out concerns of sprite types. 
-      targestDestination prop may or may not be an AI thing, as we might want to automatically move the player
-      to a location. So make sure it's accessible by all entities further up. */
-      if (targetDestination !== null) {
+      if (targetDestination !== null && !stopThinking) {
         /* You could also stick pathfinding in here or in AI when it's implemented */
         dir = {
           x: sprite.x > targetDestination.x ? -1 : 1,
           y: sprite.y > targetDestination.y ? -1 : 1
         };
-      } else if (controlledByUser && targetDestination == null) {
-        dir = {
-          x: keyPressed("a") ? -1 : keyPressed("d") ? 1 : 0,
-          y: keyPressed("w") ? -1 : keyPressed("s") ? 1 : 0
-        };
-      } else {
-        // This is literally just to stop things like ladders moving. It shouldn't be done this
-        // way at all so refactor all of this asap.
-        dir = {
-          x: 0,
-          y: 0
-        };
+
+        // Don't rely on this, it's just a test
+        if (dist(sprite, targetDestination) < 1) {
+          stopThinking = true;
+          const waitFor = getRandomIntInclusive(1000, 4000);
+
+          dir = { x: 0, y: 0 };
+
+          setTimeout(() => {
+            targetDestination = null;
+            stopThinking = false;
+          }, waitFor);
+        }
+      } else if (controlledByAI) {
+        // Again I don't like the flag being like this. Should be a separate entity altogether really. but can test
+        // a roaming AI at least.
+        if (!targetDestination) {
+          targetDestination = {
+            x: getRandomIntInclusive(90, 120),
+            y: getRandomIntInclusive(90, 120)
+          };
+        }
       }
 
       const { directionNormal } = moveSprite({
@@ -140,9 +143,6 @@ export default ({
       sprite.advance();
     }
   });
-
-  // console.log("=> Sprite generated:", sprite.name, sprite.id);
-  // console.log(sprite);
 
   return sprite;
 };
