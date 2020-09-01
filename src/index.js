@@ -1,9 +1,9 @@
 /* Credits
-* Asset Pack:
-* https://pixel-poem.itch.io/dungeon-assetpuck
-* https://0x72.itch.io/dungeontileset-ii
-* http://www.photonstorm.com/phaser/pixel-perfect-scaling-a-phaser-game
-*/
+ * Asset Pack:
+ * https://pixel-poem.itch.io/dungeon-assetpuck
+ * https://0x72.itch.io/dungeontileset-ii
+ * http://www.photonstorm.com/phaser/pixel-perfect-scaling-a-phaser-game
+ */
 
 /* Libs */
 import { init, GameLoop, load, initKeys } from "kontra";
@@ -65,7 +65,7 @@ ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 
 /* Primary field scene */
-const FieldScene = sceneProps => {
+const FieldScene = (sceneProps) => {
   /* World creation (can we not have entities just in store, it's a bit confusing) */
   const {
     createWorld,
@@ -75,10 +75,10 @@ const FieldScene = sceneProps => {
   } = WorldManager();
   const { sprites, player, tileEngine } = createWorld(sceneProps);
 
-  let spriteCache = sprites.filter(spr => spr.isAlive());
+  let spriteCache = sprites.filter((spr) => spr.isAlive());
 
   // Temporary: Use this to erase storage data
-  // resetEntityStates();
+  resetEntityStates();
 
   /* Main states creation */
   const sceneStateMachine = StateMachine();
@@ -112,16 +112,25 @@ const FieldScene = sceneProps => {
     },
     {
       type: ENTITY_TYPE.NPC,
-      reactionEvent: (interactible, actors = []) =>
-        sceneStateMachine.push(
-          startConvo({
-            id: "conversation",
-            startId: "m1",
-            // I feel these might be better done within the state... perhaps the same elsewhere too.
-            onEntry: () => actors.map(spr => spr.disableMovement()),
-            onExit: () => actors.map(spr => spr.enableMovement())
-          })
-        )
+      reactionEvent: (interactible, actors = []) => {
+        console.log(interactible);
+
+        const { customProperties } = interactible;
+
+        if (!Object.keys(customProperties).length) return;
+
+        if (customProperties.triggerConvo) {
+          sceneStateMachine.push(
+            startConvo({
+              id: "conversation", // What's this for?
+              startId: customProperties.triggerConvo,
+              // I feel these might be better done within the state... perhaps the same elsewhere too.
+              onEntry: () => actors.map((spr) => spr.disableMovement()),
+              onExit: () => actors.map((spr) => spr.enableMovement())
+            })
+          );
+        }
+      }
     },
     {
       type: ENTITY_TYPE.PICKUP,
@@ -158,16 +167,19 @@ const FieldScene = sceneProps => {
     update: () => {
       /* Add a flag to sprite to enable/disable collision checks */
       /* Check for anything dead (GC does the rest) */
-      spriteCache = spriteCache.filter(spr => spr.isAlive());
+      spriteCache = spriteCache.filter((spr) => spr.isAlive());
 
       /* Player to useable collision with other entities (not tiles) */
       const playerCollidingWith = sortByDist(
         player,
-        circleCollision(player, spriteCache.filter(s => s.id !== "player"))
+        circleCollision(
+          player,
+          spriteCache.filter((s) => s.id !== "player")
+        )
       );
 
       /* Update all sprites */
-      spriteCache.map(sprite => sprite.update());
+      spriteCache.map((sprite) => sprite.update());
 
       // ...
       player.isColliding = playerCollidingWith.length > 0;
@@ -186,14 +198,13 @@ const FieldScene = sceneProps => {
       x greater than 36 or x less than map width minus 36
       y greater than 36 or y less than map height minus 36
       */
-      const pad = 48;
 
       //if (tileEngine.mapwidth > resolution.width) {
-        tileEngine.sx = player.x - (resolution.width / 2)
+      tileEngine.sx = player.x - resolution.width / 2;
       //}
 
       //if (player.y > pad) {
-        tileEngine.sy = player.y - (resolution.height / 2) //player.y - 120;
+      tileEngine.sy = player.y - resolution.height / 2; //player.y - 120;
       //}
     },
     render: () => {
@@ -203,7 +214,7 @@ const FieldScene = sceneProps => {
       /* Edit z-order based on 'y' then change render order */
       spriteCache
         .sort((a, b) => Math.round(a.y - a.z) - Math.round(b.y - b.z))
-        .forEach(sprite => sprite.render());
+        .forEach((sprite) => sprite.render());
 
       /* Update any screen effects that are running */
       screenEffectsStateMachine.update();
@@ -237,7 +248,7 @@ load(
   "assets/gameData/conversationData.json",
   "assets/gameData/entityData.json",
   "assets/gameData/worldData.json"
-).then(assets => {
+).then((assets) => {
   initKeys();
 
   /// Note: There's now a scene manager in kontra that can be used
@@ -253,5 +264,5 @@ load(
   */
   sceneManager.loadScene({ areaId: "area2", playerStartId: "area2_entrance" });
 
-  on(EV_SCENECHANGE, props => sceneManager.loadScene({ ...props }));
+  on(EV_SCENECHANGE, (props) => sceneManager.loadScene({ ...props }));
 });
