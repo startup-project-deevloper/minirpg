@@ -4,8 +4,8 @@
   "description": "Simple Parcel Sandbox",
   "main": "index.html",
   "scripts": {
-    "start": "parcel index.html --open",
-    "build": "parcel build index.html"
+    "start": "parcel index.html -d build/ --open",
+    "build": "parcel build index.html -d build/"
   },
   "dependencies": {
     "kontra": "7.1.2",
@@ -15,5 +15,9 @@
   "devDependencies": {
     "@babel/core": "7.2.0",
     "parcel-bundler": "^1.6.1"
+  },
+  "staticFiles": {
+    "staticPath": "assets",
+    "watcherGlob": "**"
   }
 }
