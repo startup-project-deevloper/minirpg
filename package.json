@@ -7,6 +7,15 @@
     "start": "parcel index.html -d build/ --open",
     "build": "parcel build index.html -d build/"
   },
+  "staticFiles": {
+    "staticPath": [
+      {
+        "staticPath": "assets",
+        "staticOutDir": "assets"
+      }
+    ],
+    "watcherGlob": "**"
+  },
   "dependencies": {
     "kontra": "7.1.2",
     "mithril": "2.0.4",
@@ -14,10 +23,7 @@
   },
   "devDependencies": {
     "@babel/core": "7.2.0",
-    "parcel-bundler": "^1.6.1"
-  },
-  "staticFiles": {
-    "staticPath": "assets",
-    "watcherGlob": "**"
+    "parcel-bundler": "^1.6.1",
+    "parcel-plugin-static-files-copy": "^2.5.0"
   }
 }
