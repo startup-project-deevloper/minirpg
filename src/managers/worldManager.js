@@ -57,6 +57,20 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
       const map = dataAssets[mapKey];
       const tileEngine = TileEngine(map);
 
+      const aiPathLayer = tileEngine.layers.find(x => x.id === 2);
+      let aiPathGrid = [];
+
+      //tileEngine.tileAtLayer('Collision', {x: 50, y: 50});  //=> 1
+      for (let i = 0; i < aiPathLayer.width; i++) {
+        aiPathGrid.push([]);
+        for (let j = 0; j < aiPathLayer.height; j++) {
+          const t = tileEngine.tileAtLayer("AIPath", { row: i, col: j });
+          aiPathGrid[i].push(t);
+        }
+      }
+
+      console.log(aiPathGrid);
+
       const playerStart = entities.find(
         x => x.customProperties.playerStartId === playerStartId
       );
@@ -95,6 +109,7 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
       return {
         mapKey,
         tileEngine,
+        aiPathGrid,
         player,
         sprites: entities
           .map(entity => {
@@ -124,6 +139,7 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
                 ent = Npc({
                   ...entity,
                   entityData,
+                  aiPathGrid,
                   collisionMethod: (layer, sprite) =>
                     tileEngine.layerCollidesWith(layer, sprite)
                 });

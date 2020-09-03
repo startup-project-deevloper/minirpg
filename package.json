@@ -17,6 +17,7 @@
     "watcherGlob": "**"
   },
   "dependencies": {
+    "easystarjs": "^0.4.3",
     "kontra": "7.1.2",
     "mithril": "2.0.4",
     "tinyqueue": "^2.0.3",

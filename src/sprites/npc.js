@@ -1,3 +1,4 @@
+import EasyStar from "easystarjs";
 import StateMachine from "../managers/stateManager";
 import aiMoveToState from "../states/aiMoveToState";
 import aiWaitState from "../states/aiWaitState";
@@ -13,6 +14,7 @@ export default ({
   z = 1,
   customProperties = {},
   entityData = null,
+  aiPathGrid = null,
   collisionMethod = (layer, sprite) => {}
 }) => {
   if (!id) {
@@ -48,6 +50,8 @@ export default ({
   let movementDisabled = false;
   let currentAction = AI_ACTIONS.IDLE;
 
+  console.log(aiPathGrid)
+
   // ... Perhaps add these to the sprite instead?
   const doRandomWait = sprite => {
     currentAction = AI_ACTIONS.WAITING;
@@ -62,7 +66,7 @@ export default ({
     );
   };
 
-  const doRandomDest = ({ sprite, destination }) => {
+  const goToDestination = ({ sprite, destination }) => {
     currentAction = AI_ACTIONS.MOVING;
 
     entityStateMachine.push(
@@ -73,6 +77,43 @@ export default ({
         onExit: () => (currentAction = AI_ACTIONS.THINKING)
       })
     );
+  };
+
+  const findRandomDest = () => {
+    
+    currentAction = AI_ACTIONS.THINKING;
+
+    console.log("Looking for a random path on the ai grid...");
+
+    // TODO: Not sure you'll want to do this every single time.
+    const easystar = new EasyStar.js();
+    
+    easystar.enableDiagonals();
+    easystar.setGrid(aiPathGrid);
+    easystar.setAcceptableTiles([102]);
+    
+    /* Find a path within the bounds of what we have available, I've no idea how to do it yet. Perhaps
+    find the x,y of every walkable by finding out its place in the array? Unsure on how to
+    work out current position however... tileEngine has a method but, do I really want to
+    pass the entire object ref through? Rounding won't work either. */
+    // sx, sy, ex, ey (tile-wise, will need to convert back to pixels later for px dest)
+    easystar.findPath(5, 6, 8, 6, function(path) {
+      if (path === null) {
+        console.log("Path was not found.");
+      } else {
+        console.log(
+          "Path was found. The first Point is " + path[0].x + " " + path[0].y
+        );
+        console.log(path);
+      }
+    });
+    
+    // Just calculate once (if you run in to issues, may need to do it every frame. Def so for a changing map landscape)
+    easystar.calculate();
+    
+    // If you have your path, add it to the queue lib then start chomping through.
+
+    //////
   };
 
   /* Id should really be named 'class' since its re-used. */
@@ -109,16 +150,12 @@ export default ({
 
       switch (currentAction) {
         case AI_ACTIONS.IDLE:
-          doRandomDest({
-            sprite,
-            destination: Vector(
-              getRandomIntInclusive(30, 160),
-              getRandomIntInclusive(30, 160)
-            )
+          findRandomDest({
+            sprite
           });
           break;
         case AI_ACTIONS.THINKING:
-          doRandomWait(sprite);
+          // ... Do nothing until fulfilled.
           break;
       }
     }

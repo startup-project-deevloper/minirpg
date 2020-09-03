@@ -2058,6 +2058,13 @@ duplexer2@~0.1.4:
   dependencies:
     readable-stream "^2.0.2"
 
+easystarjs@^0.4.3:
+  version "0.4.3"
+  resolved "https://registry.yarnpkg.com/easystarjs/-/easystarjs-0.4.3.tgz#0a33d2db2dd607f30fcf6adbf2c0f832a0a88952"
+  integrity sha512-1h+ICk/I8gmdwaDjlP7q02LgOfcMH01FMDpJVD1ig//oYPmfFMnCZR2DNqajTD9v7JfVrJdqZuZO7TX2DdNQ6A==
+  dependencies:
+    heap "0.2.6"
+
 ecc-jsbn@~0.1.1:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/ecc-jsbn/-/ecc-jsbn-0.1.2.tgz#3a83a904e54353287874c564b7549386849a98c9"
@@ -2546,6 +2553,11 @@ hash.js@^1.0.0, hash.js@^1.0.3:
   dependencies:
     inherits "^2.0.3"
     minimalistic-assert "^1.0.1"
+
+heap@0.2.6:
+  version "0.2.6"
+  resolved "https://registry.yarnpkg.com/heap/-/heap-0.2.6.tgz#087e1f10b046932fc8594dd9e6d378afc9d1e5ac"
+  integrity sha1-CH4fELBGky/IWU3Z5tN4r8nR5aw=
 
 hex-color-regex@^1.1.0:
   version "1.1.0"
