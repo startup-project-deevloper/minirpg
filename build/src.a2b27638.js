@@ -6471,14 +6471,10 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.ENTITY_TYPE = void 0;
 var ENTITY_TYPE = {
-  PICKUP: 0,
+  FIXED: 0,
   NPC: 1,
-  ENEMY: 2,
-  SWITCH: 3,
-  DOOR: 4,
-  CONTAINER: 5,
-  ENTRANCE: 6,
-  BATTLE_MARKER: 7,
+  PICKUP: 2,
+  DOOR: 3,
   PLAYER: 99
 };
 exports.ENTITY_TYPE = ENTITY_TYPE;
@@ -9342,7 +9338,252 @@ var _default = function _default() {
 };
 
 exports.default = _default;
-},{}],"src/states/damagedState.js":[function(require,module,exports) {
+},{}],"src/sprites/spriteFunctions.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.flipSprite = exports.moveSprite = void 0;
+
+var _helpers = require("../common/helpers");
+
+var moveSprite = function moveSprite(_ref) {
+  var dir = _ref.dir,
+      sprite = _ref.sprite,
+      _ref$checkCollision = _ref.checkCollision,
+      checkCollision = _ref$checkCollision === void 0 ? function () {
+    return false;
+  } : _ref$checkCollision;
+
+  /* Normalise so you don't go super fast diagonally */
+  var directionNormal = (0, _helpers.getNormal)(dir); /// For collisions with tiles
+
+  var oldPos = {
+    x: sprite.x,
+    y: sprite.y
+  }; // Move X then check X (careful editing directly, might lead to issues with camera)
+
+  sprite.x += directionNormal.x; // Collider check (const layer names please)
+
+  var collidedWithX = checkCollision(sprite);
+
+  if (sprite.collidesWithTiles && collidedWithX) {
+    sprite.x = oldPos.x;
+    sprite.y = oldPos.y;
+  } // Update old pos ref
+
+
+  oldPos = {
+    x: sprite.x,
+    y: sprite.y
+  }; // Move Y then check Y (careful editing directly, might lead to issues with camera)
+
+  sprite.y += directionNormal.y; // Collider check against tiles
+
+  var collidedWithY = checkCollision(sprite);
+
+  if (sprite.collidesWithTiles && collidedWithY) {
+    sprite.x = oldPos.x;
+    sprite.y = oldPos.y;
+  }
+
+  return {
+    directionNormal: directionNormal
+  };
+};
+
+exports.moveSprite = moveSprite;
+
+var flipSprite = function flipSprite(_ref2) {
+  var direction = _ref2.direction,
+      sprite = _ref2.sprite;
+
+  if (direction.x < 0 && sprite.scaleX > 0) {
+    sprite.setScale(-1, 1);
+  } else if (direction.x > 0 && sprite.scaleX < 0) {
+    sprite.setScale(1, 1);
+  }
+};
+
+exports.flipSprite = flipSprite;
+},{"../common/helpers":"src/common/helpers.js"}],"src/sprites/player.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _stateManager = _interopRequireDefault(require("../managers/stateManager"));
+
+var _spriteFunctions = require("./spriteFunctions");
+
+var _helpers = require("../common/helpers");
+
+var _kontra = require("kontra");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// Really important TODO: Split sprites out so they aren't sharing the same
+// properties. Do you really need a ladder to animate for example? Just give it
+// a 'static' flag or no animations full stop.
+// TODO: Can we make sure we don't use the 'controlled by user' nonsense in the data anymore. What
+// if I want to use a different entity for the player?
+var _default = function _default(_ref) {
+  var id = _ref.id,
+      x = _ref.x,
+      y = _ref.y,
+      _ref$z = _ref.z,
+      z = _ref$z === void 0 ? 1 : _ref$z,
+      _ref$customProperties = _ref.customProperties,
+      customProperties = _ref$customProperties === void 0 ? {} : _ref$customProperties,
+      _ref$entityData = _ref.entityData,
+      entityData = _ref$entityData === void 0 ? null : _ref$entityData,
+      _ref$collisionMethod = _ref.collisionMethod,
+      collisionMethod = _ref$collisionMethod === void 0 ? function (layer, sprite) {} : _ref$collisionMethod;
+
+  if (!id) {
+    throw new Error("Entity is fairly useless without an id, you should add one.");
+  }
+
+  var entityStateMachine = (0, _stateManager.default)();
+  var name = entityData.name,
+      type = entityData.type,
+      animations = entityData.animations,
+      frameWidth = entityData.frameWidth,
+      frameHeight = entityData.frameHeight,
+      sheet = entityData.sheet,
+      _entityData$collision = entityData.collisionBodyOptions,
+      collisionBodyOptions = _entityData$collision === void 0 ? null : _entityData$collision,
+      _entityData$manualAni = entityData.manualAnimation,
+      manualAnimation = _entityData$manualAni === void 0 ? false : _entityData$manualAni,
+      _entityData$controlle = entityData.controlledByUser,
+      controlledByUser = _entityData$controlle === void 0 ? false : _entityData$controlle,
+      _entityData$controlle2 = entityData.controlledByAI,
+      controlledByAI = _entityData$controlle2 === void 0 ? false : _entityData$controlle2,
+      _entityData$collidesW = entityData.collidesWithTiles,
+      collidesWithTiles = _entityData$collidesW === void 0 ? true : _entityData$collidesW;
+  var spriteSheet = (0, _kontra.SpriteSheet)({
+    image: _kontra.imageAssets[sheet],
+    frameWidth: frameWidth,
+    frameHeight: frameHeight,
+    animations: animations
+  });
+  /* These are passable to states so they can act accordingly */
+
+  var dir = {
+    x: 0,
+    y: 0
+  }; // AI (to add later)
+
+  var targetDestination = null;
+  var movementDisabled = false;
+  /* Id should really be named 'class' since its re-used. */
+
+  var sprite = (0, _kontra.Sprite)({
+    instId: (0, _helpers.uniqueId)(id),
+    id: id,
+    type: type,
+    name: name,
+    x: x,
+    y: y,
+    z: z,
+    anchor: {
+      x: 0.5,
+      y: 0.5
+    },
+    customProperties: customProperties,
+    radius: 1,
+    animations: spriteSheet.animations,
+    collidesWithTiles: collidesWithTiles,
+    controlledByUser: controlledByUser,
+    controlledByAI: controlledByAI,
+    collisionBodyOptions: collisionBodyOptions,
+    manualAnimation: manualAnimation,
+    onAttacked: function onAttacked() {
+      // Push an internal state for damage effect (whatever that's going to be)
+      console.log(id);
+    },
+    enableMovement: function enableMovement() {
+      return movementDisabled = false;
+    },
+    disableMovement: function disableMovement() {
+      return movementDisabled = true;
+    },
+    lookAt: function lookAt(_ref2) {
+      var x = _ref2.x,
+          y = _ref2.y;
+      (0, _spriteFunctions.flipSprite)({
+        direction: {
+          x: sprite.x > x ? -1 : 1,
+          y: sprite.y > y ? -1 : 1
+        },
+        sprite: sprite
+      });
+    },
+    update: function update() {
+      entityStateMachine.update();
+      /* Movement - Massively a work in progress - TODO: Sort out data and splitting out concerns of sprite types. 
+      targestDestination prop may or may not be an AI thing, as we might want to automatically move the player
+      to a location. So make sure it's accessible by all entities further up. */
+
+      if (targetDestination !== null) {
+        /* You could also stick pathfinding in here or in AI when it's implemented */
+        dir = {
+          x: sprite.x > targetDestination.x ? -1 : 1,
+          y: sprite.y > targetDestination.y ? -1 : 1
+        };
+      } else if (controlledByUser && targetDestination == null) {
+        dir = {
+          x: (0, _kontra.keyPressed)("a") ? -1 : (0, _kontra.keyPressed)("d") ? 1 : 0,
+          y: (0, _kontra.keyPressed)("w") ? -1 : (0, _kontra.keyPressed)("s") ? 1 : 0
+        };
+      } else {
+        // This is literally just to stop things like ladders moving. It shouldn't be done this
+        // way at all so refactor all of this asap.
+        dir = {
+          x: 0,
+          y: 0
+        };
+      } // TODO: Not really needed any more
+
+
+      var _moveSprite = (0, _spriteFunctions.moveSprite)({
+        dir: movementDisabled && targetDestination === null ? {
+          x: 0,
+          y: 0
+        } : dir,
+        sprite: sprite,
+        checkCollision: function checkCollision(sprite) {
+          return collisionMethod("Collision", sprite);
+        }
+      }),
+          directionNormal = _moveSprite.directionNormal; // Flip the sprite on movement
+
+
+      (0, _spriteFunctions.flipSprite)({
+        direction: directionNormal,
+        sprite: sprite
+      }); // Do some animations
+
+      var isMoving = directionNormal.x !== 0 || directionNormal.y !== 0;
+
+      if (!sprite.manualAnimation) {
+        sprite.playAnimation(isMoving ? "walk" : "idle");
+      } // Call this to ensure animations are player
+
+
+      sprite.advance();
+    }
+  }); // console.log("=> Sprite generated:", sprite.name, sprite.id);
+  // console.log(sprite);
+
+  return sprite;
+};
+
+exports.default = _default;
+},{"../managers/stateManager":"src/managers/stateManager.js","./spriteFunctions":"src/sprites/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/states/damagedState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9406,256 +9647,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{}],"src/sprites/spriteFunctions.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.flipSprite = exports.moveSprite = void 0;
-
-var _helpers = require("../common/helpers");
-
-var moveSprite = function moveSprite(_ref) {
-  var dir = _ref.dir,
-      sprite = _ref.sprite,
-      _ref$checkCollision = _ref.checkCollision,
-      checkCollision = _ref$checkCollision === void 0 ? function () {
-    return false;
-  } : _ref$checkCollision;
-
-  /* Normalise so you don't go super fast diagonally */
-  var directionNormal = (0, _helpers.getNormal)(dir); /// For collisions with tiles
-
-  var oldPos = {
-    x: sprite.x,
-    y: sprite.y
-  }; // Move X then check X (careful editing directly, might lead to issues with camera)
-
-  sprite.x += directionNormal.x; // Collider check (const layer names please)
-
-  var collidedWithX = checkCollision(sprite);
-
-  if (sprite.collidesWithTiles && collidedWithX) {
-    sprite.x = oldPos.x;
-    sprite.y = oldPos.y;
-  } // Update old pos ref
-
-
-  oldPos = {
-    x: sprite.x,
-    y: sprite.y
-  }; // Move Y then check Y (careful editing directly, might lead to issues with camera)
-
-  sprite.y += directionNormal.y; // Collider check against tiles
-
-  var collidedWithY = checkCollision(sprite);
-
-  if (sprite.collidesWithTiles && collidedWithY) {
-    sprite.x = oldPos.x;
-    sprite.y = oldPos.y;
-  }
-
-  return {
-    directionNormal: directionNormal
-  };
-};
-
-exports.moveSprite = moveSprite;
-
-var flipSprite = function flipSprite(_ref2) {
-  var direction = _ref2.direction,
-      sprite = _ref2.sprite;
-
-  if (direction.x < 0) {
-    sprite.width = -sprite.width;
-  } else if (direction.x > 0) {
-    sprite.width = sprite.width;
-  }
-};
-
-exports.flipSprite = flipSprite;
-},{"../common/helpers":"src/common/helpers.js"}],"src/sprites/entity.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _stateManager = _interopRequireDefault(require("../managers/stateManager"));
-
-var _damagedState = _interopRequireDefault(require("../states/damagedState"));
-
-var _healthyState = _interopRequireDefault(require("../states/healthyState"));
-
-var _spriteFunctions = require("./spriteFunctions");
-
-var _helpers = require("../common/helpers");
-
-var _kontra = require("kontra");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// Really important TODO: Split sprites out so they aren't sharing the same
-// properties. Do you really need a ladder to animate for example? Just give it
-// a 'static' flag or no animations full stop.
-// TODO: Can we make sure we don't use the 'controlled by user' nonsense in the data anymore. What
-// if I want to use a different entity for the player?
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      x = _ref.x,
-      y = _ref.y,
-      _ref$z = _ref.z,
-      z = _ref$z === void 0 ? 1 : _ref$z,
-      _ref$customProperties = _ref.customProperties,
-      customProperties = _ref$customProperties === void 0 ? {} : _ref$customProperties,
-      _ref$collisionMethod = _ref.collisionMethod,
-      collisionMethod = _ref$collisionMethod === void 0 ? function (layer, sprite) {} : _ref$collisionMethod;
-
-  if (!id) {
-    throw new Error("Entity is fairly useless without an id, you should add one.");
-  }
-
-  var entityStateMachine = (0, _stateManager.default)();
-  var dataKey = "assets/gameData/entityData.json";
-  var entityData = _kontra.dataAssets[dataKey];
-
-  var _entityData$find = entityData.find(function (ent) {
-    return ent.id === id;
-  }),
-      name = _entityData$find.name,
-      type = _entityData$find.type,
-      animations = _entityData$find.animations,
-      frameWidth = _entityData$find.frameWidth,
-      frameHeight = _entityData$find.frameHeight,
-      sheet = _entityData$find.sheet,
-      _entityData$find$coll = _entityData$find.collisionBodyOptions,
-      collisionBodyOptions = _entityData$find$coll === void 0 ? null : _entityData$find$coll,
-      _entityData$find$manu = _entityData$find.manualAnimation,
-      manualAnimation = _entityData$find$manu === void 0 ? false : _entityData$find$manu,
-      _entityData$find$cont = _entityData$find.controlledByUser,
-      controlledByUser = _entityData$find$cont === void 0 ? false : _entityData$find$cont,
-      _entityData$find$cont2 = _entityData$find.controlledByAI,
-      controlledByAI = _entityData$find$cont2 === void 0 ? false : _entityData$find$cont2,
-      _entityData$find$coll2 = _entityData$find.collidesWithTiles,
-      collidesWithTiles = _entityData$find$coll2 === void 0 ? true : _entityData$find$coll2;
-
-  var spriteSheet = (0, _kontra.SpriteSheet)({
-    image: _kontra.imageAssets[sheet],
-    frameWidth: frameWidth,
-    frameHeight: frameHeight,
-    animations: animations
-  });
-  /* These are passable to states so they can act accordingly */
-
-  var dir = {
-    x: 0,
-    y: 0
-  }; // AI (to add later)
-
-  var targetDestination = null;
-  var movementDisabled = false;
-  /* Id should really be named 'class' since its re-used. */
-
-  var sprite = (0, _kontra.Sprite)({
-    instId: (0, _helpers.uniqueId)(id),
-    id: id,
-    type: type,
-    name: name,
-    x: x,
-    y: y,
-    z: z,
-    customProperties: customProperties,
-    radius: 1,
-    animations: spriteSheet.animations,
-    collidesWithTiles: collidesWithTiles,
-    controlledByUser: controlledByUser,
-    controlledByAI: controlledByAI,
-    collisionBodyOptions: collisionBodyOptions,
-    manualAnimation: manualAnimation,
-    onAttacked: function onAttacked() {
-      // Push an internal state for damage effect (whatever that's going to be)
-      console.log(id);
-    },
-    enableMovement: function enableMovement() {
-      return movementDisabled = false;
-    },
-    disableMovement: function disableMovement() {
-      return movementDisabled = true;
-    },
-    lookAt: function lookAt(_ref2) {
-      var x = _ref2.x,
-          y = _ref2.y;
-      (0, _spriteFunctions.flipSprite)({
-        direction: {
-          x: sprite.x > x ? -1 : 1,
-          y: sprite.y > y ? -1 : 1
-        },
-        sprite: sprite
-      });
-    },
-    update: function update() {
-      entityStateMachine.update();
-      /* Movement - Massively a work in progress - TODO: Sort out data and splitting out concerns of sprite types. 
-      targestDestination prop may or may not be an AI thing, as we might want to automatically move the player
-      to a location. So make sure it's accessible by all entities further up. */
-
-      if (targetDestination !== null) {
-        /* You could also stick pathfinding in here or in AI when it's implemented */
-        dir = {
-          x: sprite.x > targetDestination.x ? -1 : 1,
-          y: sprite.y > targetDestination.y ? -1 : 1
-        };
-      } else if (controlledByUser && targetDestination == null) {
-        dir = {
-          x: (0, _kontra.keyPressed)("a") ? -1 : (0, _kontra.keyPressed)("d") ? 1 : 0,
-          y: (0, _kontra.keyPressed)("w") ? -1 : (0, _kontra.keyPressed)("s") ? 1 : 0
-        };
-      } else {
-        // This is literally just to stop things like ladders moving. It shouldn't be done this
-        // way at all so refactor all of this asap.
-        dir = {
-          x: 0,
-          y: 0
-        };
-      }
-
-      var _moveSprite = (0, _spriteFunctions.moveSprite)({
-        dir: movementDisabled && targetDestination === null ? {
-          x: 0,
-          y: 0
-        } : dir,
-        sprite: sprite,
-        checkCollision: function checkCollision(sprite) {
-          return collisionMethod("Collision", sprite);
-        }
-      }),
-          directionNormal = _moveSprite.directionNormal; // Flip the sprite on movement
-
-
-      (0, _spriteFunctions.flipSprite)({
-        direction: directionNormal,
-        sprite: sprite
-      }); // Do some animations
-
-      var isMoving = directionNormal.x !== 0 || directionNormal.y !== 0;
-
-      if (!sprite.manualAnimation) {
-        sprite.playAnimation(isMoving ? "walk" : "idle");
-      } // Call this to ensure animations are player
-
-
-      sprite.advance();
-    }
-  }); // console.log("=> Sprite generated:", sprite.name, sprite.id);
-  // console.log(sprite);
-
-  return sprite;
-};
-
-exports.default = _default;
-},{"../managers/stateManager":"src/managers/stateManager.js","../states/damagedState":"src/states/damagedState.js","../states/healthyState":"src/states/healthyState.js","./spriteFunctions":"src/sprites/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/sprites/npc.js":[function(require,module,exports) {
+},{}],"src/sprites/npc.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9932,6 +9924,94 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
+},{"../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/sprites/pickup.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _helpers = require("../common/helpers");
+
+var _kontra = require("kontra");
+
+var _default = function _default(_ref) {
+  var id = _ref.id,
+      x = _ref.x,
+      y = _ref.y,
+      _ref$z = _ref.z,
+      z = _ref$z === void 0 ? 1 : _ref$z,
+      _ref$customProperties = _ref.customProperties,
+      customProperties = _ref$customProperties === void 0 ? {} : _ref$customProperties,
+      _ref$entityData = _ref.entityData,
+      entityData = _ref$entityData === void 0 ? null : _ref$entityData,
+      _ref$collisionMethod = _ref.collisionMethod,
+      collisionMethod = _ref$collisionMethod === void 0 ? function (layer, sprite) {} : _ref$collisionMethod;
+
+  if (!id) {
+    throw new Error("Entity is fairly useless without an id, you should add one.");
+  }
+
+  var name = entityData.name,
+      type = entityData.type,
+      animations = entityData.animations,
+      frameWidth = entityData.frameWidth,
+      frameHeight = entityData.frameHeight,
+      sheet = entityData.sheet,
+      _entityData$collision = entityData.collisionBodyOptions,
+      collisionBodyOptions = _entityData$collision === void 0 ? null : _entityData$collision,
+      _entityData$manualAni = entityData.manualAnimation,
+      manualAnimation = _entityData$manualAni === void 0 ? false : _entityData$manualAni,
+      _entityData$controlle = entityData.controlledByUser,
+      controlledByUser = _entityData$controlle === void 0 ? false : _entityData$controlle,
+      _entityData$controlle2 = entityData.controlledByAI,
+      controlledByAI = _entityData$controlle2 === void 0 ? false : _entityData$controlle2,
+      _entityData$collidesW = entityData.collidesWithTiles,
+      collidesWithTiles = _entityData$collidesW === void 0 ? true : _entityData$collidesW;
+  var spriteSheet = (0, _kontra.SpriteSheet)({
+    image: _kontra.imageAssets[sheet],
+    frameWidth: frameWidth,
+    frameHeight: frameHeight,
+    animations: animations
+  });
+  /* Id should really be named 'class' since its re-used. */
+
+  var sprite = (0, _kontra.Sprite)({
+    instId: (0, _helpers.uniqueId)(id),
+    id: id,
+    type: type,
+    name: name,
+    x: x,
+    y: y,
+    z: z,
+    anchor: {
+      x: 0.5,
+      y: 0.5
+    },
+    customProperties: customProperties,
+    radius: 1,
+    animations: spriteSheet.animations,
+    collidesWithTiles: collidesWithTiles,
+    controlledByUser: controlledByUser,
+    controlledByAI: controlledByAI,
+    collisionBodyOptions: collisionBodyOptions,
+    manualAnimation: manualAnimation,
+    onAttacked: function onAttacked() {
+      // Push an internal state for damage effect (whatever that's going to be)
+      console.log(id);
+    },
+    update: function update() {
+      // Static entities may still have anims so add them in later.
+      // Anim code...
+      // Call this to ensure animations are player
+      sprite.advance();
+    }
+  });
+  return sprite;
+};
+
+exports.default = _default;
 },{"../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/managers/worldManager.js":[function(require,module,exports) {
 "use strict";
 
@@ -9942,11 +10022,15 @@ exports.default = void 0;
 
 var _kontra = require("kontra");
 
-var _entity = _interopRequireDefault(require("../sprites/entity"));
+var _player = _interopRequireDefault(require("../sprites/player"));
 
 var _npc = _interopRequireDefault(require("../sprites/npc"));
 
 var _fixed = _interopRequireDefault(require("../sprites/fixed"));
+
+var _pickup = _interopRequireDefault(require("../sprites/pickup"));
+
+var _consts = require("../common/consts");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -9961,12 +10045,15 @@ var _default = function _default() {
     dataKey: "assets/gameData/worldData.json"
   };
   var dataKey = options.dataKey;
-  var worldData = _kontra.dataAssets[dataKey]; // TODO: Move these commands out of here and in to some sort of helper layer.
+  var worldData = _kontra.dataAssets[dataKey]; // TODO: Pass this in?
+
+  var entityDataKey = "assets/gameData/entityData.json";
+  var entityTable = _kontra.dataAssets[entityDataKey]; // TODO: Move these commands out of here and in to some sort of helper layer.
 
   var entitiesInStore = (0, _kontra.getStoreItem)("entities");
 
   var _getEntityFromStore = function getEntityFromStore(id) {
-    return entitiesInStore ? entitiesInStore.find(function (e) {
+    return entitiesInStore.length ? entitiesInStore.find(function (e) {
       return e.id === id;
     }) : null;
   };
@@ -10023,15 +10110,17 @@ var _default = function _default() {
 
       var map = _kontra.dataAssets[mapKey];
       var tileEngine = (0, _kontra.TileEngine)(map);
-      console.log(areaId, playerStartId);
-      console.log(entities);
       var playerStart = entities.find(function (x) {
         return x.customProperties.playerStartId === playerStartId;
       });
-      var player = (0, _entity.default)({
+      var playerEntityData = entityTable.find(function (x) {
+        return x.id === "player";
+      });
+      var player = (0, _player.default)({
         id: "player",
         x: playerStart.x,
         y: playerStart.y,
+        entityData: playerEntityData,
         collisionMethod: function collisionMethod(layer, sprite) {
           // If 16x16
           var spriteBody = {
@@ -10047,8 +10136,7 @@ var _default = function _default() {
             y: sprite.y + spriteBody.y,
             anchor: sprite.anchor
           };
-          var r = tileEngine.layerCollidesWith(layer, t);
-          return r;
+          return tileEngine.layerCollidesWith(layer, t);
         } // tileEngine.layerCollidesWith(layer, sprite)
 
       });
@@ -10058,41 +10146,50 @@ var _default = function _default() {
         tileEngine: tileEngine,
         player: player,
         sprites: entities.map(function (entity) {
-          /* Check if item exists in store as it may have been destroyed
+          // TODO: Tidy all this up
+
+          /* Check if entity exists in store as it may have been destroyed
           or collected. TODO: Move the pickup check out of here, it's a bit
           confusing alongside other field entity types. */
-          var id = entity.id,
-              type = entity.type;
-
-          var exists = _getEntityFromStore(id);
-
+          var id = entity.id;
           var ent = null;
-          if (!exists || exists && exists.ttl > 0) return null;
+          var entityData = entityTable.find(function (ent) {
+            return ent.id === id;
+          });
 
-          switch (type) {
-            case 99:
-              ent = (0, _entity.default)(_objectSpread(_objectSpread({}, entity), {}, {
+          switch (entityData.type) {
+            case _consts.ENTITY_TYPE.PICKUP:
+              var alreadyCollected = _getEntityFromStore(id);
+
+              if (alreadyCollected) return null;
+              ent = (0, _pickup.default)(_objectSpread(_objectSpread({}, entity), {}, {
+                entityData: entityData,
                 collisionMethod: function collisionMethod(layer, sprite) {
                   return tileEngine.layerCollidesWith(layer, sprite);
                 }
               }));
               break;
 
-            case 1:
+            case _consts.ENTITY_TYPE.NPC:
               ent = (0, _npc.default)(_objectSpread(_objectSpread({}, entity), {}, {
+                entityData: entityData,
                 collisionMethod: function collisionMethod(layer, sprite) {
                   return tileEngine.layerCollidesWith(layer, sprite);
                 }
               }));
               break;
 
-            case 0:
+            case _consts.ENTITY_TYPE.FIXED || _consts.ENTITY_TYPE.DOOR:
               ent = (0, _fixed.default)(_objectSpread(_objectSpread({}, entity), {}, {
+                entityData: entityData,
                 collisionMethod: function collisionMethod(layer, sprite) {
                   return tileEngine.layerCollidesWith(layer, sprite);
                 }
               }));
               break;
+
+            default:
+              return null;
           }
           /* May wish to add a flag if you want to add it to tilemap or not */
 
@@ -10108,7 +10205,7 @@ var _default = function _default() {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","../sprites/entity":"src/sprites/entity.js","../sprites/npc":"src/sprites/npc.js","../sprites/fixed":"src/sprites/fixed.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../sprites/player":"src/sprites/player.js","../sprites/npc":"src/sprites/npc.js","../sprites/fixed":"src/sprites/fixed.js","../sprites/pickup":"src/sprites/pickup.js","../common/consts":"src/common/consts.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -10421,7 +10518,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53830" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53993" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

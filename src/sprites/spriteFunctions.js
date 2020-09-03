@@ -50,9 +50,9 @@ export const moveSprite = ({
 };
 
 export const flipSprite = ({ direction, sprite }) => {
-  if (direction.x < 0) {
-    sprite.width = -sprite.width;
-  } else if (direction.x > 0) {
-    sprite.width = sprite.width;
+  if (direction.x < 0 && sprite.scaleX > 0) {
+    sprite.setScale(-1, 1);
+  } else if (direction.x > 0 && sprite.scaleX < 0) {
+    sprite.setScale(1, 1);
   }
 };
