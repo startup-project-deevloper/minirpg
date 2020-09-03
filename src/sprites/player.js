@@ -60,6 +60,7 @@ export default ({
     x,
     y,
     z,
+    anchor: { x: 0.5, y: 0.5 },
     customProperties,
     radius: 1,
     animations: spriteSheet.animations,
@@ -109,6 +110,7 @@ export default ({
         };
       }
 
+      // TODO: Not really needed any more
       const { directionNormal } = moveSprite({
         dir:
           movementDisabled && targetDestination === null ? { x: 0, y: 0 } : dir,
