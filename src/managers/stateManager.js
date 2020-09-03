@@ -17,7 +17,11 @@ export default () => {
 
       if (currentState.isComplete()) {
         currentState.exit();
-        states.pop();
+        //states.pop(); ???
+        // Careful doing this. Kind of breaks the idea of state. Look in to
+        // other AI methods rather than state machines as I think they suck
+        // when it comes to AI. Fine with other things like curtains though.
+        states = states.filter(x => x.id !== currentState.id);
       }
     },
     pop: () => {

@@ -1,9 +1,10 @@
 import StateMachine from "../managers/stateManager";
-import damagedState from "../states/damagedState";
-import healthyState from "../states/healthyState";
-import { moveSprite, flipSprite } from "./spriteFunctions";
-import { uniqueId, dist, getRandomIntInclusive } from "../common/helpers";
+import aiMoveToState from "../states/aiMoveToState";
+import aiWaitState from "../states/aiWaitState";
+import { flipSprite } from "./spriteFunctions";
+import { uniqueId, getRandomIntInclusive } from "../common/helpers";
 import { Sprite, imageAssets, SpriteSheet, Vector } from "kontra";
+import { AI_ACTIONS } from "../common/consts";
 
 export default ({
   id,
@@ -44,17 +45,35 @@ export default ({
   });
 
   /* These are passable to states so they can act accordingly */
-  let current = Vector(0, 0);
-
-  // ...
-  let destination = Vector(30, 160);
-
-  //current = current.add(direction.normalize());
-
-  let targetDestination = null;
   let movementDisabled = false;
+  let currentAction = AI_ACTIONS.IDLE;
 
-  let stopThinking = false;
+  // ... Perhaps add these to the sprite instead?
+  const doRandomWait = sprite => {
+    currentAction = AI_ACTIONS.WAITING;
+
+    entityStateMachine.push(
+      aiWaitState({
+        id: "wait",
+        sprite,
+        waitFor: getRandomIntInclusive(500, 2000),
+        onExit: () => (currentAction = AI_ACTIONS.IDLE)
+      })
+    );
+  };
+
+  const doRandomDest = ({ sprite, destination }) => {
+    currentAction = AI_ACTIONS.MOVING;
+
+    entityStateMachine.push(
+      aiMoveToState({
+        id: "moveTo",
+        sprite,
+        destination,
+        onExit: () => (currentAction = AI_ACTIONS.THINKING)
+      })
+    );
+  };
 
   /* Id should really be named 'class' since its re-used. */
   const sprite = Sprite({
@@ -74,10 +93,6 @@ export default ({
     controlledByAI,
     collisionBodyOptions,
     manualAnimation,
-    onAttacked: () => {
-      // Push an internal state for damage effect (whatever that's going to be)
-      console.log(id);
-    },
     enableMovement: () => (movementDisabled = false),
     disableMovement: () => (movementDisabled = true),
     lookAt: ({ x, y }) => {
@@ -92,81 +107,22 @@ export default ({
     update: () => {
       entityStateMachine.update();
 
-      //let direction = current.subtract(destination);
-      //current = current.add(direction);
-
-      if (targetDestination !== null && !stopThinking) {
-        /* You could also stick pathfinding in here or in AI when it's implemented */
-        // dir = {
-        //   x: sprite.x > targetDestination.x ? -1 : 1,
-        //   y: sprite.y > targetDestination.y ? -1 : 1
-        // };
-        // Don't rely on this, it's just a test
-        // if (dist(sprite, targetDestination) < 1) {
-        //   stopThinking = true;
-        //   const waitFor = getRandomIntInclusive(1000, 4000);
-        //   dir = { x: 0, y: 0 };
-        //   setTimeout(() => {
-        //     targetDestination = null;
-        //     stopThinking = false;
-        //   }, waitFor);
-        // }
-      } else {
-        // Again I don't like the flag being like this. Should be a separate entity altogether really. but can test
-        // a roaming AI at least.
-        // if (!targetDestination) {
-        //   targetDestination = {
-        //     x: getRandomIntInclusive(90, 120),
-        //     y: getRandomIntInclusive(90, 120)
-        //   };
-        // }
+      switch (currentAction) {
+        case AI_ACTIONS.IDLE:
+          doRandomDest({
+            sprite,
+            destination: Vector(
+              getRandomIntInclusive(30, 160),
+              getRandomIntInclusive(30, 160)
+            )
+          });
+          break;
+        case AI_ACTIONS.THINKING:
+          doRandomWait(sprite);
+          break;
       }
-
-      // const { directionNormal } = moveSprite({
-      //   // dir:
-      //   //   movementDisabled && targetDestination === null ? { x: 0, y: 0 } : dir,
-      //   dir: direction,
-      //   sprite,
-      //   checkCollision: (sprite) => collisionMethod("Collision", sprite)
-      // });
-
-      // Note: No need for acc at this stage
-      // TODO: Make speed value a config =========================v
-      let vel = Vector(0, 0);
-
-      // Durrent vector towards target
-      let distanceToTarget = destination.subtract(current).length();
-
-      // Cease all movement if arrived, otherwise just carry on
-      if (distanceToTarget > 10) {
-        vel = destination.subtract(current).normalize().scale(0.5);
-
-        sprite.x += vel.x;
-        sprite.y += vel.y;
-
-        current = Vector(sprite.x, sprite.y);
-      } else {
-        destination = current;
-      }
-
-      //flipSprite({ direction: directionNormal, sprite });
-      flipSprite({ direction: vel, sprite });
-
-      // Do some animations
-      //const isMoving = directionNormal.x !== 0 || directionNormal.y !== 0;
-      const isMoving = vel.x !== 0 || vel.y !== 0;
-
-      if (!sprite.manualAnimation) {
-        sprite.playAnimation(isMoving ? "walk" : "idle");
-      }
-
-      // Call this to ensure animations are player
-      sprite.advance();
     }
   });
-
-  // Temporary
-  current = Vector(sprite.x, sprite.y);
 
   return sprite;
 };

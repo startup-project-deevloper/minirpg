@@ -6303,46 +6303,40 @@ exports.emit = exports.allOff = exports.off = exports.on = exports.EV_INTERACTIO
 
 var _kontra = require("kontra");
 
-var EV_CONVOSTART = "ev.convoStart";
+const EV_CONVOSTART = "ev.convoStart";
 exports.EV_CONVOSTART = EV_CONVOSTART;
-var EV_CONVOEND = "ev.convoEnd";
+const EV_CONVOEND = "ev.convoEnd";
 exports.EV_CONVOEND = EV_CONVOEND;
-var EV_CONVONEXT = "ev.convoNext";
+const EV_CONVONEXT = "ev.convoNext";
 exports.EV_CONVONEXT = EV_CONVONEXT;
-var EV_CONVOCHOICE = "ev.convoChoice";
+const EV_CONVOCHOICE = "ev.convoChoice";
 exports.EV_CONVOCHOICE = EV_CONVOCHOICE;
-var EV_SCENECHANGE = "ev.sceneChange";
+const EV_SCENECHANGE = "ev.sceneChange";
 exports.EV_SCENECHANGE = EV_SCENECHANGE;
-var EV_INTERACTION = "ev.onInteraction";
+const EV_INTERACTION = "ev.onInteraction";
 exports.EV_INTERACTION = EV_INTERACTION;
-var registry = {};
+let registry = {};
 
-var on = function on(e, fn) {
+const on = (e, fn) => {
   registry[e] = fn;
   (0, _kontra.on)(e, registry[e]);
 };
 
 exports.on = on;
 
-var off = function off(e, fn) {
-  return (0, _kontra.off)(e, fn);
-};
+const off = (e, fn) => (0, _kontra.off)(e, fn);
 
 exports.off = off;
 
-var allOff = function allOff() {
-  var ignoreList = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-  return Object.keys(registry).map(function (k) {
-    return !ignoreList.some(function (str) {
-      return str === k;
-    }) && off(k, registry[k]);
-  });
+const allOff = function allOff() {
+  let ignoreList = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  return Object.keys(registry).map(k => !ignoreList.some(str => str === k) && off(k, registry[k]));
 };
 
 exports.allOff = allOff;
 
-var emit = function emit(e) {
-  var args = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+const emit = function emit(e) {
+  let args = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
   return (0, _kontra.emit)(e, args);
 };
 
@@ -6357,23 +6351,19 @@ exports.debug = exports.getRandomIntInclusive = exports.circleCollision = export
 
 var _events = require("../common/events");
 
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-var uniqueId = function uniqueId() {
-  var pre = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+const uniqueId = function uniqueId() {
+  let pre = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
   return "".concat(pre).concat(pre.length ? "_" : "") + (Number(String(Math.random()).slice(2)) + Date.now() + Math.round(performance.now())).toString(36);
 };
 
 exports.uniqueId = uniqueId;
 
-var between = function between(v, a, b) {
-  return v > a && v < b;
-};
+const between = (v, a, b) => v > a && v < b;
 
 exports.between = between;
 
-var getNormal = function getNormal(dir) {
-  var dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
+const getNormal = dir => {
+  const dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
   return {
     x: dir.x !== 0 ? dir.x / dirLength : 0,
     y: dir.y !== 0 ? dir.y / dirLength : 0
@@ -6382,11 +6372,11 @@ var getNormal = function getNormal(dir) {
 
 exports.getNormal = getNormal;
 
-var vmulti = function vmulti(vec, v) {
-  var x = 0;
-  var y = 0;
+const vmulti = (vec, v) => {
+  let x = 0;
+  let y = 0;
 
-  if (_typeof(v) === "object") {
+  if (typeof v === "object") {
     x = vec.x * v.x;
     y = vec.y * v.y;
   } else {
@@ -6399,42 +6389,40 @@ var vmulti = function vmulti(vec, v) {
 
 exports.vmulti = vmulti;
 
-var dist = function dist(p1, p2) {
-  var a = p1.x - p2.x;
-  var b = p1.y - p2.y;
+const dist = (p1, p2) => {
+  const a = p1.x - p2.x;
+  const b = p1.y - p2.y;
   return Math.sqrt(a * a + b * b);
 };
 
 exports.dist = dist;
 
-var sortByDist = function sortByDist(target) {
-  var items = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-  return items.sort(function (a, b) {
-    return dist(target, a.position) - dist(target, b.position);
-  });
+const sortByDist = function sortByDist(target) {
+  let items = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+  return items.sort((a, b) => dist(target, a.position) - dist(target, b.position));
 };
 
 exports.sortByDist = sortByDist;
 
-var circleCollision = function circleCollision(collider, targets) {
-  var destroyOnHit = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+const circleCollision = function circleCollision(collider, targets) {
+  let destroyOnHit = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
   if (!collider.radius) {
     console.error("Cannot detect collisions without radius property.");
   }
 
-  var filtered = targets.filter(function (target) {
+  const filtered = targets.filter(target => {
     /* Because why would you ever want to collide with yourself? */
     if (collider.id === target.id) return;
-    var offsets = target.collisionBodyOptions ? {
+    const offsets = target.collisionBodyOptions ? {
       x: target.collisionBodyOptions.offsetX ? target.x + target.collisionBodyOptions.offsetX : target.x,
       y: target.collisionBodyOptions.offsetY ? target.y + target.collisionBodyOptions.offsetY : target.y
     } : {
       x: target.x,
       y: target.y
     };
-    var dx = offsets.x - collider.x;
-    var dy = offsets.y - collider.y;
+    let dx = offsets.x - collider.x;
+    let dy = offsets.y - collider.y;
     /* You might be seeing results from two perspectives. I'd ensure that it only comes from
     one in the case of a door. */
     //debug(target.name + ": " + Math.sqrt(dx * dx + dy * dy))
@@ -6449,7 +6437,7 @@ var circleCollision = function circleCollision(collider, targets) {
 
 exports.circleCollision = circleCollision;
 
-var getRandomIntInclusive = function getRandomIntInclusive(min, max) {
+const getRandomIntInclusive = (min, max) => {
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive 
@@ -6457,7 +6445,7 @@ var getRandomIntInclusive = function getRandomIntInclusive(min, max) {
 
 exports.getRandomIntInclusive = getRandomIntInclusive;
 
-var debug = function debug(o) {
+const debug = o => {
   console.info(o);
   (0, _events.emit)(_events.EV_DEBUGLOG, o);
 };
@@ -6469,8 +6457,8 @@ exports.debug = debug;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.ENTITY_TYPE = void 0;
-var ENTITY_TYPE = {
+exports.AI_ACTIONS = exports.ENTITY_TYPE = void 0;
+const ENTITY_TYPE = {
   FIXED: 0,
   NPC: 1,
   PICKUP: 2,
@@ -6478,6 +6466,13 @@ var ENTITY_TYPE = {
   PLAYER: 99
 };
 exports.ENTITY_TYPE = ENTITY_TYPE;
+const AI_ACTIONS = {
+  IDLE: 0,
+  MOVING: 1,
+  THINKING: 2,
+  WAITING: 3
+};
+exports.AI_ACTIONS = AI_ACTIONS;
 },{}],"node_modules/mithril/render/vnode.js":[function(require,module,exports) {
 "use strict"
 
@@ -8585,21 +8580,20 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.typeWriter = void 0;
 
-var typeWriter = function typeWriter(_ref) {
-  var text = _ref.text,
-      _ref$onStart = _ref.onStart,
-      onStart = _ref$onStart === void 0 ? function () {} : _ref$onStart,
-      _ref$onTyped = _ref.onTyped,
-      onTyped = _ref$onTyped === void 0 ? function (str) {} : _ref$onTyped,
-      _ref$onFinished = _ref.onFinished,
-      onFinished = _ref$onFinished === void 0 ? function () {} : _ref$onFinished;
-  var animId = "";
-  var str = "";
+const typeWriter = (_ref) => {
+  let {
+    text,
+    onStart = () => {},
+    onTyped = str => {},
+    onFinished = () => {}
+  } = _ref;
+  let animId = "";
+  let str = "";
   onStart();
 
-  var t = function t() {
-    var s = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-    var i = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+  const t = function t() {
+    let s = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+    let i = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
     if (i > text.length) {
       cancelAnimationFrame(animId);
@@ -8610,17 +8604,11 @@ var typeWriter = function typeWriter(_ref) {
     str = s + text.charAt(i);
     i += 1;
     onTyped(str);
-    requestAnimationFrame(function () {
-      return t(str, i);
-    });
+    requestAnimationFrame(() => t(str, i));
   };
 
   return {
-    start: function start() {
-      return animId = requestAnimationFrame(function () {
-        return t();
-      });
-    }
+    start: () => animId = requestAnimationFrame(() => t())
   };
 };
 
@@ -8645,13 +8633,13 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-var mounted = false;
-var isTyping = false;
-var name = "";
-var text = "";
-var choices = [];
+let mounted = false;
+let isTyping = false;
+let name = "";
+let text = "";
+let choices = [];
 
-var primeGlobals = function primeGlobals(props) {
+const primeGlobals = props => {
   name = props.name;
   text = "";
   choices = [];
@@ -8659,84 +8647,70 @@ var primeGlobals = function primeGlobals(props) {
   _mithril.default.redraw();
 };
 
-var callTypewriter = function callTypewriter(props) {
-  return (0, _effects.typeWriter)({
-    text: props.text,
-    onStart: function onStart() {
-      return isTyping = true;
-    },
-    onTyped: function onTyped(str) {
-      text = str;
+const callTypewriter = props => (0, _effects.typeWriter)({
+  text: props.text,
+  onStart: () => isTyping = true,
+  onTyped: str => {
+    text = str;
 
-      _mithril.default.redraw();
-    },
-    onFinished: function onFinished() {
-      isTyping = false;
-      choices = props.choices.length ? props.choices : [];
+    _mithril.default.redraw();
+  },
+  onFinished: () => {
+    isTyping = false;
+    choices = props.choices.length ? props.choices : [];
 
-      _mithril.default.redraw();
-    }
-  }).start();
-};
+    _mithril.default.redraw();
+  }
+}).start();
 
-var _callText = function callText(props) {
+const _callText = props => {
   if (isTyping) return;
   primeGlobals(props);
   callTypewriter(props);
 };
 
-var Shell = function Shell(_ref) {
-  var attrs = _ref.attrs;
+const Shell = (_ref) => {
+  let {
+    attrs
+  } = _ref;
   return {
-    oninit: function oninit() {
-      return mounted = true;
-    },
-    onremove: function onremove() {
+    oninit: () => mounted = true,
+    onremove: () => {
       mounted = false;
       isTyping = false;
       name = "";
       text = "";
       choices = [];
     },
-    view: function view() {
-      return (0, _mithril.default)("div", {
-        class: "uiShell"
-      }, text && (0, _mithril.default)("div", {
-        class: "dialogueBoxOuter"
-      }, [(0, _mithril.default)("div", {
-        class: "dialogue"
-      }, [(0, _mithril.default)("span", name ? "".concat(name, ":") : ""), (0, _mithril.default)("span", name ? "\"".concat(text, "\"") : text), (0, _mithril.default)("div", {
-        class: "choiceWindow"
-      }, choices.map(function (choice) {
-        return (0, _mithril.default)("button", {
-          class: "choiceBox",
-          onclick: function onclick() {
-            return attrs.onChoiceSelected(choice);
-          }
-        }, choice.text);
-      })), isTyping ? "" : (0, _mithril.default)("span", {
-        class: "arrow"
-      })])]));
-    }
+    view: () => (0, _mithril.default)("div", {
+      class: "uiShell"
+    }, text && (0, _mithril.default)("div", {
+      class: "dialogueBoxOuter"
+    }, [(0, _mithril.default)("div", {
+      class: "dialogue"
+    }, [(0, _mithril.default)("span", name ? "".concat(name, ":") : ""), (0, _mithril.default)("span", name ? "\"".concat(text, "\"") : text), (0, _mithril.default)("div", {
+      class: "choiceWindow"
+    }, choices.map(choice => {
+      return (0, _mithril.default)("button", {
+        class: "choiceBox",
+        onclick: () => attrs.onChoiceSelected(choice)
+      }, choice.text);
+    })), isTyping ? "" : (0, _mithril.default)("span", {
+      class: "arrow"
+    })])]))
   };
 };
 
 var _default = {
-  isBusy: function isBusy() {
-    return isTyping;
-  },
+  isBusy: () => isTyping,
   mount: function mount() {
-    var attrs = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    let attrs = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
     return _mithril.default.mount(document.getElementById("ui"), {
-      view: function view() {
-        return (0, _mithril.default)(Shell, attrs);
-      }
+      view: () => (0, _mithril.default)(Shell, attrs)
     });
   },
-  unmount: function unmount() {
-    return _mithril.default.mount(document.getElementById("ui"), null);
-  },
-  callText: function callText(props) {
+  unmount: () => _mithril.default.mount(document.getElementById("ui"), null),
+  callText: props => {
     if (!mounted) return;
 
     _callText(_objectSpread({}, props));
@@ -8757,7 +8731,7 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-var MODES = {
+const MODES = {
   NOTRUNNING: 100,
   NEXTNODE: 200,
   AWAITINGINPUT: 300,
@@ -8766,24 +8740,21 @@ var MODES = {
 };
 exports.MODES = MODES;
 
-var _default = function _default(_ref) {
-  var conversationData = _ref.conversationData,
-      _ref$onChatStarted = _ref.onChatStarted,
-      onChatStarted = _ref$onChatStarted === void 0 ? function (node, props) {} : _ref$onChatStarted,
-      _ref$onChatNext = _ref.onChatNext,
-      onChatNext = _ref$onChatNext === void 0 ? function (node, props) {} : _ref$onChatNext,
-      _ref$onChatComplete = _ref.onChatComplete,
-      onChatComplete = _ref$onChatComplete === void 0 ? function (lastPositionSaved) {} : _ref$onChatComplete,
-      _ref$onChainProgress = _ref.onChainProgress,
-      onChainProgress = _ref$onChainProgress === void 0 ? function (lastNodeId) {} : _ref$onChainProgress,
-      _ref$onChatCancelled = _ref.onChatCancelled,
-      onChatCancelled = _ref$onChatCancelled === void 0 ? function () {} : _ref$onChatCancelled;
-  var index = 0;
-  var currentNode = conversationData[index];
-  var _isRunning = false;
-  var _isComplete = false;
+var _default = (_ref) => {
+  let {
+    conversationData,
+    onChatStarted = (node, props) => {},
+    onChatNext = (node, props) => {},
+    onChatComplete = lastPositionSaved => {},
+    onChainProgress = lastNodeId => {},
+    onChatCancelled = () => {}
+  } = _ref;
+  let index = 0;
+  let currentNode = conversationData[index];
+  let _isRunning = false;
+  let _isComplete = false;
 
-  var displayNode = function displayNode(queriedNode) {
+  const displayNode = queriedNode => {
     if (queriedNode) {
       currentNode = queriedNode;
       index = queriedNode.index;
@@ -8793,16 +8764,14 @@ var _default = function _default(_ref) {
     }
   };
 
-  var queryNode = function queryNode(query) {
-    var queriedNode = conversationData.length ? conversationData.filter(function (node) {
-      return query === node.id;
-    })[0] : null;
+  const queryNode = query => {
+    const queriedNode = conversationData.length ? conversationData.filter(node => query === node.id)[0] : null;
     return displayNode(queriedNode);
   };
 
-  var start = function start(query) {
-    var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-    var queriedNode = queryNode(query);
+  const start = function start(query) {
+    let props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    const queriedNode = queryNode(query);
     _isRunning = true;
     _isComplete = false;
     onChatStarted(queriedNode, props);
@@ -8811,17 +8780,17 @@ var _default = function _default(_ref) {
     });
   };
 
-  var goToExact = function goToExact(query) {
-    var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-    var queriedNode = queryNode(query);
+  const goToExact = function goToExact(query) {
+    let props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    const queriedNode = queryNode(query);
     onChatNext(queriedNode, props);
     return _objectSpread(_objectSpread({}, displayNode(queriedNode)), {}, {
       mode: MODES.NEXTNODE
     });
   };
 
-  var goToNext = function goToNext() {
-    var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  const goToNext = function goToNext() {
+    let props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
     // We need to run this 'after' the finish so it avoids chained exec on exit.
     if (!_isRunning) return {
       mode: MODES.NOTRUNNING
@@ -8836,28 +8805,23 @@ var _default = function _default(_ref) {
     // or do something a little funky. May want to check for choices here instead?
 
 
-    var _currentNode = currentNode,
-        id = _currentNode.id,
-        to = _currentNode.to,
-        choices = _currentNode.choices,
-        actions = _currentNode.actions; // Wait if choices are presented.
+    const {
+      id,
+      to,
+      choices,
+      actions
+    } = currentNode; // Wait if choices are presented.
 
     if (choices.length) return _objectSpread(_objectSpread({}, currentNode), {}, {
       mode: MODES.AWAITINGINPUT
     }); // TODO: Consts please.
 
-    if (actions.some(function (action) {
-      return action === "endConversation";
-    }) || choices.length === 0 && !to) {
-      if (actions.some(function (action) {
-        return action === "save";
-      })) {
+    if (actions.some(action => action === "endConversation") || choices.length === 0 && !to) {
+      if (actions.some(action => action === "save")) {
         onChainProgress(id);
       }
 
-      if (actions.some(function (action) {
-        return action === "cancel";
-      })) {
+      if (actions.some(action => action === "cancel")) {
         onChatCancelled();
       }
 
@@ -8875,18 +8839,12 @@ var _default = function _default(_ref) {
   };
 
   return {
-    isComplete: function isComplete() {
-      return _isComplete;
-    },
-    isRunning: function isRunning() {
-      return _isRunning;
-    },
-    currentIndex: function currentIndex() {
-      return index;
-    },
-    start: start,
-    goToExact: goToExact,
-    goToNext: goToNext
+    isComplete: () => _isComplete,
+    isRunning: () => _isRunning,
+    currentIndex: () => index,
+    start,
+    goToExact,
+    goToNext
   };
 };
 
@@ -8902,9 +8860,9 @@ exports.default = void 0;
 var _kontra = require("kontra");
 
 var _default = function _default(key) {
-  var cb = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function () {};
-  var pushed = false;
-  return function (props) {
+  let cb = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : () => {};
+  let pushed = false;
+  return props => {
     if (!pushed && (0, _kontra.keyPressed)(key)) {
       cb(props);
       pushed = true;
@@ -8943,52 +8901,54 @@ function _objectWithoutProperties(source, excluded) { if (source == null) return
 
 function _objectWithoutPropertiesLoose(source, excluded) { if (source == null) return {}; var target = {}; var sourceKeys = Object.keys(source); var key, i; for (i = 0; i < sourceKeys.length; i++) { key = sourceKeys[i]; if (excluded.indexOf(key) >= 0) continue; target[key] = source[key]; } return target; }
 
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      startId = _ref.startId,
-      _ref$onEntry = _ref.onEntry,
-      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
-      _ref$onExit = _ref.onExit,
-      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
+var _default = (_ref) => {
+  let {
+    id,
+    startId,
+    onEntry = () => {},
+    onExit = () => {}
+  } = _ref;
   console.log("Start convo.");
-  var _isComplete = false;
-  var dataKey = "assets/gameData/conversationData.json";
-  var conversationData = _kontra.dataAssets[dataKey];
-  var conversationController = (0, _conversationIterator.default)({
-    conversationData: conversationData,
-    onChatComplete: function onChatComplete(exitId) {
+  let _isComplete = false;
+  const dataKey = "assets/gameData/conversationData.json";
+  const conversationData = _kontra.dataAssets[dataKey];
+  const conversationController = (0, _conversationIterator.default)({
+    conversationData,
+    onChatComplete: exitId => {
       _dialogue.default.unmount();
 
       (0, _events.emit)(_events.EV_CONVOEND, {
-        exitId: exitId
+        exitId
       });
     },
-    onChainProgress: function onChainProgress(lastNodeId) {
-      return (0, _kontra.setStoreItem)("progress", {
-        storyProgress: lastNodeId
-      });
-    }
+    onChainProgress: lastNodeId => (0, _kontra.setStoreItem)("progress", {
+      storyProgress: lastNodeId
+    })
   });
 
-  var onDisplayText = function onDisplayText(_ref2) {
-    var name = _ref2.actor,
-        text = _ref2.text,
-        choices = _ref2.choices;
+  const onDisplayText = (_ref2) => {
+    let {
+      actor: name,
+      text,
+      choices
+    } = _ref2;
     return _dialogue.default.callText({
-      name: name,
-      text: text,
-      choices: choices
+      name,
+      text,
+      choices
     });
   };
 
-  var onInteractionPushed = (0, _onPush.default)("e", function () {
+  const onInteractionPushed = (0, _onPush.default)("e", () => {
     if (_dialogue.default.isBusy()) return;
 
-    var _ref3 = !conversationController.isRunning() ? conversationController.start(startId, {
-      startId: startId
+    const _ref3 = !conversationController.isRunning() ? conversationController.start(startId, {
+      startId
     }) : conversationController.goToNext(),
-        mode = _ref3.mode,
-        rest = _objectWithoutProperties(_ref3, ["mode"]);
+          {
+      mode
+    } = _ref3,
+          rest = _objectWithoutProperties(_ref3, ["mode"]);
 
     if (mode === _conversationIterator.MODES.NEXTNODE) {
       onDisplayText(rest);
@@ -8998,13 +8958,15 @@ var _default = function _default(_ref) {
   });
 
   _dialogue.default.mount({
-    onChoiceSelected: function onChoiceSelected(choice) {
+    onChoiceSelected: choice => {
       console.log("Selected:");
       console.log(choice);
 
-      var _conversationControll = conversationController.goToExact(choice.to),
-          mode = _conversationControll.mode,
-          rest = _objectWithoutProperties(_conversationControll, ["mode"]);
+      const _conversationControll = conversationController.goToExact(choice.to),
+            {
+        mode
+      } = _conversationControll,
+            rest = _objectWithoutProperties(_conversationControll, ["mode"]);
 
       if (mode === _conversationIterator.MODES.NEXTNODE) {
         onDisplayText(rest);
@@ -9015,19 +8977,11 @@ var _default = function _default(_ref) {
   });
 
   return {
-    id: id,
-    isComplete: function isComplete() {
-      return _isComplete;
-    },
-    enter: function enter(props) {
-      return onEntry();
-    },
-    update: function update() {
-      return onInteractionPushed();
-    },
-    exit: function exit() {
-      return onExit();
-    }
+    id,
+    isComplete: () => _isComplete,
+    enter: props => onEntry(),
+    update: () => onInteractionPushed(),
+    exit: () => onExit()
   };
 };
 
@@ -9046,77 +9000,67 @@ var _mithril = _interopRequireDefault(require("mithril"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var mounted = false;
+let mounted = false;
 /* still deciding how to work the UI either with
 sngular instances of mithril or otherwise. */
 
-var Shell = function Shell(_ref) {
-  var attrs = _ref.attrs;
-  var entitiesInStore = (0, _kontra.getStoreItem)("entities");
-  var dataKey = "assets/gameData/entityData.json";
-  var itemsInData = _kontra.dataAssets[dataKey];
+const Shell = (_ref) => {
+  let {
+    attrs
+  } = _ref;
+  const entitiesInStore = (0, _kontra.getStoreItem)("entities");
+  const dataKey = "assets/gameData/entityData.json";
+  const itemsInData = _kontra.dataAssets[dataKey];
   return {
-    oninit: function oninit() {
-      return mounted = true;
-    },
-    onremove: function onremove() {
-      return mounted = false;
-    },
-    view: function view() {
-      return (0, _mithril.default)("div", {
-        class: "uiShell"
-      }, [(0, _mithril.default)("div", {
-        class: "dialogueBoxOuter"
-      }, [(0, _mithril.default)("div", {
-        class: "dialogue"
-      }, [attrs.items.length ? (0, _mithril.default)("dl", {
-        class: "itemListing"
-      }, attrs.items.map(function (item) {
-        var data = itemsInData.find(function (_ref2) {
-          var id = _ref2.id;
-          return id === item.id;
-        });
-        var storedItem = entitiesInStore.find(function (_ref3) {
-          var id = _ref3.id;
-          return id === item.id;
-        });
-        var qty = storedItem ? storedItem.qty : 0;
-        return (0, _mithril.default)("dd", {
-          class: "itemNode",
-          onclick: function onclick() {
-            return attrs.onItemSelected(data);
-          }
-        }, [(0, _mithril.default)("img", {
-          src: data.thumb
-        }), (0, _mithril.default)("h4", "".concat(data.name, ": x").concat(qty)), (0, _mithril.default)("h5", data.description)]);
-      })) : (0, _mithril.default)("p", "No items."), (0, _mithril.default)("div", {
-        class: "choiceWindow"
-      }, (0, _mithril.default)("button", {
-        class: "choiceBox",
-        onclick: function onclick() {
-          return attrs.onInventoryClosed();
-        }
-      }, "Close"))])])]);
-    }
+    oninit: () => mounted = true,
+    onremove: () => mounted = false,
+    view: () => (0, _mithril.default)("div", {
+      class: "uiShell"
+    }, [(0, _mithril.default)("div", {
+      class: "dialogueBoxOuter"
+    }, [(0, _mithril.default)("div", {
+      class: "dialogue"
+    }, [attrs.items.length ? (0, _mithril.default)("dl", {
+      class: "itemListing"
+    }, attrs.items.map(item => {
+      const data = itemsInData.find((_ref2) => {
+        let {
+          id
+        } = _ref2;
+        return id === item.id;
+      });
+      const storedItem = entitiesInStore.find((_ref3) => {
+        let {
+          id
+        } = _ref3;
+        return id === item.id;
+      });
+      const qty = storedItem ? storedItem.qty : 0;
+      return (0, _mithril.default)("dd", {
+        class: "itemNode",
+        onclick: () => attrs.onItemSelected(data)
+      }, [(0, _mithril.default)("img", {
+        src: data.thumb
+      }), (0, _mithril.default)("h4", "".concat(data.name, ": x").concat(qty)), (0, _mithril.default)("h5", data.description)]);
+    })) : (0, _mithril.default)("p", "No items."), (0, _mithril.default)("div", {
+      class: "choiceWindow"
+    }, (0, _mithril.default)("button", {
+      class: "choiceBox",
+      onclick: () => attrs.onInventoryClosed()
+    }, "Close"))])])])
   };
 };
 
 var _default = {
-  isBusy: function isBusy() {
-    return mounted;
-  },
+  isBusy: () => mounted,
   mount: function mount() {
-    var attrs = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    let attrs = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
     _mithril.default.mount(document.getElementById("ui"), {
-      view: function view() {
-        return (0, _mithril.default)(Shell, attrs);
-      }
+      view: () => (0, _mithril.default)(Shell, attrs)
     });
   },
-  unmount: function unmount() {
-    return _mithril.default.mount(document.getElementById("ui"), null);
-  }
+  unmount: () => _mithril.default.mount(document.getElementById("ui"), null)
 };
 exports.default = _default;
 },{"kontra":"node_modules/kontra/kontra.mjs","mithril":"node_modules/mithril/index.js"}],"src/states/fieldState.js":[function(require,module,exports) {
@@ -9135,30 +9079,30 @@ var _onPush = _interopRequireDefault(require("../input/onPush"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      reactionManager = _ref.reactionManager,
-      _ref$getAllEntitiesOf = _ref.getAllEntitiesOfType,
-      getAllEntitiesOfType = _ref$getAllEntitiesOf === void 0 ? function () {} : _ref$getAllEntitiesOf,
-      _ref$onEntry = _ref.onEntry,
-      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
-      _ref$onExit = _ref.onExit,
-      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
-  var _isComplete = false;
-  var interactionCooldown = false;
+var _default = (_ref) => {
+  let {
+    id,
+    reactionManager,
+    getAllEntitiesOfType = () => {},
+    onEntry = () => {},
+    onExit = () => {}
+  } = _ref;
+  let _isComplete = false;
+  let interactionCooldown = false;
   /* TODO: Use consts on keys also */
 
-  var onInteractionPushed = (0, _onPush.default)("e", function (_ref2) {
-    var origin = _ref2.origin,
-        _ref2$collisions = _ref2.collisions,
-        collisions = _ref2$collisions === void 0 ? [] : _ref2$collisions;
+  const onInteractionPushed = (0, _onPush.default)("e", (_ref2) => {
+    let {
+      origin,
+      collisions = []
+    } = _ref2;
 
     if (collisions.length && origin.controlledByUser) {
       if (!interactionCooldown) {
         /* Collision usually pre-sorted by this point, it's not up to the state
         to handle this though. */
-        var interactible = collisions[0];
-        var reactionData = reactionManager.get(interactible.type);
+        const interactible = collisions[0];
+        const reactionData = reactionManager.get(interactible.type);
         /* Not all things will have a reaction set, plus they might expect
         different properties to be passed in future. */
 
@@ -9170,14 +9114,15 @@ var _default = function _default(_ref) {
       }
     }
   });
-  var onAttackPushed = (0, _onPush.default)("space", function (_ref3) {
-    var origin = _ref3.origin,
-        _ref3$collisions = _ref3.collisions,
-        collisions = _ref3$collisions === void 0 ? [] : _ref3$collisions;
-    collisions.map(function (col) {
+  const onAttackPushed = (0, _onPush.default)("space", (_ref3) => {
+    let {
+      origin,
+      collisions = []
+    } = _ref3;
+    collisions.map(col => {
       if (typeof col.onAttacked === "function") {
         col.onAttacked({
-          origin: origin
+          origin
         });
       }
     });
@@ -9188,38 +9133,30 @@ var _default = function _default(_ref) {
   basically. You might even want to life this to the index like the other reactions, in fact
   that might make more sense. */
 
-  var onInventoryOpened = (0, _onPush.default)("i", function () {
+  const onInventoryOpened = (0, _onPush.default)("i", () => {
     if (_inventory.default.isBusy()) return;
     /* Get you a list of all items that are being held in data */
 
     _inventory.default.mount({
       items: getAllEntitiesOfType(_consts.ENTITY_TYPE.PICKUP),
-      onInventoryClosed: function onInventoryClosed() {
-        return _inventory.default.unmount();
-      },
-      onItemSelected: function onItemSelected(itemData) {
+      onInventoryClosed: () => _inventory.default.unmount(),
+      onItemSelected: itemData => {
         console.log(itemData);
       }
     }); // Don't forget to unmount it when it's done also!
 
   });
   return {
-    id: id,
-    isComplete: function isComplete() {
-      return _isComplete;
-    },
-    enter: function enter(props) {
-      return onEntry();
-    },
-    update: function update(props) {
+    id,
+    isComplete: () => _isComplete,
+    enter: props => onEntry(),
+    update: props => {
       // TODO: Careful these don't conflict and do weird things (inventory in convo, etc, do not want!)
       onInteractionPushed(props);
       onAttackPushed(props);
       onInventoryOpened();
     },
-    exit: function exit() {
-      return onExit();
-    }
+    exit: () => onExit()
   };
 };
 
@@ -9232,35 +9169,33 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      ctx = _ref.ctx,
-      _ref$direction = _ref.direction,
-      direction = _ref$direction === void 0 ? 1 : _ref$direction,
-      _ref$onFadeComplete = _ref.onFadeComplete,
-      onFadeComplete = _ref$onFadeComplete === void 0 ? function () {} : _ref$onFadeComplete;
+var _default = (_ref) => {
+  let {
+    id,
+    ctx,
+    direction = 1,
+    onFadeComplete = () => {}
+  } = _ref;
   // https://stackoverflow.com/questions/19258169/fadein-fadeout-in-html5-canvas
-  var _isComplete = false;
-  var alpha = direction < 0 ? 1 : 0,
+  let _isComplete = false;
+  let alpha = direction < 0 ? 1 : 0,
       delta = 0.05; //ctx.globalAlpha = direction < 0 ? 1 : 0;
   // Under heavy testing
 
-  var curtainEl = document.getElementById("curtain");
+  const curtainEl = document.getElementById("curtain");
   curtainEl.style.opacity = direction < 0 ? 1 : 0;
   return {
-    id: id,
-    isComplete: function isComplete() {
-      return _isComplete;
-    },
-    enter: function enter(props) {},
-    update: function update() {
+    id,
+    isComplete: () => _isComplete,
+    enter: props => {},
+    update: () => {
       _isComplete = direction > 0 && alpha >= 1 || direction < 0 && alpha <= -1;
       alpha = direction < 0 ? alpha - delta : alpha + delta; //ctx.clearRect(0, 0, ctx.width, ctx.height);
       //ctx.globalAlpha = isComplete ? Math.round(alpha) : alpha;
 
       curtainEl.style.opacity = _isComplete ? Math.round(alpha) : alpha;
     },
-    exit: function exit() {
+    exit: () => {
       //ctx.globalAlpha = direction < 0 ? 0 : 1;
       curtainEl.style.opacity = direction < 0 ? 0 : 1;
 
@@ -9282,11 +9217,13 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _default = function _default(_ref) {
-  var Scene = _ref.sceneObject;
-  var currentScene = null;
+var _default = (_ref) => {
+  let {
+    sceneObject: Scene
+  } = _ref;
+  let currentScene = null;
   return {
-    loadScene: function loadScene(props) {
+    loadScene: props => {
       if (currentScene) currentScene.stop();
       currentScene = Scene(props);
       currentScene.start();
@@ -9303,34 +9240,34 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _default = function _default() {
-  var states = [];
+var _default = () => {
+  let states = [];
 
-  var top = function top(arr) {
-    return arr[arr.length - 1];
-  };
+  const top = arr => arr[arr.length - 1];
 
   return {
-    push: function push(state, props) {
-      if (!states.some(function (s) {
-        return s.id === state.id;
-      })) {
+    push: (state, props) => {
+      if (!states.some(s => s.id === state.id)) {
         states.push(state);
         top(states).enter(props);
       }
     },
-    update: function update(props) {
-      var currentState = top(states);
+    update: props => {
+      const currentState = top(states);
       if (!currentState) return;
       currentState.update(props);
 
       if (currentState.isComplete()) {
-        currentState.exit();
-        states.pop();
+        currentState.exit(); //states.pop(); ???
+        // Careful doing this. Kind of breaks the idea of state. Look in to
+        // other AI methods rather than state machines as I think they suck
+        // when it comes to AI. Fine with other things like curtains though.
+
+        states = states.filter(x => x.id !== currentState.id);
       }
     },
-    pop: function pop() {
-      var currentState = top(states);
+    pop: () => {
+      const currentState = top(states);
       currentState.exit();
       states.pop();
     }
@@ -9348,25 +9285,26 @@ exports.flipSprite = exports.moveSprite = void 0;
 
 var _helpers = require("../common/helpers");
 
-var moveSprite = function moveSprite(_ref) {
-  var dir = _ref.dir,
-      sprite = _ref.sprite,
-      _ref$checkCollision = _ref.checkCollision,
-      checkCollision = _ref$checkCollision === void 0 ? function () {
-    return false;
-  } : _ref$checkCollision;
+const moveSprite = (_ref) => {
+  let {
+    dir,
+    sprite,
+    checkCollision = () => {
+      return false;
+    }
+  } = _ref;
 
   /* Normalise so you don't go super fast diagonally */
-  var directionNormal = (0, _helpers.getNormal)(dir); /// For collisions with tiles
+  const directionNormal = (0, _helpers.getNormal)(dir); /// For collisions with tiles
 
-  var oldPos = {
+  let oldPos = {
     x: sprite.x,
     y: sprite.y
   }; // Move X then check X (careful editing directly, might lead to issues with camera)
 
   sprite.x += directionNormal.x; // Collider check (const layer names please)
 
-  var collidedWithX = checkCollision(sprite);
+  const collidedWithX = checkCollision(sprite);
 
   if (sprite.collidesWithTiles && collidedWithX) {
     sprite.x = oldPos.x;
@@ -9381,7 +9319,7 @@ var moveSprite = function moveSprite(_ref) {
 
   sprite.y += directionNormal.y; // Collider check against tiles
 
-  var collidedWithY = checkCollision(sprite);
+  const collidedWithY = checkCollision(sprite);
 
   if (sprite.collidesWithTiles && collidedWithY) {
     sprite.x = oldPos.x;
@@ -9389,15 +9327,17 @@ var moveSprite = function moveSprite(_ref) {
   }
 
   return {
-    directionNormal: directionNormal
+    directionNormal
   };
 };
 
 exports.moveSprite = moveSprite;
 
-var flipSprite = function flipSprite(_ref2) {
-  var direction = _ref2.direction,
-      sprite = _ref2.sprite;
+const flipSprite = (_ref2) => {
+  let {
+    direction,
+    sprite
+  } = _ref2;
 
   if (direction.x < 0 && sprite.scaleX > 0) {
     sprite.setScale(-1, 1);
@@ -9430,99 +9370,92 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // a 'static' flag or no animations full stop.
 // TODO: Can we make sure we don't use the 'controlled by user' nonsense in the data anymore. What
 // if I want to use a different entity for the player?
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      x = _ref.x,
-      y = _ref.y,
-      _ref$z = _ref.z,
-      z = _ref$z === void 0 ? 1 : _ref$z,
-      _ref$customProperties = _ref.customProperties,
-      customProperties = _ref$customProperties === void 0 ? {} : _ref$customProperties,
-      _ref$entityData = _ref.entityData,
-      entityData = _ref$entityData === void 0 ? null : _ref$entityData,
-      _ref$collisionMethod = _ref.collisionMethod,
-      collisionMethod = _ref$collisionMethod === void 0 ? function (layer, sprite) {} : _ref$collisionMethod;
+var _default = (_ref) => {
+  let {
+    id,
+    x,
+    y,
+    z = 1,
+    customProperties = {},
+    entityData = null,
+    collisionMethod = (layer, sprite) => {}
+  } = _ref;
 
   if (!id) {
     throw new Error("Entity is fairly useless without an id, you should add one.");
   }
 
-  var entityStateMachine = (0, _stateManager.default)();
-  var name = entityData.name,
-      type = entityData.type,
-      animations = entityData.animations,
-      frameWidth = entityData.frameWidth,
-      frameHeight = entityData.frameHeight,
-      sheet = entityData.sheet,
-      _entityData$collision = entityData.collisionBodyOptions,
-      collisionBodyOptions = _entityData$collision === void 0 ? null : _entityData$collision,
-      _entityData$manualAni = entityData.manualAnimation,
-      manualAnimation = _entityData$manualAni === void 0 ? false : _entityData$manualAni,
-      _entityData$controlle = entityData.controlledByUser,
-      controlledByUser = _entityData$controlle === void 0 ? false : _entityData$controlle,
-      _entityData$controlle2 = entityData.controlledByAI,
-      controlledByAI = _entityData$controlle2 === void 0 ? false : _entityData$controlle2,
-      _entityData$collidesW = entityData.collidesWithTiles,
-      collidesWithTiles = _entityData$collidesW === void 0 ? true : _entityData$collidesW;
-  var spriteSheet = (0, _kontra.SpriteSheet)({
+  const entityStateMachine = (0, _stateManager.default)();
+  const {
+    name,
+    type,
+    animations,
+    frameWidth,
+    frameHeight,
+    sheet,
+    collisionBodyOptions = null,
+    manualAnimation = false,
+    controlledByUser = false,
+    controlledByAI = false,
+    collidesWithTiles = true
+  } = entityData;
+  let spriteSheet = (0, _kontra.SpriteSheet)({
     image: _kontra.imageAssets[sheet],
-    frameWidth: frameWidth,
-    frameHeight: frameHeight,
-    animations: animations
+    frameWidth,
+    frameHeight,
+    animations
   });
   /* These are passable to states so they can act accordingly */
 
-  var dir = {
+  let dir = {
     x: 0,
     y: 0
   }; // AI (to add later)
 
-  var targetDestination = null;
-  var movementDisabled = false;
+  let targetDestination = null;
+  let movementDisabled = false;
   /* Id should really be named 'class' since its re-used. */
 
-  var sprite = (0, _kontra.Sprite)({
+  const sprite = (0, _kontra.Sprite)({
     instId: (0, _helpers.uniqueId)(id),
-    id: id,
-    type: type,
-    name: name,
-    x: x,
-    y: y,
-    z: z,
+    id,
+    type,
+    name,
+    x,
+    y,
+    z,
     anchor: {
       x: 0.5,
       y: 0.5
     },
-    customProperties: customProperties,
+    customProperties,
     radius: 1,
     animations: spriteSheet.animations,
-    collidesWithTiles: collidesWithTiles,
-    controlledByUser: controlledByUser,
-    controlledByAI: controlledByAI,
-    collisionBodyOptions: collisionBodyOptions,
-    manualAnimation: manualAnimation,
-    onAttacked: function onAttacked() {
+    collidesWithTiles,
+    controlledByUser,
+    controlledByAI,
+    collisionBodyOptions,
+    manualAnimation,
+    onAttacked: () => {
       // Push an internal state for damage effect (whatever that's going to be)
       console.log(id);
     },
-    enableMovement: function enableMovement() {
-      return movementDisabled = false;
-    },
-    disableMovement: function disableMovement() {
-      return movementDisabled = true;
-    },
-    lookAt: function lookAt(_ref2) {
-      var x = _ref2.x,
-          y = _ref2.y;
+    enableMovement: () => movementDisabled = false,
+    disableMovement: () => movementDisabled = true,
+    lookAt: (_ref2) => {
+      let {
+        x,
+        y
+      } = _ref2;
       (0, _spriteFunctions.flipSprite)({
         direction: {
           x: sprite.x > x ? -1 : 1,
           y: sprite.y > y ? -1 : 1
         },
-        sprite: sprite
+        sprite
       });
     },
-    update: function update() {
+    update: () => {
       entityStateMachine.update();
       /* Movement - Massively a work in progress - TODO: Sort out data and splitting out concerns of sprite types. 
       targestDestination prop may or may not be an AI thing, as we might want to automatically move the player
@@ -9549,25 +9482,23 @@ var _default = function _default(_ref) {
       } // TODO: Not really needed any more
 
 
-      var _moveSprite = (0, _spriteFunctions.moveSprite)({
+      const {
+        directionNormal
+      } = (0, _spriteFunctions.moveSprite)({
         dir: movementDisabled && targetDestination === null ? {
           x: 0,
           y: 0
         } : dir,
-        sprite: sprite,
-        checkCollision: function checkCollision(sprite) {
-          return collisionMethod("Collision", sprite);
-        }
-      }),
-          directionNormal = _moveSprite.directionNormal; // Flip the sprite on movement
-
+        sprite,
+        checkCollision: sprite => collisionMethod("Collision", sprite)
+      }); // Flip the sprite on movement
 
       (0, _spriteFunctions.flipSprite)({
         direction: directionNormal,
-        sprite: sprite
+        sprite
       }); // Do some animations
 
-      var isMoving = directionNormal.x !== 0 || directionNormal.y !== 0;
+      const isMoving = directionNormal.x !== 0 || directionNormal.y !== 0;
 
       if (!sprite.manualAnimation) {
         sprite.playAnimation(isMoving ? "walk" : "idle");
@@ -9583,7 +9514,7 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"../managers/stateManager":"src/managers/stateManager.js","./spriteFunctions":"src/sprites/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/states/damagedState.js":[function(require,module,exports) {
+},{"../managers/stateManager":"src/managers/stateManager.js","./spriteFunctions":"src/sprites/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/states/aiMoveToState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9591,31 +9522,61 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      cache = _ref.cache,
-      _ref$onEntry = _ref.onEntry,
-      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
-      _ref$onExit = _ref.onExit,
-      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
-  var _isComplete = false;
+var _kontra = require("kontra");
+
+var _spriteFunctions = require("../sprites/spriteFunctions");
+
+var _default = (_ref) => {
+  let {
+    id,
+    sprite,
+    destination,
+    onEntry = () => {},
+    onExit = () => {}
+  } = _ref;
+  let _isComplete = false;
+  let current = (0, _kontra.Vector)(sprite.x, sprite.y);
   return {
-    id: id,
-    isComplete: function isComplete() {
-      return _isComplete;
+    id,
+    isComplete: () => _isComplete,
+    enter: props => onEntry(),
+    update: () => {
+      // Note: No need for acc at this stage
+      let vel = (0, _kontra.Vector)(0, 0); // Current vector towards target
+
+      let distanceToTarget = destination.subtract(current).length(); // Cease all movement if arrived, otherwise just carry on
+
+      if (distanceToTarget > 10) {
+        vel = destination.subtract(current).normalize().scale(0.5);
+        sprite.x += vel.x;
+        sprite.y += vel.y;
+        current = (0, _kontra.Vector)(sprite.x, sprite.y);
+      } else {
+        console.log(sprite.name + " reached destination.");
+        destination = current;
+        _isComplete = true;
+      }
+
+      (0, _spriteFunctions.flipSprite)({
+        direction: vel,
+        sprite
+      }); // Do some animations
+
+      const isMoving = vel.x !== 0 || vel.y !== 0;
+
+      if (!sprite.manualAnimation) {
+        sprite.playAnimation(isMoving ? "walk" : "idle");
+      } // Call this to ensure animations are player
+
+
+      sprite.advance();
     },
-    enter: function enter(props) {
-      return onEntry();
-    },
-    update: function update() {},
-    exit: function exit() {
-      return onExit();
-    }
+    exit: () => onExit()
   };
 };
 
 exports.default = _default;
-},{}],"src/states/healthyState.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../sprites/spriteFunctions":"src/sprites/spriteFunctions.js"}],"src/states/aiWaitState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9623,26 +9584,31 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      cache = _ref.cache,
-      _ref$onEntry = _ref.onEntry,
-      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
-      _ref$onExit = _ref.onExit,
-      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
-  var _isComplete = false;
+const wait = ms => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+};
+
+var _default = (_ref) => {
+  let {
+    id,
+    waitFor,
+    sprite,
+    onEntry = () => {},
+    onExit = () => {}
+  } = _ref;
+  let _isComplete = false;
   return {
-    id: id,
-    isComplete: function isComplete() {
-      return _isComplete;
+    id,
+    isComplete: () => _isComplete,
+    enter: async props => {
+      onEntry();
+      await wait(waitFor);
+      _isComplete = true;
     },
-    enter: function enter(props) {
-      return onEntry();
+    update: () => {
+      sprite.playAnimation("idle");
     },
-    update: function update() {},
-    exit: function exit() {
-      return onExit();
-    }
+    exit: () => onExit()
   };
 };
 
@@ -9657,9 +9623,9 @@ exports.default = void 0;
 
 var _stateManager = _interopRequireDefault(require("../managers/stateManager"));
 
-var _damagedState = _interopRequireDefault(require("../states/damagedState"));
+var _aiMoveToState = _interopRequireDefault(require("../states/aiMoveToState"));
 
-var _healthyState = _interopRequireDefault(require("../states/healthyState"));
+var _aiWaitState = _interopRequireDefault(require("../states/aiWaitState"));
 
 var _spriteFunctions = require("./spriteFunctions");
 
@@ -9667,176 +9633,133 @@ var _helpers = require("../common/helpers");
 
 var _kontra = require("kontra");
 
+var _consts = require("../common/consts");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      x = _ref.x,
-      y = _ref.y,
-      _ref$z = _ref.z,
-      z = _ref$z === void 0 ? 1 : _ref$z,
-      _ref$customProperties = _ref.customProperties,
-      customProperties = _ref$customProperties === void 0 ? {} : _ref$customProperties,
-      _ref$entityData = _ref.entityData,
-      entityData = _ref$entityData === void 0 ? null : _ref$entityData,
-      _ref$collisionMethod = _ref.collisionMethod,
-      collisionMethod = _ref$collisionMethod === void 0 ? function (layer, sprite) {} : _ref$collisionMethod;
+var _default = (_ref) => {
+  let {
+    id,
+    x,
+    y,
+    z = 1,
+    customProperties = {},
+    entityData = null,
+    collisionMethod = (layer, sprite) => {}
+  } = _ref;
 
   if (!id) {
     throw new Error("Entity is fairly useless without an id, you should add one.");
   }
 
-  var entityStateMachine = (0, _stateManager.default)();
-  var name = entityData.name,
-      type = entityData.type,
-      animations = entityData.animations,
-      frameWidth = entityData.frameWidth,
-      frameHeight = entityData.frameHeight,
-      sheet = entityData.sheet,
-      _entityData$collision = entityData.collisionBodyOptions,
-      collisionBodyOptions = _entityData$collision === void 0 ? null : _entityData$collision,
-      _entityData$manualAni = entityData.manualAnimation,
-      manualAnimation = _entityData$manualAni === void 0 ? false : _entityData$manualAni,
-      _entityData$controlle = entityData.controlledByUser,
-      controlledByUser = _entityData$controlle === void 0 ? false : _entityData$controlle,
-      _entityData$controlle2 = entityData.controlledByAI,
-      controlledByAI = _entityData$controlle2 === void 0 ? false : _entityData$controlle2,
-      _entityData$collidesW = entityData.collidesWithTiles,
-      collidesWithTiles = _entityData$collidesW === void 0 ? true : _entityData$collidesW;
-  var spriteSheet = (0, _kontra.SpriteSheet)({
+  const entityStateMachine = (0, _stateManager.default)();
+  const {
+    name,
+    type,
+    animations,
+    frameWidth,
+    frameHeight,
+    sheet,
+    collisionBodyOptions = null,
+    manualAnimation = false,
+    controlledByUser = false,
+    controlledByAI = false,
+    collidesWithTiles = true
+  } = entityData;
+  let spriteSheet = (0, _kontra.SpriteSheet)({
     image: _kontra.imageAssets[sheet],
-    frameWidth: frameWidth,
-    frameHeight: frameHeight,
-    animations: animations
+    frameWidth,
+    frameHeight,
+    animations
   });
   /* These are passable to states so they can act accordingly */
 
-  var current = (0, _kontra.Vector)(0, 0); // ...
+  let movementDisabled = false;
+  let currentAction = _consts.AI_ACTIONS.IDLE; // ... Perhaps add these to the sprite instead?
 
-  var destination = (0, _kontra.Vector)(30, 160); //current = current.add(direction.normalize());
+  const doRandomWait = sprite => {
+    currentAction = _consts.AI_ACTIONS.WAITING;
+    entityStateMachine.push((0, _aiWaitState.default)({
+      id: "wait",
+      sprite,
+      waitFor: (0, _helpers.getRandomIntInclusive)(500, 2000),
+      onExit: () => currentAction = _consts.AI_ACTIONS.IDLE
+    }));
+  };
 
-  var targetDestination = null;
-  var movementDisabled = false;
-  var stopThinking = false;
+  const doRandomDest = (_ref2) => {
+    let {
+      sprite,
+      destination
+    } = _ref2;
+    currentAction = _consts.AI_ACTIONS.MOVING;
+    entityStateMachine.push((0, _aiMoveToState.default)({
+      id: "moveTo",
+      sprite,
+      destination,
+      onExit: () => currentAction = _consts.AI_ACTIONS.THINKING
+    }));
+  };
   /* Id should really be named 'class' since its re-used. */
 
-  var sprite = (0, _kontra.Sprite)({
+
+  const sprite = (0, _kontra.Sprite)({
     instId: (0, _helpers.uniqueId)(id),
-    id: id,
-    type: type,
-    name: name,
-    x: x,
-    y: y,
-    z: z,
+    id,
+    type,
+    name,
+    x,
+    y,
+    z,
     anchor: {
       x: 0.5,
       y: 0.5
     },
-    customProperties: customProperties,
+    customProperties,
     radius: 1,
     animations: spriteSheet.animations,
-    collidesWithTiles: collidesWithTiles,
-    controlledByUser: controlledByUser,
-    controlledByAI: controlledByAI,
-    collisionBodyOptions: collisionBodyOptions,
-    manualAnimation: manualAnimation,
-    onAttacked: function onAttacked() {
-      // Push an internal state for damage effect (whatever that's going to be)
-      console.log(id);
-    },
-    enableMovement: function enableMovement() {
-      return movementDisabled = false;
-    },
-    disableMovement: function disableMovement() {
-      return movementDisabled = true;
-    },
-    lookAt: function lookAt(_ref2) {
-      var x = _ref2.x,
-          y = _ref2.y;
+    collidesWithTiles,
+    controlledByUser,
+    controlledByAI,
+    collisionBodyOptions,
+    manualAnimation,
+    enableMovement: () => movementDisabled = false,
+    disableMovement: () => movementDisabled = true,
+    lookAt: (_ref3) => {
+      let {
+        x,
+        y
+      } = _ref3;
       (0, _spriteFunctions.flipSprite)({
         direction: {
           x: sprite.x > x ? -1 : 1,
           y: sprite.y > y ? -1 : 1
         },
-        sprite: sprite
+        sprite
       });
     },
-    update: function update() {
-      entityStateMachine.update(); //let direction = current.subtract(destination);
-      //current = current.add(direction);
+    update: () => {
+      entityStateMachine.update();
 
-      if (targetDestination !== null && !stopThinking) {
-        /* You could also stick pathfinding in here or in AI when it's implemented */
-        // dir = {
-        //   x: sprite.x > targetDestination.x ? -1 : 1,
-        //   y: sprite.y > targetDestination.y ? -1 : 1
-        // };
-        // Don't rely on this, it's just a test
-        // if (dist(sprite, targetDestination) < 1) {
-        //   stopThinking = true;
-        //   const waitFor = getRandomIntInclusive(1000, 4000);
-        //   dir = { x: 0, y: 0 };
-        //   setTimeout(() => {
-        //     targetDestination = null;
-        //     stopThinking = false;
-        //   }, waitFor);
-        // }
-      } else {// Again I don't like the flag being like this. Should be a separate entity altogether really. but can test
-          // a roaming AI at least.
-          // if (!targetDestination) {
-          //   targetDestination = {
-          //     x: getRandomIntInclusive(90, 120),
-          //     y: getRandomIntInclusive(90, 120)
-          //   };
-          // }
-        } // const { directionNormal } = moveSprite({
-      //   // dir:
-      //   //   movementDisabled && targetDestination === null ? { x: 0, y: 0 } : dir,
-      //   dir: direction,
-      //   sprite,
-      //   checkCollision: (sprite) => collisionMethod("Collision", sprite)
-      // });
-      // Note: No need for acc at this stage
-      // TODO: Make speed value a config =========================v
+      switch (currentAction) {
+        case _consts.AI_ACTIONS.IDLE:
+          doRandomDest({
+            sprite,
+            destination: (0, _kontra.Vector)((0, _helpers.getRandomIntInclusive)(30, 160), (0, _helpers.getRandomIntInclusive)(30, 160))
+          });
+          break;
 
-
-      var vel = (0, _kontra.Vector)(0, 0); // Durrent vector towards target
-
-      var distanceToTarget = destination.subtract(current).length(); // Cease all movement if arrived, otherwise just carry on
-
-      if (distanceToTarget > 10) {
-        vel = destination.subtract(current).normalize().scale(0.5);
-        sprite.x += vel.x;
-        sprite.y += vel.y;
-        current = (0, _kontra.Vector)(sprite.x, sprite.y);
-      } else {
-        destination = current;
-      } //flipSprite({ direction: directionNormal, sprite });
-
-
-      (0, _spriteFunctions.flipSprite)({
-        direction: vel,
-        sprite: sprite
-      }); // Do some animations
-      //const isMoving = directionNormal.x !== 0 || directionNormal.y !== 0;
-
-      var isMoving = vel.x !== 0 || vel.y !== 0;
-
-      if (!sprite.manualAnimation) {
-        sprite.playAnimation(isMoving ? "walk" : "idle");
-      } // Call this to ensure animations are player
-
-
-      sprite.advance();
+        case _consts.AI_ACTIONS.THINKING:
+          doRandomWait(sprite);
+          break;
+      }
     }
-  }); // Temporary
-
-  current = (0, _kontra.Vector)(sprite.x, sprite.y);
+  });
   return sprite;
 };
 
 exports.default = _default;
-},{"../managers/stateManager":"src/managers/stateManager.js","../states/damagedState":"src/states/damagedState.js","../states/healthyState":"src/states/healthyState.js","./spriteFunctions":"src/sprites/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/sprites/fixed.js":[function(require,module,exports) {
+},{"../managers/stateManager":"src/managers/stateManager.js","../states/aiMoveToState":"src/states/aiMoveToState.js","../states/aiWaitState":"src/states/aiWaitState.js","./spriteFunctions":"src/sprites/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs","../common/consts":"src/common/consts.js"}],"src/sprites/fixed.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9848,72 +9771,67 @@ var _helpers = require("../common/helpers");
 
 var _kontra = require("kontra");
 
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      x = _ref.x,
-      y = _ref.y,
-      _ref$z = _ref.z,
-      z = _ref$z === void 0 ? 1 : _ref$z,
-      _ref$customProperties = _ref.customProperties,
-      customProperties = _ref$customProperties === void 0 ? {} : _ref$customProperties,
-      _ref$entityData = _ref.entityData,
-      entityData = _ref$entityData === void 0 ? null : _ref$entityData,
-      _ref$collisionMethod = _ref.collisionMethod,
-      collisionMethod = _ref$collisionMethod === void 0 ? function (layer, sprite) {} : _ref$collisionMethod;
+var _default = (_ref) => {
+  let {
+    id,
+    x,
+    y,
+    z = 1,
+    customProperties = {},
+    entityData = null,
+    collisionMethod = (layer, sprite) => {}
+  } = _ref;
 
   if (!id) {
     throw new Error("Entity is fairly useless without an id, you should add one.");
   }
 
-  var name = entityData.name,
-      type = entityData.type,
-      animations = entityData.animations,
-      frameWidth = entityData.frameWidth,
-      frameHeight = entityData.frameHeight,
-      sheet = entityData.sheet,
-      _entityData$collision = entityData.collisionBodyOptions,
-      collisionBodyOptions = _entityData$collision === void 0 ? null : _entityData$collision,
-      _entityData$manualAni = entityData.manualAnimation,
-      manualAnimation = _entityData$manualAni === void 0 ? false : _entityData$manualAni,
-      _entityData$controlle = entityData.controlledByUser,
-      controlledByUser = _entityData$controlle === void 0 ? false : _entityData$controlle,
-      _entityData$controlle2 = entityData.controlledByAI,
-      controlledByAI = _entityData$controlle2 === void 0 ? false : _entityData$controlle2,
-      _entityData$collidesW = entityData.collidesWithTiles,
-      collidesWithTiles = _entityData$collidesW === void 0 ? true : _entityData$collidesW;
-  var spriteSheet = (0, _kontra.SpriteSheet)({
+  const {
+    name,
+    type,
+    animations,
+    frameWidth,
+    frameHeight,
+    sheet,
+    collisionBodyOptions = null,
+    manualAnimation = false,
+    controlledByUser = false,
+    controlledByAI = false,
+    collidesWithTiles = true
+  } = entityData;
+  let spriteSheet = (0, _kontra.SpriteSheet)({
     image: _kontra.imageAssets[sheet],
-    frameWidth: frameWidth,
-    frameHeight: frameHeight,
-    animations: animations
+    frameWidth,
+    frameHeight,
+    animations
   });
   /* Id should really be named 'class' since its re-used. */
 
-  var sprite = (0, _kontra.Sprite)({
+  const sprite = (0, _kontra.Sprite)({
     instId: (0, _helpers.uniqueId)(id),
-    id: id,
-    type: type,
-    name: name,
-    x: x,
-    y: y,
-    z: z,
+    id,
+    type,
+    name,
+    x,
+    y,
+    z,
     anchor: {
       x: 0.5,
       y: 0.5
     },
-    customProperties: customProperties,
+    customProperties,
     radius: 1,
     animations: spriteSheet.animations,
-    collidesWithTiles: collidesWithTiles,
-    controlledByUser: controlledByUser,
-    controlledByAI: controlledByAI,
-    collisionBodyOptions: collisionBodyOptions,
-    manualAnimation: manualAnimation,
-    onAttacked: function onAttacked() {
+    collidesWithTiles,
+    controlledByUser,
+    controlledByAI,
+    collisionBodyOptions,
+    manualAnimation,
+    onAttacked: () => {
       // Push an internal state for damage effect (whatever that's going to be)
       console.log(id);
     },
-    update: function update() {
+    update: () => {
       // Static entities may still have anims so add them in later.
       // Anim code...
       // Call this to ensure animations are player
@@ -9936,72 +9854,67 @@ var _helpers = require("../common/helpers");
 
 var _kontra = require("kontra");
 
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      x = _ref.x,
-      y = _ref.y,
-      _ref$z = _ref.z,
-      z = _ref$z === void 0 ? 1 : _ref$z,
-      _ref$customProperties = _ref.customProperties,
-      customProperties = _ref$customProperties === void 0 ? {} : _ref$customProperties,
-      _ref$entityData = _ref.entityData,
-      entityData = _ref$entityData === void 0 ? null : _ref$entityData,
-      _ref$collisionMethod = _ref.collisionMethod,
-      collisionMethod = _ref$collisionMethod === void 0 ? function (layer, sprite) {} : _ref$collisionMethod;
+var _default = (_ref) => {
+  let {
+    id,
+    x,
+    y,
+    z = 1,
+    customProperties = {},
+    entityData = null,
+    collisionMethod = (layer, sprite) => {}
+  } = _ref;
 
   if (!id) {
     throw new Error("Entity is fairly useless without an id, you should add one.");
   }
 
-  var name = entityData.name,
-      type = entityData.type,
-      animations = entityData.animations,
-      frameWidth = entityData.frameWidth,
-      frameHeight = entityData.frameHeight,
-      sheet = entityData.sheet,
-      _entityData$collision = entityData.collisionBodyOptions,
-      collisionBodyOptions = _entityData$collision === void 0 ? null : _entityData$collision,
-      _entityData$manualAni = entityData.manualAnimation,
-      manualAnimation = _entityData$manualAni === void 0 ? false : _entityData$manualAni,
-      _entityData$controlle = entityData.controlledByUser,
-      controlledByUser = _entityData$controlle === void 0 ? false : _entityData$controlle,
-      _entityData$controlle2 = entityData.controlledByAI,
-      controlledByAI = _entityData$controlle2 === void 0 ? false : _entityData$controlle2,
-      _entityData$collidesW = entityData.collidesWithTiles,
-      collidesWithTiles = _entityData$collidesW === void 0 ? true : _entityData$collidesW;
-  var spriteSheet = (0, _kontra.SpriteSheet)({
+  const {
+    name,
+    type,
+    animations,
+    frameWidth,
+    frameHeight,
+    sheet,
+    collisionBodyOptions = null,
+    manualAnimation = false,
+    controlledByUser = false,
+    controlledByAI = false,
+    collidesWithTiles = true
+  } = entityData;
+  let spriteSheet = (0, _kontra.SpriteSheet)({
     image: _kontra.imageAssets[sheet],
-    frameWidth: frameWidth,
-    frameHeight: frameHeight,
-    animations: animations
+    frameWidth,
+    frameHeight,
+    animations
   });
   /* Id should really be named 'class' since its re-used. */
 
-  var sprite = (0, _kontra.Sprite)({
+  const sprite = (0, _kontra.Sprite)({
     instId: (0, _helpers.uniqueId)(id),
-    id: id,
-    type: type,
-    name: name,
-    x: x,
-    y: y,
-    z: z,
+    id,
+    type,
+    name,
+    x,
+    y,
+    z,
     anchor: {
       x: 0.5,
       y: 0.5
     },
-    customProperties: customProperties,
+    customProperties,
     radius: 1,
     animations: spriteSheet.animations,
-    collidesWithTiles: collidesWithTiles,
-    controlledByUser: controlledByUser,
-    controlledByAI: controlledByAI,
-    collisionBodyOptions: collisionBodyOptions,
-    manualAnimation: manualAnimation,
-    onAttacked: function onAttacked() {
+    collidesWithTiles,
+    controlledByUser,
+    controlledByAI,
+    collisionBodyOptions,
+    manualAnimation,
+    onAttacked: () => {
       // Push an internal state for damage effect (whatever that's going to be)
       console.log(id);
     },
-    update: function update() {
+    update: () => {
       // Static entities may still have anims so add them in later.
       // Anim code...
       // Call this to ensure animations are player
@@ -10041,95 +9954,78 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 var _default = function _default() {
-  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
+  let options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
     dataKey: "assets/gameData/worldData.json"
   };
-  var dataKey = options.dataKey;
-  var worldData = _kontra.dataAssets[dataKey]; // TODO: Pass this in?
+  const {
+    dataKey
+  } = options;
+  const worldData = _kontra.dataAssets[dataKey]; // TODO: Pass this in?
 
-  var entityDataKey = "assets/gameData/entityData.json";
-  var entityTable = _kontra.dataAssets[entityDataKey]; // TODO: Move these commands out of here and in to some sort of helper layer.
+  const entityDataKey = "assets/gameData/entityData.json";
+  const entityTable = _kontra.dataAssets[entityDataKey]; // TODO: Move these commands out of here and in to some sort of helper layer.
 
-  var entitiesInStore = (0, _kontra.getStoreItem)("entities");
+  const entitiesInStore = (0, _kontra.getStoreItem)("entities");
 
-  var _getEntityFromStore = function getEntityFromStore(id) {
-    return entitiesInStore.length ? entitiesInStore.find(function (e) {
-      return e.id === id;
-    }) : null;
-  };
+  const _getEntityFromStore = id => entitiesInStore.length ? entitiesInStore.find(e => e.id === id) : null;
 
   return {
-    getAllEntitiesOfType: function getAllEntitiesOfType(type) {
-      var existingEntities = (0, _kontra.getStoreItem)("entities");
-      return existingEntities ? existingEntities.filter(function (ent) {
-        return ent.type === type;
-      }) : [];
+    getAllEntitiesOfType: type => {
+      const existingEntities = (0, _kontra.getStoreItem)("entities");
+      return existingEntities ? existingEntities.filter(ent => ent.type === type) : [];
     },
-    getAllEntities: function getAllEntities() {
-      return (0, _kontra.getStoreItem)("entities");
-    },
-    getEntityFromStore: function getEntityFromStore(id) {
-      return _getEntityFromStore(id);
-    },
-    resetEntityStates: function resetEntityStates() {
-      return (0, _kontra.setStoreItem)("entities", []);
-    },
-    savePickup: function savePickup(entityData) {
-      var id = entityData.id,
-          type = entityData.type,
-          ttl = entityData.ttl;
-      var existingEntities = (0, _kontra.getStoreItem)("entities");
-      var existingEntity = existingEntities ? existingEntities.find(function (x) {
-        return x.id === id;
-      }) : null;
+    getAllEntities: () => (0, _kontra.getStoreItem)("entities"),
+    getEntityFromStore: id => _getEntityFromStore(id),
+    resetEntityStates: () => (0, _kontra.setStoreItem)("entities", []),
+    savePickup: entityData => {
+      const {
+        id,
+        type,
+        ttl
+      } = entityData;
+      const existingEntities = (0, _kontra.getStoreItem)("entities");
+      const existingEntity = existingEntities ? existingEntities.find(x => x.id === id) : null;
       /* This needs cleaning up */
 
-      (0, _kontra.setStoreItem)("entities", existingEntities ? existingEntities.filter(function (ent) {
-        return ent.id !== id;
-      }).concat([{
-        id: id,
-        type: type,
-        ttl: ttl,
+      (0, _kontra.setStoreItem)("entities", existingEntities ? existingEntities.filter(ent => ent.id !== id).concat([{
+        id,
+        type,
+        ttl,
         qty: existingEntity ? existingEntity.qty + 1 : 1
       }]) : [{
-        id: id,
-        type: type,
-        ttl: ttl,
+        id,
+        type,
+        ttl,
         qty: 1
       }]);
     },
-    createWorld: function createWorld(_ref) {
-      var areaId = _ref.areaId,
-          playerStartId = _ref.playerStartId;
-
-      var _worldData$find = worldData.find(function (x) {
-        return x.areaId === areaId;
-      }),
-          entities = _worldData$find.entities,
-          mapKey = _worldData$find.mapKey;
-
-      var map = _kontra.dataAssets[mapKey];
-      var tileEngine = (0, _kontra.TileEngine)(map);
-      var playerStart = entities.find(function (x) {
-        return x.customProperties.playerStartId === playerStartId;
-      });
-      var playerEntityData = entityTable.find(function (x) {
-        return x.id === "player";
-      });
-      var player = (0, _player.default)({
+    createWorld: (_ref) => {
+      let {
+        areaId,
+        playerStartId
+      } = _ref;
+      const {
+        entities,
+        mapKey
+      } = worldData.find(x => x.areaId === areaId);
+      const map = _kontra.dataAssets[mapKey];
+      const tileEngine = (0, _kontra.TileEngine)(map);
+      const playerStart = entities.find(x => x.customProperties.playerStartId === playerStartId);
+      const playerEntityData = entityTable.find(x => x.id === "player");
+      const player = (0, _player.default)({
         id: "player",
         x: playerStart.x,
         y: playerStart.y,
         entityData: playerEntityData,
-        collisionMethod: function collisionMethod(layer, sprite) {
+        collisionMethod: (layer, sprite) => {
           // If 16x16
-          var spriteBody = {
+          const spriteBody = {
             x: 2,
             y: 8,
             width: 11,
             height: 8
           };
-          var t = {
+          const t = {
             width: spriteBody.width,
             height: spriteBody.height,
             x: sprite.x + spriteBody.x,
@@ -10142,49 +10038,51 @@ var _default = function _default() {
       });
       tileEngine.addObject(player);
       return {
-        mapKey: mapKey,
-        tileEngine: tileEngine,
-        player: player,
-        sprites: entities.map(function (entity) {
+        mapKey,
+        tileEngine,
+        player,
+        sprites: entities.map(entity => {
           // TODO: Tidy all this up
 
           /* Check if entity exists in store as it may have been destroyed
           or collected. TODO: Move the pickup check out of here, it's a bit
           confusing alongside other field entity types. */
-          var id = entity.id;
-          var ent = null;
-          var entityData = entityTable.find(function (ent) {
-            return ent.id === id;
-          });
+          const {
+            id
+          } = entity;
+          let ent = null;
+          const entityData = entityTable.find(ent => ent.id === id);
 
           switch (entityData.type) {
             case _consts.ENTITY_TYPE.PICKUP:
-              var alreadyCollected = _getEntityFromStore(id);
+              const alreadyCollected = _getEntityFromStore(id);
 
               if (alreadyCollected) return null;
               ent = (0, _pickup.default)(_objectSpread(_objectSpread({}, entity), {}, {
-                entityData: entityData,
-                collisionMethod: function collisionMethod(layer, sprite) {
-                  return tileEngine.layerCollidesWith(layer, sprite);
-                }
+                entityData,
+                collisionMethod: (layer, sprite) => tileEngine.layerCollidesWith(layer, sprite)
               }));
               break;
 
             case _consts.ENTITY_TYPE.NPC:
               ent = (0, _npc.default)(_objectSpread(_objectSpread({}, entity), {}, {
-                entityData: entityData,
-                collisionMethod: function collisionMethod(layer, sprite) {
-                  return tileEngine.layerCollidesWith(layer, sprite);
-                }
+                entityData,
+                collisionMethod: (layer, sprite) => tileEngine.layerCollidesWith(layer, sprite)
               }));
               break;
 
-            case _consts.ENTITY_TYPE.FIXED || _consts.ENTITY_TYPE.DOOR:
+            case _consts.ENTITY_TYPE.DOOR:
+              // Doors may be animated, this is just temporary usage.
               ent = (0, _fixed.default)(_objectSpread(_objectSpread({}, entity), {}, {
-                entityData: entityData,
-                collisionMethod: function collisionMethod(layer, sprite) {
-                  return tileEngine.layerCollidesWith(layer, sprite);
-                }
+                entityData,
+                collisionMethod: (layer, sprite) => tileEngine.layerCollidesWith(layer, sprite)
+              }));
+              break;
+
+            case _consts.ENTITY_TYPE.FIXED:
+              ent = (0, _fixed.default)(_objectSpread(_objectSpread({}, entity), {}, {
+                entityData,
+                collisionMethod: (layer, sprite) => tileEngine.layerCollidesWith(layer, sprite)
               }));
               break;
 
@@ -10196,9 +10094,7 @@ var _default = function _default() {
 
           tileEngine.addObject(ent);
           return ent;
-        }).filter(function (e) {
-          return e;
-        }).concat([player])
+        }).filter(e => e).concat([player])
       };
     }
   };
@@ -10214,13 +10110,9 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = void 0;
 
 var _default = function _default() {
-  var reactions = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  let reactions = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
   return {
-    get: function get(type) {
-      return reactions.find(function (reaction) {
-        return reaction.type === type;
-      });
-    }
+    get: type => reactions.find(reaction => reaction.type === type)
   };
 };
 
@@ -10259,7 +10151,7 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 /* Screen size (16:9) */
-var resolution = {
+const resolution = {
   width: 256,
   height: 192,
   scale: 3
@@ -10267,11 +10159,11 @@ var resolution = {
 /* Canvas initialization */
 // Make absolutely sure we have to use two canvases (I'm not convinced)
 
-var _init = (0, _kontra.init)("gameCanvas"),
-    gameCanvas = _init.canvas;
-
-var scaledCanvas = document.getElementById("scaledCanvas");
-var rootElement = document.getElementById("root");
+const {
+  canvas: gameCanvas
+} = (0, _kontra.init)("gameCanvas");
+const scaledCanvas = document.getElementById("scaledCanvas");
+const rootElement = document.getElementById("root");
 /* Set correct scales to be universal */
 
 gameCanvas.width = resolution.width;
@@ -10286,13 +10178,13 @@ rootElement.style.width = resolution.width * resolution.scale + "px";
 rootElement.style.height = resolution.height * resolution.scale + "px";
 /* Remove smoothing */
 
-var gameCanvasCtx = gameCanvas.getContext("2d");
+const gameCanvasCtx = gameCanvas.getContext("2d");
 gameCanvasCtx.imageSmoothingEnabled = false;
 gameCanvasCtx.webkitImageSmoothingEnabled = false;
 gameCanvasCtx.mozImageSmoothingEnabled = false;
 gameCanvasCtx.msImageSmoothingEnabled = false;
 gameCanvasCtx.oImageSmoothingEnabled = false;
-var ctx = scaledCanvas.getContext("2d");
+const ctx = scaledCanvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 ctx.webkitImageSmoothingEnabled = false;
 ctx.mozImageSmoothingEnabled = false;
@@ -10300,44 +10192,42 @@ ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 /* Primary field scene */
 
-var FieldScene = function FieldScene(sceneProps) {
+const FieldScene = sceneProps => {
   /* World creation (can we not have entities just in store, it's a bit confusing) */
-  var _WorldManager = (0, _worldManager.default)(),
-      createWorld = _WorldManager.createWorld,
-      savePickup = _WorldManager.savePickup,
-      getAllEntitiesOfType = _WorldManager.getAllEntitiesOfType,
-      resetEntityStates = _WorldManager.resetEntityStates;
-
-  var _createWorld = createWorld(sceneProps),
-      sprites = _createWorld.sprites,
-      player = _createWorld.player,
-      tileEngine = _createWorld.tileEngine;
-
-  var spriteCache = sprites.filter(function (spr) {
-    return spr.isAlive();
-  }); // Temporary: Use this to erase storage data
+  const {
+    createWorld,
+    savePickup,
+    getAllEntitiesOfType,
+    resetEntityStates
+  } = (0, _worldManager.default)();
+  const {
+    sprites,
+    player,
+    tileEngine
+  } = createWorld(sceneProps);
+  let spriteCache = sprites.filter(spr => spr.isAlive()); // Temporary: Use this to erase storage data
 
   resetEntityStates();
   /* Main states creation */
 
-  var sceneStateMachine = (0, _stateManager.default)();
-  var screenEffectsStateMachine = (0, _stateManager.default)();
+  const sceneStateMachine = (0, _stateManager.default)();
+  const screenEffectsStateMachine = (0, _stateManager.default)();
   /* Decide what happens on different player interaction events (was separated, seemed pointless at this stage) */
 
-  var reactionManager = (0, _reactionManager.default)([{
+  const reactionManager = (0, _reactionManager.default)([{
     type: _consts.ENTITY_TYPE.DOOR,
 
     /* First available refers to the first given collision. So it might not always be what
     what you want it to be. This needs to be made a bit more robust. */
     reactionEvent: function reactionEvent(interactible) {
-      var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+      let actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
       // TODO: Entities should manage their own animations (same problem seen elsewhere)
       //interactible.playAnimation("default");
       screenEffectsStateMachine.push((0, _curtainState.default)({
         id: "curtain",
-        ctx: ctx,
+        ctx,
         direction: 1,
-        onFadeComplete: function onFadeComplete() {
+        onFadeComplete: () => {
           (0, _events.allOff)([_events.EV_SCENECHANGE]);
           /* Player start becomes part of the collider data so we attempt to use that. */
 
@@ -10351,9 +10241,11 @@ var FieldScene = function FieldScene(sceneProps) {
   }, {
     type: _consts.ENTITY_TYPE.NPC,
     reactionEvent: function reactionEvent(interactible) {
-      var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+      let actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
       console.log(interactible);
-      var customProperties = interactible.customProperties;
+      const {
+        customProperties
+      } = interactible;
       if (!Object.keys(customProperties).length) return;
 
       if (customProperties.triggerConvo) {
@@ -10362,23 +10254,15 @@ var FieldScene = function FieldScene(sceneProps) {
           // What's this for?
           startId: customProperties.triggerConvo,
           // I feel these might be better done within the state... perhaps the same elsewhere too.
-          onEntry: function onEntry() {
-            return actors.map(function (spr) {
-              return spr.disableMovement();
-            });
-          },
-          onExit: function onExit() {
-            return actors.map(function (spr) {
-              return spr.enableMovement();
-            });
-          }
+          onEntry: () => actors.map(spr => spr.disableMovement()),
+          onExit: () => actors.map(spr => spr.enableMovement())
         }));
       }
     }
   }, {
     type: _consts.ENTITY_TYPE.PICKUP,
     reactionEvent: function reactionEvent(interactible) {
-      var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+      let actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
       interactible.ttl = 0;
       savePickup(interactible);
     }
@@ -10388,38 +10272,32 @@ var FieldScene = function FieldScene(sceneProps) {
 
   sceneStateMachine.push((0, _fieldState.default)({
     id: "field",
-    sprites: sprites,
-    tileEngine: tileEngine,
-    reactionManager: reactionManager,
-    getAllEntitiesOfType: getAllEntitiesOfType
+    sprites,
+    tileEngine,
+    reactionManager,
+    getAllEntitiesOfType
   }));
   /* Open up the first scene with a fade */
 
   screenEffectsStateMachine.push((0, _curtainState.default)({
     id: "curtain",
-    ctx: ctx,
+    ctx,
     direction: -1
   }));
   /* Primary loop */
 
   return (0, _kontra.GameLoop)({
-    update: function update() {
+    update: () => {
       /* Add a flag to sprite to enable/disable collision checks */
 
       /* Check for anything dead (GC does the rest) */
-      spriteCache = spriteCache.filter(function (spr) {
-        return spr.isAlive();
-      });
+      spriteCache = spriteCache.filter(spr => spr.isAlive());
       /* Player to useable collision with other entities (not tiles) */
 
-      var playerCollidingWith = (0, _helpers.sortByDist)(player, (0, _helpers.circleCollision)(player, spriteCache.filter(function (s) {
-        return s.id !== "player";
-      })));
+      const playerCollidingWith = (0, _helpers.sortByDist)(player, (0, _helpers.circleCollision)(player, spriteCache.filter(s => s.id !== "player")));
       /* Update all sprites */
 
-      spriteCache.map(function (sprite) {
-        return sprite.update();
-      }); // ...
+      spriteCache.map(sprite => sprite.update()); // ...
 
       player.isColliding = playerCollidingWith.length > 0;
       /* Origin is the controller of the scene, so 9/10 that'll probably be the player */
@@ -10444,16 +10322,12 @@ var FieldScene = function FieldScene(sceneProps) {
       tileEngine.sy = player.y - resolution.height / 2; //player.y - 120;
       //}
     },
-    render: function render() {
+    render: () => {
       /* Instruct tileEngine to update its frame */
       tileEngine.render();
       /* Edit z-order based on 'y' then change render order */
 
-      spriteCache.sort(function (a, b) {
-        return Math.round(a.y - a.z) - Math.round(b.y - b.z);
-      }).forEach(function (sprite) {
-        return sprite.render();
-      });
+      spriteCache.sort((a, b) => Math.round(a.y - a.z) - Math.round(b.y - b.z)).forEach(sprite => sprite.render());
       /* Update any screen effects that are running */
 
       screenEffectsStateMachine.update();
@@ -10467,11 +10341,11 @@ var FieldScene = function FieldScene(sceneProps) {
 TODO: Can we also const the dataKeys across the board plz. */
 
 
-(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/tiledata/test3.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/entityimages/little_bob.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json").then(function (assets) {
+(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/tiledata/test3.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/entityimages/little_bob.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json").then(assets => {
   (0, _kontra.initKeys)(); /// Note: There's now a scene manager in kontra that can be used
   // Hook up player start todo
 
-  var sceneManager = (0, _sceneManager.default)({
+  const sceneManager = (0, _sceneManager.default)({
     sceneObject: FieldScene
   });
   /* First load instigates a player start so this might be found from saveData
@@ -10486,9 +10360,7 @@ TODO: Can we also const the dataKeys across the board plz. */
     areaId: "area2",
     playerStartId: "area2_entrance"
   });
-  (0, _events.on)(_events.EV_SCENECHANGE, function (props) {
-    return sceneManager.loadScene(_objectSpread({}, props));
-  });
+  (0, _events.on)(_events.EV_SCENECHANGE, props => sceneManager.loadScene(_objectSpread({}, props)));
 });
 },{"kontra":"node_modules/kontra/kontra.mjs","./common/helpers":"src/common/helpers.js","./common/consts":"src/common/consts.js","./common/events":"src/common/events.js","./states/startConvoState":"src/states/startConvoState.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js","./managers/sceneManager":"src/managers/sceneManager.js","./managers/worldManager":"src/managers/worldManager.js","./managers/reactionManager":"src/managers/reactionManager.js","./managers/stateManager":"src/managers/stateManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
@@ -10518,7 +10390,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53993" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50429" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
