@@ -10536,10 +10536,12 @@ const findPath = (_ref) => {
     easystar.setAcceptableTiles([walkableId]);
     easystar.findPath(tx, ty, rx, ry, function (path) {
       if (path === null || path !== null && path.length === 0) {
-        console.log("Path was not found.");
+        // console.log("Path was not found.");
         resolve([]);
       } else {
-        console.log("Path was found. The first Point is " + path[0].x + " " + path[0].y);
+        // console.log(
+        //   "Path was found. The first Point is " + path[0].x + " " + path[0].y
+        // );
         resolve(path);
       }
     }); // Just calculate once (if you run in to issues, may need to do it every frame. Def so for a changing map landscape)
@@ -10603,7 +10605,6 @@ var _default = (_ref) => {
   const randomWalkable = walkableTiles[(0, _helpers.getRandomIntInclusive)(0, walkableTiles.length - 1)];
   let rx = randomWalkable.x;
   let ry = randomWalkable.y;
-  console.log(randomWalkable);
   let _isComplete = false;
   let current = (0, _kontra.Vector)(sprite.x, sprite.y);
   let tileDest = null;
@@ -10636,8 +10637,6 @@ var _default = (_ref) => {
 
       tileDest = destQueue.dequeue();
       destination = (0, _kontra.Vector)(tileDest.x, tileDest.y);
-      console.log("First point to go to:");
-      console.log(tileDest);
       onEntry();
     },
     update: () => {
@@ -10658,8 +10657,6 @@ var _default = (_ref) => {
         current = (0, _kontra.Vector)(sprite.x, sprite.y);
       } else {
         destination = destQueue.dequeue();
-        console.log("NEXT SEGMENT:");
-        console.log(destination);
       }
 
       (0, _spriteFunctions.flipSprite)({
@@ -10795,7 +10792,6 @@ var _default = (_ref) => {
     throw new Error("Entity is fairly useless without an id, you should add one.");
   }
 
-  const entityStateMachine = (0, _stateManager.default)();
   const {
     name,
     type,
@@ -11140,9 +11136,9 @@ var _default = function _default() {
         collisionMethod: (layer, sprite) => {
           // If 16x16
           const spriteBody = {
-            x: 2,
-            y: 8,
-            width: 11,
+            x: 0,
+            y: 4,
+            width: 10,
             height: 8
           };
           const t = {
@@ -11517,7 +11513,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51411" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52130" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

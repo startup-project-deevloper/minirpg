@@ -1,6 +1,4 @@
 import { dataAssets, TileEngine, setStoreItem, getStoreItem } from "kontra";
-
-// This need to be making use of inheritance
 import Player from "../sprites/player";
 import Npc from "../sprites/npc";
 import Fixed from "../sprites/fixed";
@@ -85,9 +83,9 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
         collisionMethod: (layer, sprite) => {
           // If 16x16
           const spriteBody = {
-            x: 2,
-            y: 8,
-            width: 11,
+            x: 0,
+            y: 4,
+            width: 10,
             height: 8
           };
 
