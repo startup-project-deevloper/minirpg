@@ -18,9 +18,9 @@
   },
   "dependencies": {
     "easystarjs": "^0.4.3",
+    "fluent-behavior-tree": "^1.2.6",
     "kontra": "7.1.2",
     "mithril": "2.0.4",
-    "tinyqueue": "^2.0.3",
     "trim-right": "1.0.1"
   },
   "devDependencies": {

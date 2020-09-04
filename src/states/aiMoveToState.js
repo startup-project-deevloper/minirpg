@@ -1,5 +1,5 @@
 import { Vector } from "kontra";
-import { flipSprite } from "../sprites/spriteFunctions";
+import { flipSprite } from "../common/spriteFunctions";
 
 export default ({
   id,

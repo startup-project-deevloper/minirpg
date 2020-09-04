@@ -1,7 +1,7 @@
 import StateMachine from "../managers/stateManager";
 import damagedState from "../states/damagedState";
 import healthyState from "../states/healthyState";
-import { moveSprite, flipSprite } from "./spriteFunctions";
+import { moveSprite, flipSprite } from "../common/spriteFunctions";
 import { uniqueId, dist } from "../common/helpers";
 import {
   Sprite,

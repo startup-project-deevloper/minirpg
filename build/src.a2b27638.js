@@ -6347,7 +6347,7 @@ exports.emit = emit;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.debug = exports.getRandomIntInclusive = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.getNormal = exports.between = exports.uniqueId = void 0;
+exports.debug = exports.Queue = exports.getRandomIntInclusive = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.getNormal = exports.between = exports.uniqueId = void 0;
 
 var _events = require("../common/events");
 
@@ -6440,10 +6440,24 @@ exports.circleCollision = circleCollision;
 const getRandomIntInclusive = (min, max) => {
   min = Math.ceil(min);
   max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive 
+  return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
 };
 
 exports.getRandomIntInclusive = getRandomIntInclusive;
+
+const Queue = () => {
+  let _elements = [];
+  return {
+    elements: () => _elements,
+    enqueue: e => _elements.push(e),
+    dequeue: () => _elements.shift(),
+    isEmpty: () => _elements.length === 0,
+    length: () => _elements.length,
+    peek: () => _elements.length > 0 ? _elements[0] : null
+  };
+};
+
+exports.Queue = Queue;
 
 const debug = o => {
   console.info(o);
@@ -6457,7 +6471,7 @@ exports.debug = debug;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.AI_ACTIONS = exports.ENTITY_TYPE = void 0;
+exports.ENTITY_TYPE = void 0;
 const ENTITY_TYPE = {
   FIXED: 0,
   NPC: 1,
@@ -6466,13 +6480,6 @@ const ENTITY_TYPE = {
   PLAYER: 99
 };
 exports.ENTITY_TYPE = ENTITY_TYPE;
-const AI_ACTIONS = {
-  IDLE: 0,
-  MOVING: 1,
-  THINKING: 2,
-  WAITING: 3
-};
-exports.AI_ACTIONS = AI_ACTIONS;
 },{}],"node_modules/mithril/render/vnode.js":[function(require,module,exports) {
 "use strict"
 
@@ -9240,6 +9247,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
+/* Note: This isn't a true stack-based FSM. It allows for you to remove
+states at any level which could lead to big problems so keep an eye on it. */
 var _default = () => {
   let states = [];
 
@@ -9270,12 +9279,18 @@ var _default = () => {
       const currentState = top(states);
       currentState.exit();
       states.pop();
+    },
+    popState: id => {
+      const currentState = states.find(x => x.id === id);
+      if (!currentState) return;
+      currentState.exit();
+      states = states.filter(x => x.id !== id);
     }
   };
 };
 
 exports.default = _default;
-},{}],"src/sprites/spriteFunctions.js":[function(require,module,exports) {
+},{}],"src/common/spriteFunctions.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9357,7 +9372,7 @@ exports.default = void 0;
 
 var _stateManager = _interopRequireDefault(require("../managers/stateManager"));
 
-var _spriteFunctions = require("./spriteFunctions");
+var _spriteFunctions = require("../common/spriteFunctions");
 
 var _helpers = require("../common/helpers");
 
@@ -9514,7 +9529,7 @@ var _default = (_ref) => {
 };
 
 exports.default = _default;
-},{"../managers/stateManager":"src/managers/stateManager.js","./spriteFunctions":"src/sprites/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"node_modules/easystarjs/src/instance.js":[function(require,module,exports) {
+},{"../managers/stateManager":"src/managers/stateManager.js","../common/spriteFunctions":"src/common/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"node_modules/easystarjs/src/instance.js":[function(require,module,exports) {
 /**
  * Represents a single instance of EasyStar.
  * A path that is in the queue to eventually be found.
@@ -10491,7 +10506,55 @@ EasyStar.BOTTOM_LEFT = 'BOTTOM_LEFT'
 EasyStar.LEFT = 'LEFT'
 EasyStar.TOP_LEFT = 'TOP_LEFT'
 
-},{"./instance":"node_modules/easystarjs/src/instance.js","./node":"node_modules/easystarjs/src/node.js","heap":"node_modules/heap/index.js"}],"src/states/aiMoveToState.js":[function(require,module,exports) {
+},{"./instance":"node_modules/easystarjs/src/instance.js","./node":"node_modules/easystarjs/src/node.js","heap":"node_modules/heap/index.js"}],"src/common/aiHelpers.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.wait = exports.findPath = void 0;
+
+var _easystarjs = _interopRequireDefault(require("easystarjs"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const findPath = (_ref) => {
+  let {
+    aiPathGrid,
+    tx,
+    ty,
+    rx,
+    ry,
+    walkableId
+  } = _ref;
+  return new Promise(resolve => {
+    // TODO: Not sure you'll want to do this every single time.
+    const easystar = new _easystarjs.default.js();
+    easystar.enableDiagonals();
+    easystar.setGrid(aiPathGrid);
+    easystar.setAcceptableTiles([walkableId]);
+    easystar.findPath(tx, ty, rx, ry, function (path) {
+      if (path === null) {
+        console.log("Path was not found.");
+        resolve([]);
+      } else {
+        console.log("Path was found. The first Point is " + path[0].x + " " + path[0].y);
+        resolve(path);
+      }
+    }); // Just calculate once (if you run in to issues, may need to do it every frame. Def so for a changing map landscape)
+
+    easystar.calculate();
+  });
+};
+
+exports.findPath = findPath;
+
+const wait = ms => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+};
+
+exports.wait = wait;
+},{"easystarjs":"node_modules/easystarjs/src/easystar.js"}],"src/states/aiFollowPathState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -10501,24 +10564,79 @@ exports.default = void 0;
 
 var _kontra = require("kontra");
 
-var _spriteFunctions = require("../sprites/spriteFunctions");
+var _helpers = require("../common/helpers");
+
+var _spriteFunctions = require("../common/spriteFunctions");
+
+var _aiHelpers = require("../common/aiHelpers");
 
 var _default = (_ref) => {
   let {
-    id,
-    sprite,
-    destination,
+    props,
     onEntry = () => {},
     onExit = () => {}
   } = _ref;
+  const destQueue = (0, _helpers.Queue)();
+  const {
+    aiPathGrid,
+    sprite
+  } = props; // TODO: Stick in a config (you may have one than one in future also).
+
+  const walkableId = 102;
+  const tx = Math.floor(sprite.x / 16);
+  const ty = Math.floor(sprite.y / 16);
+  let walkableTiles = []; // We need to grab a random point on the aiPathGrid but only if it's walkable.
+
+  for (let i = 0; i < aiPathGrid.length; i++) {
+    for (let j = 0; j < aiPathGrid[i].length; j++) {
+      if (aiPathGrid[i][j] === walkableId) {
+        walkableTiles.push((0, _kontra.Vector)(i, j));
+      }
+    }
+  }
+
+  if (!walkableTiles.length) {
+    throw "No walkable tiles were found."; // TODO: const errors please
+  }
+
+  const randomWalkable = walkableTiles[(0, _helpers.getRandomIntInclusive)(0, walkableTiles.length - 1)];
+  let rx = randomWalkable.x;
+  let ry = randomWalkable.y;
   let _isComplete = false;
   let current = (0, _kontra.Vector)(sprite.x, sprite.y);
+  let tileDest = null;
+  let destination = null;
   return {
-    id,
+    id: "followPath",
     isComplete: () => _isComplete,
-    enter: props => onEntry(),
+    enter: async props => {
+      const calculatedPath = await (0, _aiHelpers.findPath)({
+        aiPathGrid,
+        tx,
+        ty,
+        rx,
+        ry,
+        walkableId
+      }); // Exit early on errored path (could be a sign of something sinister)
+
+      if (!calculatedPath.length) {
+        _isComplete = true;
+        return;
+      }
+
+      for (let i = 0; i < calculatedPath.length; i++) {
+        destQueue.enqueue((0, _kontra.Vector)(calculatedPath[i].x * 16, calculatedPath[i].y * 16));
+      }
+
+      tileDest = destQueue.dequeue();
+      destination = (0, _kontra.Vector)(tileDest.x, tileDest.y);
+      console.log("First point to go to:");
+      console.log(destQueue.elements());
+      onEntry();
+    },
     update: () => {
-      // Note: No need for acc at this stage
+      if (!destination) return; // Note: No need for acc at this stage
+
       let vel = (0, _kontra.Vector)(0, 0); // Current vector towards target
 
       let distanceToTarget = destination.subtract(current).length(); // Cease all movement if arrived, otherwise just carry on
@@ -10529,9 +10647,9 @@ var _default = (_ref) => {
         sprite.y += vel.y;
         current = (0, _kontra.Vector)(sprite.x, sprite.y);
       } else {
-        console.log(sprite.name + " reached destination.");
-        destination = current;
-        _isComplete = true;
+        console.log(sprite.name + " reached path segment.");
+        destination = !destQueue.isEmpty() ? destQueue.dequeue() : current;
+        _isComplete = destQueue.isEmpty();
       }
 
       (0, _spriteFunctions.flipSprite)({
@@ -10553,7 +10671,7 @@ var _default = (_ref) => {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","../sprites/spriteFunctions":"src/sprites/spriteFunctions.js"}],"src/states/aiWaitState.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../common/helpers":"src/common/helpers.js","../common/spriteFunctions":"src/common/spriteFunctions.js","../common/aiHelpers":"src/common/aiHelpers.js"}],"src/states/aiIdleState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -10561,29 +10679,22 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-const wait = ms => {
-  return new Promise(resolve => setTimeout(resolve, ms));
-};
-
 var _default = (_ref) => {
   let {
-    id,
-    waitFor,
-    sprite,
+    props,
     onEntry = () => {},
+    onUpdate = () => {},
     onExit = () => {}
   } = _ref;
   let _isComplete = false;
   return {
-    id,
+    id: "idle",
     isComplete: () => _isComplete,
-    enter: async props => {
-      onEntry();
-      await wait(waitFor);
-      _isComplete = true;
-    },
+    enter: props => onEntry(),
     update: () => {
-      sprite.playAnimation("idle");
+      props.sprite.playAnimation("idle");
+      props.sprite.advance();
+      onUpdate();
     },
     exit: () => onExit()
   };
@@ -10598,23 +10709,65 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _easystarjs = _interopRequireDefault(require("easystarjs"));
-
 var _stateManager = _interopRequireDefault(require("../managers/stateManager"));
 
-var _aiMoveToState = _interopRequireDefault(require("../states/aiMoveToState"));
+var _aiFollowPathState = _interopRequireDefault(require("../states/aiFollowPathState"));
 
-var _aiWaitState = _interopRequireDefault(require("../states/aiWaitState"));
+var _aiIdleState = _interopRequireDefault(require("../states/aiIdleState"));
 
-var _spriteFunctions = require("./spriteFunctions");
+var _spriteFunctions = require("../common/spriteFunctions");
 
 var _helpers = require("../common/helpers");
 
+var _aiHelpers = require("../common/aiHelpers");
+
 var _kontra = require("kontra");
 
-var _consts = require("../common/consts");
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+// TODO: Considering looking at an FSM lib...
+const Brain = () => {
+  const entityStateMachine = (0, _stateManager.default)();
+  let brainData = {};
+  /* Push an idle state to kick things off (can probably make this in to
+      json data later on and auto-create all this) */
+
+  const behaviours = {
+    idleAndRoam: () => {
+      entityStateMachine.push((0, _aiIdleState.default)({
+        props: {
+          sprite: brainData.sprite
+        },
+        onEntry: async () => {
+          // Sticking this here rather than in update. No idea if it's right.
+          await (0, _aiHelpers.wait)((0, _helpers.getRandomIntInclusive)(500, 1500));
+          entityStateMachine.popState("idle");
+        },
+        onExit: () => behaviours.followPath()
+      }));
+    },
+    followPath: () => {
+      entityStateMachine.push((0, _aiFollowPathState.default)({
+        props: brainData,
+        onExit: () => {
+          // Hmm... this is a bit weird I feel...
+          behaviours.idleAndRoam();
+        }
+      }));
+    }
+  };
+  return {
+    bootstrap: props => brainData = _objectSpread({}, props),
+    update: () => entityStateMachine.update(),
+    start: () => behaviours.idleAndRoam()
+  };
+};
 
 var _default = (_ref) => {
   let {
@@ -10652,64 +10805,8 @@ var _default = (_ref) => {
     frameHeight,
     animations
   });
-  /* These are passable to states so they can act accordingly */
-
-  let movementDisabled = false;
-  let currentAction = _consts.AI_ACTIONS.IDLE;
-  console.log(aiPathGrid); // ... Perhaps add these to the sprite instead?
-
-  const doRandomWait = sprite => {
-    currentAction = _consts.AI_ACTIONS.WAITING;
-    entityStateMachine.push((0, _aiWaitState.default)({
-      id: "wait",
-      sprite,
-      waitFor: (0, _helpers.getRandomIntInclusive)(500, 2000),
-      onExit: () => currentAction = _consts.AI_ACTIONS.IDLE
-    }));
-  };
-
-  const goToDestination = (_ref2) => {
-    let {
-      sprite,
-      destination
-    } = _ref2;
-    currentAction = _consts.AI_ACTIONS.MOVING;
-    entityStateMachine.push((0, _aiMoveToState.default)({
-      id: "moveTo",
-      sprite,
-      destination,
-      onExit: () => currentAction = _consts.AI_ACTIONS.THINKING
-    }));
-  };
-
-  const findRandomDest = () => {
-    currentAction = _consts.AI_ACTIONS.THINKING;
-    console.log("Looking for a random path on the ai grid..."); // TODO: Not sure you'll want to do this every single time.
-
-    const easystar = new _easystarjs.default.js();
-    easystar.enableDiagonals();
-    easystar.setGrid(aiPathGrid);
-    easystar.setAcceptableTiles([102]);
-    /* Find a path within the bounds of what we have available, I've no idea how to do it yet. Perhaps
-    find the x,y of every walkable by finding out its place in the array? Unsure on how to
-    work out current position however... tileEngine has a method but, do I really want to
-    pass the entire object ref through? Rounding won't work either. */
-    // sx, sy, ex, ey (tile-wise, will need to convert back to pixels later for px dest)
-
-    easystar.findPath(5, 6, 8, 6, function (path) {
-      if (path === null) {
-        console.log("Path was not found.");
-      } else {
-        console.log("Path was found. The first Point is " + path[0].x + " " + path[0].y);
-        console.log(path);
-      }
-    }); // Just calculate once (if you run in to issues, may need to do it every frame. Def so for a changing map landscape)
-
-    easystar.calculate(); // If you have your path, add it to the queue lib then start chomping through.
-    //////
-  };
+  const myBrain = Brain();
   /* Id should really be named 'class' since its re-used. */
-
 
   const sprite = (0, _kontra.Sprite)({
     instId: (0, _helpers.uniqueId)(id),
@@ -10733,11 +10830,11 @@ var _default = (_ref) => {
     manualAnimation,
     enableMovement: () => movementDisabled = false,
     disableMovement: () => movementDisabled = true,
-    lookAt: (_ref3) => {
+    lookAt: (_ref2) => {
       let {
         x,
         y
-      } = _ref3;
+      } = _ref2;
       (0, _spriteFunctions.flipSprite)({
         direction: {
           x: sprite.x > x ? -1 : 1,
@@ -10746,27 +10843,18 @@ var _default = (_ref) => {
         sprite
       });
     },
-    update: () => {
-      entityStateMachine.update();
-
-      switch (currentAction) {
-        case _consts.AI_ACTIONS.IDLE:
-          findRandomDest({
-            sprite
-          });
-          break;
-
-        case _consts.AI_ACTIONS.THINKING:
-          // ... Do nothing until fulfilled.
-          break;
-      }
-    }
+    update: () => myBrain.update()
   });
+  myBrain.bootstrap({
+    sprite,
+    aiPathGrid
+  });
+  myBrain.start();
   return sprite;
 };
 
 exports.default = _default;
-},{"easystarjs":"node_modules/easystarjs/src/easystar.js","../managers/stateManager":"src/managers/stateManager.js","../states/aiMoveToState":"src/states/aiMoveToState.js","../states/aiWaitState":"src/states/aiWaitState.js","./spriteFunctions":"src/sprites/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs","../common/consts":"src/common/consts.js"}],"src/sprites/fixed.js":[function(require,module,exports) {
+},{"../managers/stateManager":"src/managers/stateManager.js","../states/aiFollowPathState":"src/states/aiFollowPathState.js","../states/aiIdleState":"src/states/aiIdleState.js","../common/spriteFunctions":"src/common/spriteFunctions.js","../common/helpers":"src/common/helpers.js","../common/aiHelpers":"src/common/aiHelpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/sprites/fixed.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -11415,7 +11503,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55314" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52050" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

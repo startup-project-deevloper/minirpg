@@ -1,5 +1,5 @@
 import StateMachine from "../managers/stateManager";
-import { moveSprite, flipSprite } from "./spriteFunctions";
+import { moveSprite, flipSprite } from "../common/spriteFunctions";
 import { uniqueId } from "../common/helpers";
 import { Sprite, imageAssets, SpriteSheet, keyPressed } from "kontra";
 

@@ -5,10 +5,3 @@ export const ENTITY_TYPE = {
   DOOR: 3,
   PLAYER: 99
 };
-
-export const AI_ACTIONS = {
-  IDLE: 0,
-  MOVING: 1,
-  THINKING: 2,
-  WAITING: 3
-};

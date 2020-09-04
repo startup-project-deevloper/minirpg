@@ -2345,6 +2345,14 @@ fill-range@^4.0.0:
     repeat-string "^1.6.1"
     to-regex-range "^2.1.0"
 
+fluent-behavior-tree@^1.2.6:
+  version "1.2.6"
+  resolved "https://registry.yarnpkg.com/fluent-behavior-tree/-/fluent-behavior-tree-1.2.6.tgz#4a5b35f6044f42ad919c03319369e07b7cd24106"
+  integrity sha512-MsHIVl3Kq8VaCvkxIa4I5Dy/glmNRvT97JFYdY6JMdlMk3TigpRBAh0+uagmYg+ckpR51c5wq49P1dG0W3jHuQ==
+  dependencies:
+    ts-data.stack "^1.0.6"
+    ts-iterable "^1.0.1"
+
 for-in@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/for-in/-/for-in-1.0.2.tgz#81068d295a8142ec0ac726c6e2200c30fb6d5e80"
@@ -4837,11 +4845,6 @@ tiny-inflate@^1.0.0:
   resolved "https://registry.yarnpkg.com/tiny-inflate/-/tiny-inflate-1.0.3.tgz#122715494913a1805166aaf7c93467933eea26c4"
   integrity sha512-pkY1fj1cKHb2seWDy0B16HeWyczlJA9/WW3u3c4z/NiWDsO3DOU5D7nhTLE9CF0yXv/QZFY7sEJmj24dK+Rrqw==
 
-tinyqueue@^2.0.3:
-  version "2.0.3"
-  resolved "https://registry.yarnpkg.com/tinyqueue/-/tinyqueue-2.0.3.tgz#64d8492ebf39e7801d7bd34062e29b45b2035f08"
-  integrity sha512-ppJZNDuKGgxzkHihX8v9v9G5f+18gzaTfrukGrq6ueg0lmH4nqVnA2IPG0AEH3jKEk2GRJCUhDoqpoiw3PHLBA==
-
 to-arraybuffer@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/to-arraybuffer/-/to-arraybuffer-1.0.1.tgz#7d229b1fcc637e466ca081180836a7aabff83f43"
@@ -4906,6 +4909,16 @@ trim-right@1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/trim-right/-/trim-right-1.0.1.tgz#cb2e1203067e0c8de1f614094b9fe45704ea6003"
   integrity sha1-yy4SAwZ+DI3h9hQJS5/kVwTqYAM=
+
+ts-data.stack@^1.0.6:
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/ts-data.stack/-/ts-data.stack-1.0.6.tgz#a8af2ba4803a8bea40b35b84a6ccae53ec2fa221"
+  integrity sha1-qK8rpIA6i+pAs1uEpsyuU+wvoiE=
+
+ts-iterable@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/ts-iterable/-/ts-iterable-1.0.1.tgz#8ec6915469aff7390bdbb8e321259bd009e9af5a"
+  integrity sha1-jsaRVGmv9zkL27jjISWb0Anpr1o=
 
 tty-browserify@0.0.0:
   version "0.0.0"
