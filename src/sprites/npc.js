@@ -65,8 +65,6 @@ export default ({
     );
   }
 
-  const entityStateMachine = StateMachine();
-
   const {
     name,
     type,
