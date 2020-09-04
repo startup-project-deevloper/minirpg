@@ -9505,7 +9505,7 @@ var _default = (_ref) => {
           y: 0
         } : dir,
         sprite,
-        checkCollision: sprite => collisionMethod("Collision", sprite)
+        checkCollision: sprite => collisionMethod("collision", sprite)
       }); // Flip the sprite on movement
 
       (0, _spriteFunctions.flipSprite)({
@@ -11130,7 +11130,6 @@ var _default = function _default() {
         }
       }
 
-      console.log(aiPathGrid);
       const playerStart = entities.find(x => x.customProperties.playerStartId === playerStartId);
       const playerEntityData = entityTable.find(x => x.id === "player");
       const player = (0, _player.default)({
@@ -11447,13 +11446,18 @@ const FieldScene = sceneProps => {
     },
     render: () => {
       /* Instruct tileEngine to update its frame */
-      tileEngine.render();
+      // tileEngine.render();
+      tileEngine.renderLayer("rearDecor");
+      tileEngine.renderLayer("middleDecor");
       /* Edit z-order based on 'y' then change render order */
 
       spriteCache.sort((a, b) => Math.round(a.y - a.z) - Math.round(b.y - b.z)).forEach(sprite => sprite.render());
       /* Update any screen effects that are running */
 
       screenEffectsStateMachine.update();
+      /* Any layers that need to overlap everything go below here */
+
+      tileEngine.renderLayer("forwardDecor");
       /* Project the actual game canvas on to the scaled canvas */
 
       ctx.drawImage(gameCanvas, 0, 0, resolution.width, resolution.height, 0, 0, scaledCanvas.width, scaledCanvas.height);
@@ -11513,7 +11517,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50071" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50483" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

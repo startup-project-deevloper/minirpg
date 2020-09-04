@@ -209,7 +209,9 @@ const FieldScene = (sceneProps) => {
     },
     render: () => {
       /* Instruct tileEngine to update its frame */
-      tileEngine.render();
+      // tileEngine.render();
+      tileEngine.renderLayer("rearDecor");
+      tileEngine.renderLayer("middleDecor");
 
       /* Edit z-order based on 'y' then change render order */
       spriteCache
@@ -218,6 +220,9 @@ const FieldScene = (sceneProps) => {
 
       /* Update any screen effects that are running */
       screenEffectsStateMachine.update();
+
+      /* Any layers that need to overlap everything go below here */
+      tileEngine.renderLayer("forwardDecor");
 
       /* Project the actual game canvas on to the scaled canvas */
       ctx.drawImage(

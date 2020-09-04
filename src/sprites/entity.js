@@ -123,7 +123,7 @@ export default ({
         dir:
           movementDisabled && targetDestination === null ? { x: 0, y: 0 } : dir,
         sprite,
-        checkCollision: sprite => collisionMethod("Collision", sprite)
+        checkCollision: sprite => collisionMethod("collision", sprite)
       });
 
       // Flip the sprite on movement

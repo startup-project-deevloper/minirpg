@@ -56,7 +56,7 @@
     "mapKey": "assets/tiledata/test2",
     "entities": [
       {
-        "x": 82,
+        "x": 92,
         "y": 92,
         "id": "bob",
         "customProperties": {}
