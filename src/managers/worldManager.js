@@ -18,7 +18,9 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
   // TODO: Move these commands out of here and in to some sort of helper layer.
   const entitiesInStore = getStoreItem("entities");
   const getEntityFromStore = id =>
-    entitiesInStore.length ? entitiesInStore.find(e => e.id === id) : null;
+    entitiesInStore && entitiesInStore.length
+      ? entitiesInStore.find(e => e.id === id)
+      : null;
 
   return {
     getAllEntitiesOfType: type => {
