@@ -2,15 +2,16 @@ import EasyStar from "easystarjs";
 
 export const findPath = ({ aiPathGrid, tx, ty, rx, ry, walkableId }) => {
   return new Promise(resolve => {
-    // TODO: Not sure you'll want to do this every single time.
+    // TODO: Not sure you'll want to do this every single time, seems intensive.
     const easystar = new EasyStar.js();
 
     easystar.enableDiagonals();
+    easystar.enableCornerCutting();
     easystar.setGrid(aiPathGrid);
     easystar.setAcceptableTiles([walkableId]);
 
     easystar.findPath(tx, ty, rx, ry, function(path) {
-      if (path === null) {
+      if (path === null || path !== null && path.length === 0) {
         console.log("Path was not found.");
 
         resolve([]);

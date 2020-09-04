@@ -6450,7 +6450,7 @@ const Queue = () => {
   return {
     elements: () => _elements,
     enqueue: e => _elements.push(e),
-    dequeue: () => _elements.shift(),
+    dequeue: () => _elements.length > 0 ? _elements.shift() : null,
     isEmpty: () => _elements.length === 0,
     length: () => _elements.length,
     peek: () => _elements.length > 0 ? _elements[0] : null
@@ -10528,13 +10528,14 @@ const findPath = (_ref) => {
     walkableId
   } = _ref;
   return new Promise(resolve => {
-    // TODO: Not sure you'll want to do this every single time.
+    // TODO: Not sure you'll want to do this every single time, seems intensive.
     const easystar = new _easystarjs.default.js();
     easystar.enableDiagonals();
+    easystar.enableCornerCutting();
     easystar.setGrid(aiPathGrid);
     easystar.setAcceptableTiles([walkableId]);
     easystar.findPath(tx, ty, rx, ry, function (path) {
-      if (path === null) {
+      if (path === null || path !== null && path.length === 0) {
         console.log("Path was not found.");
         resolve([]);
       } else {
@@ -10590,7 +10591,7 @@ var _default = (_ref) => {
   for (let i = 0; i < aiPathGrid.length; i++) {
     for (let j = 0; j < aiPathGrid[i].length; j++) {
       if (aiPathGrid[i][j] === walkableId) {
-        walkableTiles.push((0, _kontra.Vector)(i, j));
+        walkableTiles.push((0, _kontra.Vector)(j, i));
       }
     }
   }
@@ -10602,6 +10603,7 @@ var _default = (_ref) => {
   const randomWalkable = walkableTiles[(0, _helpers.getRandomIntInclusive)(0, walkableTiles.length - 1)];
   let rx = randomWalkable.x;
   let ry = randomWalkable.y;
+  console.log(randomWalkable);
   let _isComplete = false;
   let current = (0, _kontra.Vector)(sprite.x, sprite.y);
   let tileDest = null;
@@ -10610,6 +10612,8 @@ var _default = (_ref) => {
     id: "followPath",
     isComplete: () => _isComplete,
     enter: async props => {
+      // TODO: This isn't a hugely performant method. ES should be running at all times
+      // and instantiate only once.
       const calculatedPath = await (0, _aiHelpers.findPath)({
         aiPathGrid,
         tx,
@@ -10622,34 +10626,40 @@ var _default = (_ref) => {
       if (!calculatedPath.length) {
         _isComplete = true;
         return;
-      }
+      } // Let set to '1' to avoid pointless backtrack on first segment
+      // Give the destination a little variation as well to make it more natural
 
-      for (let i = 0; i < calculatedPath.length; i++) {
-        destQueue.enqueue((0, _kontra.Vector)(calculatedPath[i].x * 16, calculatedPath[i].y * 16));
+
+      for (let i = 1; i < calculatedPath.length; i++) {
+        destQueue.enqueue((0, _kontra.Vector)(calculatedPath[i].x * 16 + (0, _helpers.getRandomIntInclusive)(0, 16), calculatedPath[i].y * 16 + (0, _helpers.getRandomIntInclusive)(0, 16)));
       }
 
       tileDest = destQueue.dequeue();
       destination = (0, _kontra.Vector)(tileDest.x, tileDest.y);
       console.log("First point to go to:");
-      console.log(destQueue.elements());
+      console.log(tileDest);
       onEntry();
     },
     update: () => {
-      if (!destination) return; // Note: No need for acc at this stage
+      if (!destination) {
+        _isComplete = true;
+        return;
+      } // Note: No need for acc at this stage
+
 
       let vel = (0, _kontra.Vector)(0, 0); // Current vector towards target
 
       let distanceToTarget = destination.subtract(current).length(); // Cease all movement if arrived, otherwise just carry on
 
-      if (distanceToTarget > 10) {
-        vel = destination.subtract(current).normalize().scale(0.5);
+      if (distanceToTarget > 1) {
+        vel = destination.subtract(current).normalize().scale(0.75);
         sprite.x += vel.x;
         sprite.y += vel.y;
         current = (0, _kontra.Vector)(sprite.x, sprite.y);
       } else {
-        console.log(sprite.name + " reached path segment.");
-        destination = !destQueue.isEmpty() ? destQueue.dequeue() : current;
-        _isComplete = destQueue.isEmpty();
+        destination = destQueue.dequeue();
+        console.log("NEXT SEGMENT:");
+        console.log(destination);
       }
 
       (0, _spriteFunctions.flipSprite)({
@@ -11503,7 +11513,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52050" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50071" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

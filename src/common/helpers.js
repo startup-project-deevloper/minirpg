@@ -89,7 +89,7 @@ export const Queue = () => {
   return {
     elements: () => elements,
     enqueue: e => elements.push(e),
-    dequeue: () => elements.shift(),
+    dequeue: () => elements.length > 0 ? elements.shift() : null,
     isEmpty: () => elements.length === 0,
     length: () => elements.length,
     peek: () => (elements.length > 0 ? elements[0] : null)

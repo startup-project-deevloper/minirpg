@@ -18,7 +18,7 @@ export default ({ props, onEntry = () => {}, onExit = () => {} }) => {
   for (let i = 0; i < aiPathGrid.length; i++) {
     for (let j = 0; j < aiPathGrid[i].length; j++) {
       if (aiPathGrid[i][j] === walkableId) {
-        walkableTiles.push(Vector(i, j));
+        walkableTiles.push(Vector(j, i));
       }
     }
   }
@@ -33,6 +33,8 @@ export default ({ props, onEntry = () => {}, onExit = () => {} }) => {
   let rx = randomWalkable.x;
   let ry = randomWalkable.y;
 
+  console.log(randomWalkable);
+
   let isComplete = false;
   let current = Vector(sprite.x, sprite.y);
   let tileDest = null;
@@ -42,6 +44,8 @@ export default ({ props, onEntry = () => {}, onExit = () => {} }) => {
     id: "followPath",
     isComplete: () => isComplete,
     enter: async props => {
+      // TODO: This isn't a hugely performant method. ES should be running at all times
+      // and instantiate only once.
       const calculatedPath = await findPath({
         aiPathGrid,
         tx,
@@ -57,9 +61,14 @@ export default ({ props, onEntry = () => {}, onExit = () => {} }) => {
         return;
       }
 
-      for (let i = 0; i < calculatedPath.length; i++) {
+      // Let set to '1' to avoid pointless backtrack on first segment
+      // Give the destination a little variation as well to make it more natural
+      for (let i = 1; i < calculatedPath.length; i++) {
         destQueue.enqueue(
-          Vector(calculatedPath[i].x * 16, calculatedPath[i].y * 16)
+          Vector(
+            calculatedPath[i].x * 16 + getRandomIntInclusive(0, 16),
+            calculatedPath[i].y * 16 + getRandomIntInclusive(0, 16)
+          )
         );
       }
 
@@ -67,12 +76,15 @@ export default ({ props, onEntry = () => {}, onExit = () => {} }) => {
       destination = Vector(tileDest.x, tileDest.y);
 
       console.log("First point to go to:");
-      console.log(destQueue.elements());
+      console.log(tileDest);
 
       onEntry();
     },
     update: () => {
-      if (!destination) return;
+      if (!destination) {
+        isComplete = true;
+        return;
+      }
 
       // Note: No need for acc at this stage
       let vel = Vector(0, 0);
@@ -81,17 +93,15 @@ export default ({ props, onEntry = () => {}, onExit = () => {} }) => {
       let distanceToTarget = destination.subtract(current).length();
 
       // Cease all movement if arrived, otherwise just carry on
-      if (distanceToTarget > 10) {
-        vel = destination.subtract(current).normalize().scale(0.5);
-
+      if (distanceToTarget > 1) {
+        vel = destination.subtract(current).normalize().scale(0.75);
         sprite.x += vel.x;
         sprite.y += vel.y;
-
         current = Vector(sprite.x, sprite.y);
       } else {
-        console.log(sprite.name + " reached path segment.");
-        destination = !destQueue.isEmpty() ? destQueue.dequeue() : current;
-        isComplete = destQueue.isEmpty();
+        destination = destQueue.dequeue();
+        console.log("NEXT SEGMENT:");
+        console.log(destination);
       }
 
       flipSprite({ direction: vel, sprite });
