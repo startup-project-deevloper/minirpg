@@ -80,8 +80,21 @@ export const circleCollision = (collider, targets, destroyOnHit = false) => {
 export const getRandomIntInclusive = (min, max) => {
   min = Math.ceil(min);
   max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive 
-}
+  return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
+};
+
+export const Queue = () => {
+  let elements = [];
+
+  return {
+    elements: () => elements,
+    enqueue: e => elements.push(e),
+    dequeue: () => elements.length > 0 ? elements.shift() : null,
+    isEmpty: () => elements.length === 0,
+    length: () => elements.length,
+    peek: () => (elements.length > 0 ? elements[0] : null)
+  };
+};
 
 export const debug = o => {
   console.info(o);

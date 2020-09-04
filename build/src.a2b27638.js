@@ -6303,46 +6303,40 @@ exports.emit = exports.allOff = exports.off = exports.on = exports.EV_INTERACTIO
 
 var _kontra = require("kontra");
 
-var EV_CONVOSTART = "ev.convoStart";
+const EV_CONVOSTART = "ev.convoStart";
 exports.EV_CONVOSTART = EV_CONVOSTART;
-var EV_CONVOEND = "ev.convoEnd";
+const EV_CONVOEND = "ev.convoEnd";
 exports.EV_CONVOEND = EV_CONVOEND;
-var EV_CONVONEXT = "ev.convoNext";
+const EV_CONVONEXT = "ev.convoNext";
 exports.EV_CONVONEXT = EV_CONVONEXT;
-var EV_CONVOCHOICE = "ev.convoChoice";
+const EV_CONVOCHOICE = "ev.convoChoice";
 exports.EV_CONVOCHOICE = EV_CONVOCHOICE;
-var EV_SCENECHANGE = "ev.sceneChange";
+const EV_SCENECHANGE = "ev.sceneChange";
 exports.EV_SCENECHANGE = EV_SCENECHANGE;
-var EV_INTERACTION = "ev.onInteraction";
+const EV_INTERACTION = "ev.onInteraction";
 exports.EV_INTERACTION = EV_INTERACTION;
-var registry = {};
+let registry = {};
 
-var on = function on(e, fn) {
+const on = (e, fn) => {
   registry[e] = fn;
   (0, _kontra.on)(e, registry[e]);
 };
 
 exports.on = on;
 
-var off = function off(e, fn) {
-  return (0, _kontra.off)(e, fn);
-};
+const off = (e, fn) => (0, _kontra.off)(e, fn);
 
 exports.off = off;
 
-var allOff = function allOff() {
-  var ignoreList = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-  return Object.keys(registry).map(function (k) {
-    return !ignoreList.some(function (str) {
-      return str === k;
-    }) && off(k, registry[k]);
-  });
+const allOff = function allOff() {
+  let ignoreList = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  return Object.keys(registry).map(k => !ignoreList.some(str => str === k) && off(k, registry[k]));
 };
 
 exports.allOff = allOff;
 
-var emit = function emit(e) {
-  var args = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+const emit = function emit(e) {
+  let args = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
   return (0, _kontra.emit)(e, args);
 };
 
@@ -6353,27 +6347,23 @@ exports.emit = emit;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.debug = exports.getRandomIntInclusive = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.getNormal = exports.between = exports.uniqueId = void 0;
+exports.debug = exports.Queue = exports.getRandomIntInclusive = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.getNormal = exports.between = exports.uniqueId = void 0;
 
 var _events = require("../common/events");
 
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-var uniqueId = function uniqueId() {
-  var pre = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+const uniqueId = function uniqueId() {
+  let pre = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
   return "".concat(pre).concat(pre.length ? "_" : "") + (Number(String(Math.random()).slice(2)) + Date.now() + Math.round(performance.now())).toString(36);
 };
 
 exports.uniqueId = uniqueId;
 
-var between = function between(v, a, b) {
-  return v > a && v < b;
-};
+const between = (v, a, b) => v > a && v < b;
 
 exports.between = between;
 
-var getNormal = function getNormal(dir) {
-  var dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
+const getNormal = dir => {
+  const dirLength = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
   return {
     x: dir.x !== 0 ? dir.x / dirLength : 0,
     y: dir.y !== 0 ? dir.y / dirLength : 0
@@ -6382,11 +6372,11 @@ var getNormal = function getNormal(dir) {
 
 exports.getNormal = getNormal;
 
-var vmulti = function vmulti(vec, v) {
-  var x = 0;
-  var y = 0;
+const vmulti = (vec, v) => {
+  let x = 0;
+  let y = 0;
 
-  if (_typeof(v) === "object") {
+  if (typeof v === "object") {
     x = vec.x * v.x;
     y = vec.y * v.y;
   } else {
@@ -6399,42 +6389,40 @@ var vmulti = function vmulti(vec, v) {
 
 exports.vmulti = vmulti;
 
-var dist = function dist(p1, p2) {
-  var a = p1.x - p2.x;
-  var b = p1.y - p2.y;
+const dist = (p1, p2) => {
+  const a = p1.x - p2.x;
+  const b = p1.y - p2.y;
   return Math.sqrt(a * a + b * b);
 };
 
 exports.dist = dist;
 
-var sortByDist = function sortByDist(target) {
-  var items = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-  return items.sort(function (a, b) {
-    return dist(target, a.position) - dist(target, b.position);
-  });
+const sortByDist = function sortByDist(target) {
+  let items = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+  return items.sort((a, b) => dist(target, a.position) - dist(target, b.position));
 };
 
 exports.sortByDist = sortByDist;
 
-var circleCollision = function circleCollision(collider, targets) {
-  var destroyOnHit = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+const circleCollision = function circleCollision(collider, targets) {
+  let destroyOnHit = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
   if (!collider.radius) {
     console.error("Cannot detect collisions without radius property.");
   }
 
-  var filtered = targets.filter(function (target) {
+  const filtered = targets.filter(target => {
     /* Because why would you ever want to collide with yourself? */
     if (collider.id === target.id) return;
-    var offsets = target.collisionBodyOptions ? {
+    const offsets = target.collisionBodyOptions ? {
       x: target.collisionBodyOptions.offsetX ? target.x + target.collisionBodyOptions.offsetX : target.x,
       y: target.collisionBodyOptions.offsetY ? target.y + target.collisionBodyOptions.offsetY : target.y
     } : {
       x: target.x,
       y: target.y
     };
-    var dx = offsets.x - collider.x;
-    var dy = offsets.y - collider.y;
+    let dx = offsets.x - collider.x;
+    let dy = offsets.y - collider.y;
     /* You might be seeing results from two perspectives. I'd ensure that it only comes from
     one in the case of a door. */
     //debug(target.name + ": " + Math.sqrt(dx * dx + dy * dy))
@@ -6449,15 +6437,29 @@ var circleCollision = function circleCollision(collider, targets) {
 
 exports.circleCollision = circleCollision;
 
-var getRandomIntInclusive = function getRandomIntInclusive(min, max) {
+const getRandomIntInclusive = (min, max) => {
   min = Math.ceil(min);
   max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive 
+  return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
 };
 
 exports.getRandomIntInclusive = getRandomIntInclusive;
 
-var debug = function debug(o) {
+const Queue = () => {
+  let _elements = [];
+  return {
+    elements: () => _elements,
+    enqueue: e => _elements.push(e),
+    dequeue: () => _elements.length > 0 ? _elements.shift() : null,
+    isEmpty: () => _elements.length === 0,
+    length: () => _elements.length,
+    peek: () => _elements.length > 0 ? _elements[0] : null
+  };
+};
+
+exports.Queue = Queue;
+
+const debug = o => {
   console.info(o);
   (0, _events.emit)(_events.EV_DEBUGLOG, o);
 };
@@ -6470,7 +6472,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.ENTITY_TYPE = void 0;
-var ENTITY_TYPE = {
+const ENTITY_TYPE = {
   FIXED: 0,
   NPC: 1,
   PICKUP: 2,
@@ -8585,21 +8587,20 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.typeWriter = void 0;
 
-var typeWriter = function typeWriter(_ref) {
-  var text = _ref.text,
-      _ref$onStart = _ref.onStart,
-      onStart = _ref$onStart === void 0 ? function () {} : _ref$onStart,
-      _ref$onTyped = _ref.onTyped,
-      onTyped = _ref$onTyped === void 0 ? function (str) {} : _ref$onTyped,
-      _ref$onFinished = _ref.onFinished,
-      onFinished = _ref$onFinished === void 0 ? function () {} : _ref$onFinished;
-  var animId = "";
-  var str = "";
+const typeWriter = (_ref) => {
+  let {
+    text,
+    onStart = () => {},
+    onTyped = str => {},
+    onFinished = () => {}
+  } = _ref;
+  let animId = "";
+  let str = "";
   onStart();
 
-  var t = function t() {
-    var s = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-    var i = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+  const t = function t() {
+    let s = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+    let i = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
     if (i > text.length) {
       cancelAnimationFrame(animId);
@@ -8610,17 +8611,11 @@ var typeWriter = function typeWriter(_ref) {
     str = s + text.charAt(i);
     i += 1;
     onTyped(str);
-    requestAnimationFrame(function () {
-      return t(str, i);
-    });
+    requestAnimationFrame(() => t(str, i));
   };
 
   return {
-    start: function start() {
-      return animId = requestAnimationFrame(function () {
-        return t();
-      });
-    }
+    start: () => animId = requestAnimationFrame(() => t())
   };
 };
 
@@ -8645,13 +8640,13 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-var mounted = false;
-var isTyping = false;
-var name = "";
-var text = "";
-var choices = [];
+let mounted = false;
+let isTyping = false;
+let name = "";
+let text = "";
+let choices = [];
 
-var primeGlobals = function primeGlobals(props) {
+const primeGlobals = props => {
   name = props.name;
   text = "";
   choices = [];
@@ -8659,84 +8654,70 @@ var primeGlobals = function primeGlobals(props) {
   _mithril.default.redraw();
 };
 
-var callTypewriter = function callTypewriter(props) {
-  return (0, _effects.typeWriter)({
-    text: props.text,
-    onStart: function onStart() {
-      return isTyping = true;
-    },
-    onTyped: function onTyped(str) {
-      text = str;
+const callTypewriter = props => (0, _effects.typeWriter)({
+  text: props.text,
+  onStart: () => isTyping = true,
+  onTyped: str => {
+    text = str;
 
-      _mithril.default.redraw();
-    },
-    onFinished: function onFinished() {
-      isTyping = false;
-      choices = props.choices.length ? props.choices : [];
+    _mithril.default.redraw();
+  },
+  onFinished: () => {
+    isTyping = false;
+    choices = props.choices.length ? props.choices : [];
 
-      _mithril.default.redraw();
-    }
-  }).start();
-};
+    _mithril.default.redraw();
+  }
+}).start();
 
-var _callText = function callText(props) {
+const _callText = props => {
   if (isTyping) return;
   primeGlobals(props);
   callTypewriter(props);
 };
 
-var Shell = function Shell(_ref) {
-  var attrs = _ref.attrs;
+const Shell = (_ref) => {
+  let {
+    attrs
+  } = _ref;
   return {
-    oninit: function oninit() {
-      return mounted = true;
-    },
-    onremove: function onremove() {
+    oninit: () => mounted = true,
+    onremove: () => {
       mounted = false;
       isTyping = false;
       name = "";
       text = "";
       choices = [];
     },
-    view: function view() {
-      return (0, _mithril.default)("div", {
-        class: "uiShell"
-      }, text && (0, _mithril.default)("div", {
-        class: "dialogueBoxOuter"
-      }, [(0, _mithril.default)("div", {
-        class: "dialogue"
-      }, [(0, _mithril.default)("span", name ? "".concat(name, ":") : ""), (0, _mithril.default)("span", name ? "\"".concat(text, "\"") : text), (0, _mithril.default)("div", {
-        class: "choiceWindow"
-      }, choices.map(function (choice) {
-        return (0, _mithril.default)("button", {
-          class: "choiceBox",
-          onclick: function onclick() {
-            return attrs.onChoiceSelected(choice);
-          }
-        }, choice.text);
-      })), isTyping ? "" : (0, _mithril.default)("span", {
-        class: "arrow"
-      })])]));
-    }
+    view: () => (0, _mithril.default)("div", {
+      class: "uiShell"
+    }, text && (0, _mithril.default)("div", {
+      class: "dialogueBoxOuter"
+    }, [(0, _mithril.default)("div", {
+      class: "dialogue"
+    }, [(0, _mithril.default)("span", name ? "".concat(name, ":") : ""), (0, _mithril.default)("span", name ? "\"".concat(text, "\"") : text), (0, _mithril.default)("div", {
+      class: "choiceWindow"
+    }, choices.map(choice => {
+      return (0, _mithril.default)("button", {
+        class: "choiceBox",
+        onclick: () => attrs.onChoiceSelected(choice)
+      }, choice.text);
+    })), isTyping ? "" : (0, _mithril.default)("span", {
+      class: "arrow"
+    })])]))
   };
 };
 
 var _default = {
-  isBusy: function isBusy() {
-    return isTyping;
-  },
+  isBusy: () => isTyping,
   mount: function mount() {
-    var attrs = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    let attrs = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
     return _mithril.default.mount(document.getElementById("ui"), {
-      view: function view() {
-        return (0, _mithril.default)(Shell, attrs);
-      }
+      view: () => (0, _mithril.default)(Shell, attrs)
     });
   },
-  unmount: function unmount() {
-    return _mithril.default.mount(document.getElementById("ui"), null);
-  },
-  callText: function callText(props) {
+  unmount: () => _mithril.default.mount(document.getElementById("ui"), null),
+  callText: props => {
     if (!mounted) return;
 
     _callText(_objectSpread({}, props));
@@ -8757,7 +8738,7 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-var MODES = {
+const MODES = {
   NOTRUNNING: 100,
   NEXTNODE: 200,
   AWAITINGINPUT: 300,
@@ -8766,24 +8747,21 @@ var MODES = {
 };
 exports.MODES = MODES;
 
-var _default = function _default(_ref) {
-  var conversationData = _ref.conversationData,
-      _ref$onChatStarted = _ref.onChatStarted,
-      onChatStarted = _ref$onChatStarted === void 0 ? function (node, props) {} : _ref$onChatStarted,
-      _ref$onChatNext = _ref.onChatNext,
-      onChatNext = _ref$onChatNext === void 0 ? function (node, props) {} : _ref$onChatNext,
-      _ref$onChatComplete = _ref.onChatComplete,
-      onChatComplete = _ref$onChatComplete === void 0 ? function (lastPositionSaved) {} : _ref$onChatComplete,
-      _ref$onChainProgress = _ref.onChainProgress,
-      onChainProgress = _ref$onChainProgress === void 0 ? function (lastNodeId) {} : _ref$onChainProgress,
-      _ref$onChatCancelled = _ref.onChatCancelled,
-      onChatCancelled = _ref$onChatCancelled === void 0 ? function () {} : _ref$onChatCancelled;
-  var index = 0;
-  var currentNode = conversationData[index];
-  var _isRunning = false;
-  var _isComplete = false;
+var _default = (_ref) => {
+  let {
+    conversationData,
+    onChatStarted = (node, props) => {},
+    onChatNext = (node, props) => {},
+    onChatComplete = lastPositionSaved => {},
+    onChainProgress = lastNodeId => {},
+    onChatCancelled = () => {}
+  } = _ref;
+  let index = 0;
+  let currentNode = conversationData[index];
+  let _isRunning = false;
+  let _isComplete = false;
 
-  var displayNode = function displayNode(queriedNode) {
+  const displayNode = queriedNode => {
     if (queriedNode) {
       currentNode = queriedNode;
       index = queriedNode.index;
@@ -8793,16 +8771,14 @@ var _default = function _default(_ref) {
     }
   };
 
-  var queryNode = function queryNode(query) {
-    var queriedNode = conversationData.length ? conversationData.filter(function (node) {
-      return query === node.id;
-    })[0] : null;
+  const queryNode = query => {
+    const queriedNode = conversationData.length ? conversationData.filter(node => query === node.id)[0] : null;
     return displayNode(queriedNode);
   };
 
-  var start = function start(query) {
-    var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-    var queriedNode = queryNode(query);
+  const start = function start(query) {
+    let props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    const queriedNode = queryNode(query);
     _isRunning = true;
     _isComplete = false;
     onChatStarted(queriedNode, props);
@@ -8811,17 +8787,17 @@ var _default = function _default(_ref) {
     });
   };
 
-  var goToExact = function goToExact(query) {
-    var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-    var queriedNode = queryNode(query);
+  const goToExact = function goToExact(query) {
+    let props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    const queriedNode = queryNode(query);
     onChatNext(queriedNode, props);
     return _objectSpread(_objectSpread({}, displayNode(queriedNode)), {}, {
       mode: MODES.NEXTNODE
     });
   };
 
-  var goToNext = function goToNext() {
-    var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  const goToNext = function goToNext() {
+    let props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
     // We need to run this 'after' the finish so it avoids chained exec on exit.
     if (!_isRunning) return {
       mode: MODES.NOTRUNNING
@@ -8836,28 +8812,23 @@ var _default = function _default(_ref) {
     // or do something a little funky. May want to check for choices here instead?
 
 
-    var _currentNode = currentNode,
-        id = _currentNode.id,
-        to = _currentNode.to,
-        choices = _currentNode.choices,
-        actions = _currentNode.actions; // Wait if choices are presented.
+    const {
+      id,
+      to,
+      choices,
+      actions
+    } = currentNode; // Wait if choices are presented.
 
     if (choices.length) return _objectSpread(_objectSpread({}, currentNode), {}, {
       mode: MODES.AWAITINGINPUT
     }); // TODO: Consts please.
 
-    if (actions.some(function (action) {
-      return action === "endConversation";
-    }) || choices.length === 0 && !to) {
-      if (actions.some(function (action) {
-        return action === "save";
-      })) {
+    if (actions.some(action => action === "endConversation") || choices.length === 0 && !to) {
+      if (actions.some(action => action === "save")) {
         onChainProgress(id);
       }
 
-      if (actions.some(function (action) {
-        return action === "cancel";
-      })) {
+      if (actions.some(action => action === "cancel")) {
         onChatCancelled();
       }
 
@@ -8875,18 +8846,12 @@ var _default = function _default(_ref) {
   };
 
   return {
-    isComplete: function isComplete() {
-      return _isComplete;
-    },
-    isRunning: function isRunning() {
-      return _isRunning;
-    },
-    currentIndex: function currentIndex() {
-      return index;
-    },
-    start: start,
-    goToExact: goToExact,
-    goToNext: goToNext
+    isComplete: () => _isComplete,
+    isRunning: () => _isRunning,
+    currentIndex: () => index,
+    start,
+    goToExact,
+    goToNext
   };
 };
 
@@ -8902,9 +8867,9 @@ exports.default = void 0;
 var _kontra = require("kontra");
 
 var _default = function _default(key) {
-  var cb = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function () {};
-  var pushed = false;
-  return function (props) {
+  let cb = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : () => {};
+  let pushed = false;
+  return props => {
     if (!pushed && (0, _kontra.keyPressed)(key)) {
       cb(props);
       pushed = true;
@@ -8943,52 +8908,54 @@ function _objectWithoutProperties(source, excluded) { if (source == null) return
 
 function _objectWithoutPropertiesLoose(source, excluded) { if (source == null) return {}; var target = {}; var sourceKeys = Object.keys(source); var key, i; for (i = 0; i < sourceKeys.length; i++) { key = sourceKeys[i]; if (excluded.indexOf(key) >= 0) continue; target[key] = source[key]; } return target; }
 
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      startId = _ref.startId,
-      _ref$onEntry = _ref.onEntry,
-      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
-      _ref$onExit = _ref.onExit,
-      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
+var _default = (_ref) => {
+  let {
+    id,
+    startId,
+    onEntry = () => {},
+    onExit = () => {}
+  } = _ref;
   console.log("Start convo.");
-  var _isComplete = false;
-  var dataKey = "assets/gameData/conversationData.json";
-  var conversationData = _kontra.dataAssets[dataKey];
-  var conversationController = (0, _conversationIterator.default)({
-    conversationData: conversationData,
-    onChatComplete: function onChatComplete(exitId) {
+  let _isComplete = false;
+  const dataKey = "assets/gameData/conversationData.json";
+  const conversationData = _kontra.dataAssets[dataKey];
+  const conversationController = (0, _conversationIterator.default)({
+    conversationData,
+    onChatComplete: exitId => {
       _dialogue.default.unmount();
 
       (0, _events.emit)(_events.EV_CONVOEND, {
-        exitId: exitId
+        exitId
       });
     },
-    onChainProgress: function onChainProgress(lastNodeId) {
-      return (0, _kontra.setStoreItem)("progress", {
-        storyProgress: lastNodeId
-      });
-    }
+    onChainProgress: lastNodeId => (0, _kontra.setStoreItem)("progress", {
+      storyProgress: lastNodeId
+    })
   });
 
-  var onDisplayText = function onDisplayText(_ref2) {
-    var name = _ref2.actor,
-        text = _ref2.text,
-        choices = _ref2.choices;
+  const onDisplayText = (_ref2) => {
+    let {
+      actor: name,
+      text,
+      choices
+    } = _ref2;
     return _dialogue.default.callText({
-      name: name,
-      text: text,
-      choices: choices
+      name,
+      text,
+      choices
     });
   };
 
-  var onInteractionPushed = (0, _onPush.default)("e", function () {
+  const onInteractionPushed = (0, _onPush.default)("e", () => {
     if (_dialogue.default.isBusy()) return;
 
-    var _ref3 = !conversationController.isRunning() ? conversationController.start(startId, {
-      startId: startId
+    const _ref3 = !conversationController.isRunning() ? conversationController.start(startId, {
+      startId
     }) : conversationController.goToNext(),
-        mode = _ref3.mode,
-        rest = _objectWithoutProperties(_ref3, ["mode"]);
+          {
+      mode
+    } = _ref3,
+          rest = _objectWithoutProperties(_ref3, ["mode"]);
 
     if (mode === _conversationIterator.MODES.NEXTNODE) {
       onDisplayText(rest);
@@ -8998,13 +8965,15 @@ var _default = function _default(_ref) {
   });
 
   _dialogue.default.mount({
-    onChoiceSelected: function onChoiceSelected(choice) {
+    onChoiceSelected: choice => {
       console.log("Selected:");
       console.log(choice);
 
-      var _conversationControll = conversationController.goToExact(choice.to),
-          mode = _conversationControll.mode,
-          rest = _objectWithoutProperties(_conversationControll, ["mode"]);
+      const _conversationControll = conversationController.goToExact(choice.to),
+            {
+        mode
+      } = _conversationControll,
+            rest = _objectWithoutProperties(_conversationControll, ["mode"]);
 
       if (mode === _conversationIterator.MODES.NEXTNODE) {
         onDisplayText(rest);
@@ -9015,19 +8984,11 @@ var _default = function _default(_ref) {
   });
 
   return {
-    id: id,
-    isComplete: function isComplete() {
-      return _isComplete;
-    },
-    enter: function enter(props) {
-      return onEntry();
-    },
-    update: function update() {
-      return onInteractionPushed();
-    },
-    exit: function exit() {
-      return onExit();
-    }
+    id,
+    isComplete: () => _isComplete,
+    enter: props => onEntry(),
+    update: () => onInteractionPushed(),
+    exit: () => onExit()
   };
 };
 
@@ -9046,77 +9007,67 @@ var _mithril = _interopRequireDefault(require("mithril"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var mounted = false;
+let mounted = false;
 /* still deciding how to work the UI either with
 sngular instances of mithril or otherwise. */
 
-var Shell = function Shell(_ref) {
-  var attrs = _ref.attrs;
-  var entitiesInStore = (0, _kontra.getStoreItem)("entities");
-  var dataKey = "assets/gameData/entityData.json";
-  var itemsInData = _kontra.dataAssets[dataKey];
+const Shell = (_ref) => {
+  let {
+    attrs
+  } = _ref;
+  const entitiesInStore = (0, _kontra.getStoreItem)("entities");
+  const dataKey = "assets/gameData/entityData.json";
+  const itemsInData = _kontra.dataAssets[dataKey];
   return {
-    oninit: function oninit() {
-      return mounted = true;
-    },
-    onremove: function onremove() {
-      return mounted = false;
-    },
-    view: function view() {
-      return (0, _mithril.default)("div", {
-        class: "uiShell"
-      }, [(0, _mithril.default)("div", {
-        class: "dialogueBoxOuter"
-      }, [(0, _mithril.default)("div", {
-        class: "dialogue"
-      }, [attrs.items.length ? (0, _mithril.default)("dl", {
-        class: "itemListing"
-      }, attrs.items.map(function (item) {
-        var data = itemsInData.find(function (_ref2) {
-          var id = _ref2.id;
-          return id === item.id;
-        });
-        var storedItem = entitiesInStore.find(function (_ref3) {
-          var id = _ref3.id;
-          return id === item.id;
-        });
-        var qty = storedItem ? storedItem.qty : 0;
-        return (0, _mithril.default)("dd", {
-          class: "itemNode",
-          onclick: function onclick() {
-            return attrs.onItemSelected(data);
-          }
-        }, [(0, _mithril.default)("img", {
-          src: data.thumb
-        }), (0, _mithril.default)("h4", "".concat(data.name, ": x").concat(qty)), (0, _mithril.default)("h5", data.description)]);
-      })) : (0, _mithril.default)("p", "No items."), (0, _mithril.default)("div", {
-        class: "choiceWindow"
-      }, (0, _mithril.default)("button", {
-        class: "choiceBox",
-        onclick: function onclick() {
-          return attrs.onInventoryClosed();
-        }
-      }, "Close"))])])]);
-    }
+    oninit: () => mounted = true,
+    onremove: () => mounted = false,
+    view: () => (0, _mithril.default)("div", {
+      class: "uiShell"
+    }, [(0, _mithril.default)("div", {
+      class: "dialogueBoxOuter"
+    }, [(0, _mithril.default)("div", {
+      class: "dialogue"
+    }, [attrs.items.length ? (0, _mithril.default)("dl", {
+      class: "itemListing"
+    }, attrs.items.map(item => {
+      const data = itemsInData.find((_ref2) => {
+        let {
+          id
+        } = _ref2;
+        return id === item.id;
+      });
+      const storedItem = entitiesInStore.find((_ref3) => {
+        let {
+          id
+        } = _ref3;
+        return id === item.id;
+      });
+      const qty = storedItem ? storedItem.qty : 0;
+      return (0, _mithril.default)("dd", {
+        class: "itemNode",
+        onclick: () => attrs.onItemSelected(data)
+      }, [(0, _mithril.default)("img", {
+        src: data.thumb
+      }), (0, _mithril.default)("h4", "".concat(data.name, ": x").concat(qty)), (0, _mithril.default)("h5", data.description)]);
+    })) : (0, _mithril.default)("p", "No items."), (0, _mithril.default)("div", {
+      class: "choiceWindow"
+    }, (0, _mithril.default)("button", {
+      class: "choiceBox",
+      onclick: () => attrs.onInventoryClosed()
+    }, "Close"))])])])
   };
 };
 
 var _default = {
-  isBusy: function isBusy() {
-    return mounted;
-  },
+  isBusy: () => mounted,
   mount: function mount() {
-    var attrs = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    let attrs = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
     _mithril.default.mount(document.getElementById("ui"), {
-      view: function view() {
-        return (0, _mithril.default)(Shell, attrs);
-      }
+      view: () => (0, _mithril.default)(Shell, attrs)
     });
   },
-  unmount: function unmount() {
-    return _mithril.default.mount(document.getElementById("ui"), null);
-  }
+  unmount: () => _mithril.default.mount(document.getElementById("ui"), null)
 };
 exports.default = _default;
 },{"kontra":"node_modules/kontra/kontra.mjs","mithril":"node_modules/mithril/index.js"}],"src/states/fieldState.js":[function(require,module,exports) {
@@ -9135,30 +9086,30 @@ var _onPush = _interopRequireDefault(require("../input/onPush"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      reactionManager = _ref.reactionManager,
-      _ref$getAllEntitiesOf = _ref.getAllEntitiesOfType,
-      getAllEntitiesOfType = _ref$getAllEntitiesOf === void 0 ? function () {} : _ref$getAllEntitiesOf,
-      _ref$onEntry = _ref.onEntry,
-      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
-      _ref$onExit = _ref.onExit,
-      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
-  var _isComplete = false;
-  var interactionCooldown = false;
+var _default = (_ref) => {
+  let {
+    id,
+    reactionManager,
+    getAllEntitiesOfType = () => {},
+    onEntry = () => {},
+    onExit = () => {}
+  } = _ref;
+  let _isComplete = false;
+  let interactionCooldown = false;
   /* TODO: Use consts on keys also */
 
-  var onInteractionPushed = (0, _onPush.default)("e", function (_ref2) {
-    var origin = _ref2.origin,
-        _ref2$collisions = _ref2.collisions,
-        collisions = _ref2$collisions === void 0 ? [] : _ref2$collisions;
+  const onInteractionPushed = (0, _onPush.default)("e", (_ref2) => {
+    let {
+      origin,
+      collisions = []
+    } = _ref2;
 
     if (collisions.length && origin.controlledByUser) {
       if (!interactionCooldown) {
         /* Collision usually pre-sorted by this point, it's not up to the state
         to handle this though. */
-        var interactible = collisions[0];
-        var reactionData = reactionManager.get(interactible.type);
+        const interactible = collisions[0];
+        const reactionData = reactionManager.get(interactible.type);
         /* Not all things will have a reaction set, plus they might expect
         different properties to be passed in future. */
 
@@ -9170,14 +9121,15 @@ var _default = function _default(_ref) {
       }
     }
   });
-  var onAttackPushed = (0, _onPush.default)("space", function (_ref3) {
-    var origin = _ref3.origin,
-        _ref3$collisions = _ref3.collisions,
-        collisions = _ref3$collisions === void 0 ? [] : _ref3$collisions;
-    collisions.map(function (col) {
+  const onAttackPushed = (0, _onPush.default)("space", (_ref3) => {
+    let {
+      origin,
+      collisions = []
+    } = _ref3;
+    collisions.map(col => {
       if (typeof col.onAttacked === "function") {
         col.onAttacked({
-          origin: origin
+          origin
         });
       }
     });
@@ -9188,38 +9140,30 @@ var _default = function _default(_ref) {
   basically. You might even want to life this to the index like the other reactions, in fact
   that might make more sense. */
 
-  var onInventoryOpened = (0, _onPush.default)("i", function () {
+  const onInventoryOpened = (0, _onPush.default)("i", () => {
     if (_inventory.default.isBusy()) return;
     /* Get you a list of all items that are being held in data */
 
     _inventory.default.mount({
       items: getAllEntitiesOfType(_consts.ENTITY_TYPE.PICKUP),
-      onInventoryClosed: function onInventoryClosed() {
-        return _inventory.default.unmount();
-      },
-      onItemSelected: function onItemSelected(itemData) {
+      onInventoryClosed: () => _inventory.default.unmount(),
+      onItemSelected: itemData => {
         console.log(itemData);
       }
     }); // Don't forget to unmount it when it's done also!
 
   });
   return {
-    id: id,
-    isComplete: function isComplete() {
-      return _isComplete;
-    },
-    enter: function enter(props) {
-      return onEntry();
-    },
-    update: function update(props) {
+    id,
+    isComplete: () => _isComplete,
+    enter: props => onEntry(),
+    update: props => {
       // TODO: Careful these don't conflict and do weird things (inventory in convo, etc, do not want!)
       onInteractionPushed(props);
       onAttackPushed(props);
       onInventoryOpened();
     },
-    exit: function exit() {
-      return onExit();
-    }
+    exit: () => onExit()
   };
 };
 
@@ -9232,35 +9176,33 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      ctx = _ref.ctx,
-      _ref$direction = _ref.direction,
-      direction = _ref$direction === void 0 ? 1 : _ref$direction,
-      _ref$onFadeComplete = _ref.onFadeComplete,
-      onFadeComplete = _ref$onFadeComplete === void 0 ? function () {} : _ref$onFadeComplete;
+var _default = (_ref) => {
+  let {
+    id,
+    ctx,
+    direction = 1,
+    onFadeComplete = () => {}
+  } = _ref;
   // https://stackoverflow.com/questions/19258169/fadein-fadeout-in-html5-canvas
-  var _isComplete = false;
-  var alpha = direction < 0 ? 1 : 0,
+  let _isComplete = false;
+  let alpha = direction < 0 ? 1 : 0,
       delta = 0.05; //ctx.globalAlpha = direction < 0 ? 1 : 0;
   // Under heavy testing
 
-  var curtainEl = document.getElementById("curtain");
+  const curtainEl = document.getElementById("curtain");
   curtainEl.style.opacity = direction < 0 ? 1 : 0;
   return {
-    id: id,
-    isComplete: function isComplete() {
-      return _isComplete;
-    },
-    enter: function enter(props) {},
-    update: function update() {
+    id,
+    isComplete: () => _isComplete,
+    enter: props => {},
+    update: () => {
       _isComplete = direction > 0 && alpha >= 1 || direction < 0 && alpha <= -1;
       alpha = direction < 0 ? alpha - delta : alpha + delta; //ctx.clearRect(0, 0, ctx.width, ctx.height);
       //ctx.globalAlpha = isComplete ? Math.round(alpha) : alpha;
 
       curtainEl.style.opacity = _isComplete ? Math.round(alpha) : alpha;
     },
-    exit: function exit() {
+    exit: () => {
       //ctx.globalAlpha = direction < 0 ? 0 : 1;
       curtainEl.style.opacity = direction < 0 ? 0 : 1;
 
@@ -9282,11 +9224,13 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _default = function _default(_ref) {
-  var Scene = _ref.sceneObject;
-  var currentScene = null;
+var _default = (_ref) => {
+  let {
+    sceneObject: Scene
+  } = _ref;
+  let currentScene = null;
   return {
-    loadScene: function loadScene(props) {
+    loadScene: props => {
       if (currentScene) currentScene.stop();
       currentScene = Scene(props);
       currentScene.start();
@@ -9303,42 +9247,50 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _default = function _default() {
-  var states = [];
+/* Note: This isn't a true stack-based FSM. It allows for you to remove
+states at any level which could lead to big problems so keep an eye on it. */
+var _default = () => {
+  let states = [];
 
-  var top = function top(arr) {
-    return arr[arr.length - 1];
-  };
+  const top = arr => arr[arr.length - 1];
 
   return {
-    push: function push(state, props) {
-      if (!states.some(function (s) {
-        return s.id === state.id;
-      })) {
+    push: (state, props) => {
+      if (!states.some(s => s.id === state.id)) {
         states.push(state);
         top(states).enter(props);
       }
     },
-    update: function update(props) {
-      var currentState = top(states);
+    update: props => {
+      const currentState = top(states);
       if (!currentState) return;
       currentState.update(props);
 
       if (currentState.isComplete()) {
-        currentState.exit();
-        states.pop();
+        currentState.exit(); //states.pop(); ???
+        // Careful doing this. Kind of breaks the idea of state. Look in to
+        // other AI methods rather than state machines as I think they suck
+        // when it comes to AI. Fine with other things like curtains though.
+
+        states = states.filter(x => x.id !== currentState.id);
       }
     },
-    pop: function pop() {
-      var currentState = top(states);
+    pop: () => {
+      const currentState = top(states);
       currentState.exit();
       states.pop();
+    },
+    popState: id => {
+      const currentState = states.find(x => x.id === id);
+      if (!currentState) return;
+      currentState.exit();
+      states = states.filter(x => x.id !== id);
     }
   };
 };
 
 exports.default = _default;
-},{}],"src/sprites/spriteFunctions.js":[function(require,module,exports) {
+},{}],"src/common/spriteFunctions.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9348,25 +9300,26 @@ exports.flipSprite = exports.moveSprite = void 0;
 
 var _helpers = require("../common/helpers");
 
-var moveSprite = function moveSprite(_ref) {
-  var dir = _ref.dir,
-      sprite = _ref.sprite,
-      _ref$checkCollision = _ref.checkCollision,
-      checkCollision = _ref$checkCollision === void 0 ? function () {
-    return false;
-  } : _ref$checkCollision;
+const moveSprite = (_ref) => {
+  let {
+    dir,
+    sprite,
+    checkCollision = () => {
+      return false;
+    }
+  } = _ref;
 
   /* Normalise so you don't go super fast diagonally */
-  var directionNormal = (0, _helpers.getNormal)(dir); /// For collisions with tiles
+  const directionNormal = (0, _helpers.getNormal)(dir); /// For collisions with tiles
 
-  var oldPos = {
+  let oldPos = {
     x: sprite.x,
     y: sprite.y
   }; // Move X then check X (careful editing directly, might lead to issues with camera)
 
   sprite.x += directionNormal.x; // Collider check (const layer names please)
 
-  var collidedWithX = checkCollision(sprite);
+  const collidedWithX = checkCollision(sprite);
 
   if (sprite.collidesWithTiles && collidedWithX) {
     sprite.x = oldPos.x;
@@ -9381,7 +9334,7 @@ var moveSprite = function moveSprite(_ref) {
 
   sprite.y += directionNormal.y; // Collider check against tiles
 
-  var collidedWithY = checkCollision(sprite);
+  const collidedWithY = checkCollision(sprite);
 
   if (sprite.collidesWithTiles && collidedWithY) {
     sprite.x = oldPos.x;
@@ -9389,15 +9342,17 @@ var moveSprite = function moveSprite(_ref) {
   }
 
   return {
-    directionNormal: directionNormal
+    directionNormal
   };
 };
 
 exports.moveSprite = moveSprite;
 
-var flipSprite = function flipSprite(_ref2) {
-  var direction = _ref2.direction,
-      sprite = _ref2.sprite;
+const flipSprite = (_ref2) => {
+  let {
+    direction,
+    sprite
+  } = _ref2;
 
   if (direction.x < 0 && sprite.scaleX > 0) {
     sprite.setScale(-1, 1);
@@ -9417,7 +9372,7 @@ exports.default = void 0;
 
 var _stateManager = _interopRequireDefault(require("../managers/stateManager"));
 
-var _spriteFunctions = require("./spriteFunctions");
+var _spriteFunctions = require("../common/spriteFunctions");
 
 var _helpers = require("../common/helpers");
 
@@ -9430,99 +9385,92 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // a 'static' flag or no animations full stop.
 // TODO: Can we make sure we don't use the 'controlled by user' nonsense in the data anymore. What
 // if I want to use a different entity for the player?
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      x = _ref.x,
-      y = _ref.y,
-      _ref$z = _ref.z,
-      z = _ref$z === void 0 ? 1 : _ref$z,
-      _ref$customProperties = _ref.customProperties,
-      customProperties = _ref$customProperties === void 0 ? {} : _ref$customProperties,
-      _ref$entityData = _ref.entityData,
-      entityData = _ref$entityData === void 0 ? null : _ref$entityData,
-      _ref$collisionMethod = _ref.collisionMethod,
-      collisionMethod = _ref$collisionMethod === void 0 ? function (layer, sprite) {} : _ref$collisionMethod;
+var _default = (_ref) => {
+  let {
+    id,
+    x,
+    y,
+    z = 1,
+    customProperties = {},
+    entityData = null,
+    collisionMethod = (layer, sprite) => {}
+  } = _ref;
 
   if (!id) {
     throw new Error("Entity is fairly useless without an id, you should add one.");
   }
 
-  var entityStateMachine = (0, _stateManager.default)();
-  var name = entityData.name,
-      type = entityData.type,
-      animations = entityData.animations,
-      frameWidth = entityData.frameWidth,
-      frameHeight = entityData.frameHeight,
-      sheet = entityData.sheet,
-      _entityData$collision = entityData.collisionBodyOptions,
-      collisionBodyOptions = _entityData$collision === void 0 ? null : _entityData$collision,
-      _entityData$manualAni = entityData.manualAnimation,
-      manualAnimation = _entityData$manualAni === void 0 ? false : _entityData$manualAni,
-      _entityData$controlle = entityData.controlledByUser,
-      controlledByUser = _entityData$controlle === void 0 ? false : _entityData$controlle,
-      _entityData$controlle2 = entityData.controlledByAI,
-      controlledByAI = _entityData$controlle2 === void 0 ? false : _entityData$controlle2,
-      _entityData$collidesW = entityData.collidesWithTiles,
-      collidesWithTiles = _entityData$collidesW === void 0 ? true : _entityData$collidesW;
-  var spriteSheet = (0, _kontra.SpriteSheet)({
+  const entityStateMachine = (0, _stateManager.default)();
+  const {
+    name,
+    type,
+    animations,
+    frameWidth,
+    frameHeight,
+    sheet,
+    collisionBodyOptions = null,
+    manualAnimation = false,
+    controlledByUser = false,
+    controlledByAI = false,
+    collidesWithTiles = true
+  } = entityData;
+  let spriteSheet = (0, _kontra.SpriteSheet)({
     image: _kontra.imageAssets[sheet],
-    frameWidth: frameWidth,
-    frameHeight: frameHeight,
-    animations: animations
+    frameWidth,
+    frameHeight,
+    animations
   });
   /* These are passable to states so they can act accordingly */
 
-  var dir = {
+  let dir = {
     x: 0,
     y: 0
   }; // AI (to add later)
 
-  var targetDestination = null;
-  var movementDisabled = false;
+  let targetDestination = null;
+  let movementDisabled = false;
   /* Id should really be named 'class' since its re-used. */
 
-  var sprite = (0, _kontra.Sprite)({
+  const sprite = (0, _kontra.Sprite)({
     instId: (0, _helpers.uniqueId)(id),
-    id: id,
-    type: type,
-    name: name,
-    x: x,
-    y: y,
-    z: z,
+    id,
+    type,
+    name,
+    x,
+    y,
+    z,
     anchor: {
       x: 0.5,
       y: 0.5
     },
-    customProperties: customProperties,
+    customProperties,
     radius: 1,
     animations: spriteSheet.animations,
-    collidesWithTiles: collidesWithTiles,
-    controlledByUser: controlledByUser,
-    controlledByAI: controlledByAI,
-    collisionBodyOptions: collisionBodyOptions,
-    manualAnimation: manualAnimation,
-    onAttacked: function onAttacked() {
+    collidesWithTiles,
+    controlledByUser,
+    controlledByAI,
+    collisionBodyOptions,
+    manualAnimation,
+    onAttacked: () => {
       // Push an internal state for damage effect (whatever that's going to be)
       console.log(id);
     },
-    enableMovement: function enableMovement() {
-      return movementDisabled = false;
-    },
-    disableMovement: function disableMovement() {
-      return movementDisabled = true;
-    },
-    lookAt: function lookAt(_ref2) {
-      var x = _ref2.x,
-          y = _ref2.y;
+    enableMovement: () => movementDisabled = false,
+    disableMovement: () => movementDisabled = true,
+    lookAt: (_ref2) => {
+      let {
+        x,
+        y
+      } = _ref2;
       (0, _spriteFunctions.flipSprite)({
         direction: {
           x: sprite.x > x ? -1 : 1,
           y: sprite.y > y ? -1 : 1
         },
-        sprite: sprite
+        sprite
       });
     },
-    update: function update() {
+    update: () => {
       entityStateMachine.update();
       /* Movement - Massively a work in progress - TODO: Sort out data and splitting out concerns of sprite types. 
       targestDestination prop may or may not be an AI thing, as we might want to automatically move the player
@@ -9549,25 +9497,23 @@ var _default = function _default(_ref) {
       } // TODO: Not really needed any more
 
 
-      var _moveSprite = (0, _spriteFunctions.moveSprite)({
+      const {
+        directionNormal
+      } = (0, _spriteFunctions.moveSprite)({
         dir: movementDisabled && targetDestination === null ? {
           x: 0,
           y: 0
         } : dir,
-        sprite: sprite,
-        checkCollision: function checkCollision(sprite) {
-          return collisionMethod("Collision", sprite);
-        }
-      }),
-          directionNormal = _moveSprite.directionNormal; // Flip the sprite on movement
-
+        sprite,
+        checkCollision: sprite => collisionMethod("Collision", sprite)
+      }); // Flip the sprite on movement
 
       (0, _spriteFunctions.flipSprite)({
         direction: directionNormal,
-        sprite: sprite
+        sprite
       }); // Do some animations
 
-      var isMoving = directionNormal.x !== 0 || directionNormal.y !== 0;
+      const isMoving = directionNormal.x !== 0 || directionNormal.y !== 0;
 
       if (!sprite.manualAnimation) {
         sprite.playAnimation(isMoving ? "walk" : "idle");
@@ -9583,7 +9529,1033 @@ var _default = function _default(_ref) {
 };
 
 exports.default = _default;
-},{"../managers/stateManager":"src/managers/stateManager.js","./spriteFunctions":"src/sprites/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/states/damagedState.js":[function(require,module,exports) {
+},{"../managers/stateManager":"src/managers/stateManager.js","../common/spriteFunctions":"src/common/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"node_modules/easystarjs/src/instance.js":[function(require,module,exports) {
+/**
+ * Represents a single instance of EasyStar.
+ * A path that is in the queue to eventually be found.
+ */
+module.exports = function() {
+    this.pointsToAvoid = {};
+    this.startX;
+    this.callback;
+    this.startY;
+    this.endX;
+    this.endY;
+    this.nodeHash = {};
+    this.openList;
+};
+},{}],"node_modules/easystarjs/src/node.js":[function(require,module,exports) {
+/**
+* A simple Node that represents a single tile on the grid.
+* @param {Object} parent The parent node.
+* @param {Number} x The x position on the grid.
+* @param {Number} y The y position on the grid.
+* @param {Number} costSoFar How far this node is in moves*cost from the start.
+* @param {Number} simpleDistanceToTarget Manhatten distance to the end point.
+**/
+module.exports = function(parent, x, y, costSoFar, simpleDistanceToTarget) {
+    this.parent = parent;
+    this.x = x;
+    this.y = y;
+    this.costSoFar = costSoFar;
+    this.simpleDistanceToTarget = simpleDistanceToTarget;
+
+    /**
+    * @return {Number} Best guess distance of a cost using this node.
+    **/
+    this.bestGuessDistance = function() {
+        return this.costSoFar + this.simpleDistanceToTarget;
+    }
+};
+},{}],"node_modules/heap/lib/heap.js":[function(require,module,exports) {
+var define;
+// Generated by CoffeeScript 1.8.0
+(function() {
+  var Heap, defaultCmp, floor, heapify, heappop, heappush, heappushpop, heapreplace, insort, min, nlargest, nsmallest, updateItem, _siftdown, _siftup;
+
+  floor = Math.floor, min = Math.min;
+
+
+  /*
+  Default comparison function to be used
+   */
+
+  defaultCmp = function(x, y) {
+    if (x < y) {
+      return -1;
+    }
+    if (x > y) {
+      return 1;
+    }
+    return 0;
+  };
+
+
+  /*
+  Insert item x in list a, and keep it sorted assuming a is sorted.
+  
+  If x is already in a, insert it to the right of the rightmost x.
+  
+  Optional args lo (default 0) and hi (default a.length) bound the slice
+  of a to be searched.
+   */
+
+  insort = function(a, x, lo, hi, cmp) {
+    var mid;
+    if (lo == null) {
+      lo = 0;
+    }
+    if (cmp == null) {
+      cmp = defaultCmp;
+    }
+    if (lo < 0) {
+      throw new Error('lo must be non-negative');
+    }
+    if (hi == null) {
+      hi = a.length;
+    }
+    while (lo < hi) {
+      mid = floor((lo + hi) / 2);
+      if (cmp(x, a[mid]) < 0) {
+        hi = mid;
+      } else {
+        lo = mid + 1;
+      }
+    }
+    return ([].splice.apply(a, [lo, lo - lo].concat(x)), x);
+  };
+
+
+  /*
+  Push item onto heap, maintaining the heap invariant.
+   */
+
+  heappush = function(array, item, cmp) {
+    if (cmp == null) {
+      cmp = defaultCmp;
+    }
+    array.push(item);
+    return _siftdown(array, 0, array.length - 1, cmp);
+  };
+
+
+  /*
+  Pop the smallest item off the heap, maintaining the heap invariant.
+   */
+
+  heappop = function(array, cmp) {
+    var lastelt, returnitem;
+    if (cmp == null) {
+      cmp = defaultCmp;
+    }
+    lastelt = array.pop();
+    if (array.length) {
+      returnitem = array[0];
+      array[0] = lastelt;
+      _siftup(array, 0, cmp);
+    } else {
+      returnitem = lastelt;
+    }
+    return returnitem;
+  };
+
+
+  /*
+  Pop and return the current smallest value, and add the new item.
+  
+  This is more efficient than heappop() followed by heappush(), and can be
+  more appropriate when using a fixed size heap. Note that the value
+  returned may be larger than item! That constrains reasonable use of
+  this routine unless written as part of a conditional replacement:
+      if item > array[0]
+        item = heapreplace(array, item)
+   */
+
+  heapreplace = function(array, item, cmp) {
+    var returnitem;
+    if (cmp == null) {
+      cmp = defaultCmp;
+    }
+    returnitem = array[0];
+    array[0] = item;
+    _siftup(array, 0, cmp);
+    return returnitem;
+  };
+
+
+  /*
+  Fast version of a heappush followed by a heappop.
+   */
+
+  heappushpop = function(array, item, cmp) {
+    var _ref;
+    if (cmp == null) {
+      cmp = defaultCmp;
+    }
+    if (array.length && cmp(array[0], item) < 0) {
+      _ref = [array[0], item], item = _ref[0], array[0] = _ref[1];
+      _siftup(array, 0, cmp);
+    }
+    return item;
+  };
+
+
+  /*
+  Transform list into a heap, in-place, in O(array.length) time.
+   */
+
+  heapify = function(array, cmp) {
+    var i, _i, _j, _len, _ref, _ref1, _results, _results1;
+    if (cmp == null) {
+      cmp = defaultCmp;
+    }
+    _ref1 = (function() {
+      _results1 = [];
+      for (var _j = 0, _ref = floor(array.length / 2); 0 <= _ref ? _j < _ref : _j > _ref; 0 <= _ref ? _j++ : _j--){ _results1.push(_j); }
+      return _results1;
+    }).apply(this).reverse();
+    _results = [];
+    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+      i = _ref1[_i];
+      _results.push(_siftup(array, i, cmp));
+    }
+    return _results;
+  };
+
+
+  /*
+  Update the position of the given item in the heap.
+  This function should be called every time the item is being modified.
+   */
+
+  updateItem = function(array, item, cmp) {
+    var pos;
+    if (cmp == null) {
+      cmp = defaultCmp;
+    }
+    pos = array.indexOf(item);
+    if (pos === -1) {
+      return;
+    }
+    _siftdown(array, 0, pos, cmp);
+    return _siftup(array, pos, cmp);
+  };
+
+
+  /*
+  Find the n largest elements in a dataset.
+   */
+
+  nlargest = function(array, n, cmp) {
+    var elem, result, _i, _len, _ref;
+    if (cmp == null) {
+      cmp = defaultCmp;
+    }
+    result = array.slice(0, n);
+    if (!result.length) {
+      return result;
+    }
+    heapify(result, cmp);
+    _ref = array.slice(n);
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      elem = _ref[_i];
+      heappushpop(result, elem, cmp);
+    }
+    return result.sort(cmp).reverse();
+  };
+
+
+  /*
+  Find the n smallest elements in a dataset.
+   */
+
+  nsmallest = function(array, n, cmp) {
+    var elem, i, los, result, _i, _j, _len, _ref, _ref1, _results;
+    if (cmp == null) {
+      cmp = defaultCmp;
+    }
+    if (n * 10 <= array.length) {
+      result = array.slice(0, n).sort(cmp);
+      if (!result.length) {
+        return result;
+      }
+      los = result[result.length - 1];
+      _ref = array.slice(n);
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        elem = _ref[_i];
+        if (cmp(elem, los) < 0) {
+          insort(result, elem, 0, null, cmp);
+          result.pop();
+          los = result[result.length - 1];
+        }
+      }
+      return result;
+    }
+    heapify(array, cmp);
+    _results = [];
+    for (i = _j = 0, _ref1 = min(n, array.length); 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
+      _results.push(heappop(array, cmp));
+    }
+    return _results;
+  };
+
+  _siftdown = function(array, startpos, pos, cmp) {
+    var newitem, parent, parentpos;
+    if (cmp == null) {
+      cmp = defaultCmp;
+    }
+    newitem = array[pos];
+    while (pos > startpos) {
+      parentpos = (pos - 1) >> 1;
+      parent = array[parentpos];
+      if (cmp(newitem, parent) < 0) {
+        array[pos] = parent;
+        pos = parentpos;
+        continue;
+      }
+      break;
+    }
+    return array[pos] = newitem;
+  };
+
+  _siftup = function(array, pos, cmp) {
+    var childpos, endpos, newitem, rightpos, startpos;
+    if (cmp == null) {
+      cmp = defaultCmp;
+    }
+    endpos = array.length;
+    startpos = pos;
+    newitem = array[pos];
+    childpos = 2 * pos + 1;
+    while (childpos < endpos) {
+      rightpos = childpos + 1;
+      if (rightpos < endpos && !(cmp(array[childpos], array[rightpos]) < 0)) {
+        childpos = rightpos;
+      }
+      array[pos] = array[childpos];
+      pos = childpos;
+      childpos = 2 * pos + 1;
+    }
+    array[pos] = newitem;
+    return _siftdown(array, startpos, pos, cmp);
+  };
+
+  Heap = (function() {
+    Heap.push = heappush;
+
+    Heap.pop = heappop;
+
+    Heap.replace = heapreplace;
+
+    Heap.pushpop = heappushpop;
+
+    Heap.heapify = heapify;
+
+    Heap.updateItem = updateItem;
+
+    Heap.nlargest = nlargest;
+
+    Heap.nsmallest = nsmallest;
+
+    function Heap(cmp) {
+      this.cmp = cmp != null ? cmp : defaultCmp;
+      this.nodes = [];
+    }
+
+    Heap.prototype.push = function(x) {
+      return heappush(this.nodes, x, this.cmp);
+    };
+
+    Heap.prototype.pop = function() {
+      return heappop(this.nodes, this.cmp);
+    };
+
+    Heap.prototype.peek = function() {
+      return this.nodes[0];
+    };
+
+    Heap.prototype.contains = function(x) {
+      return this.nodes.indexOf(x) !== -1;
+    };
+
+    Heap.prototype.replace = function(x) {
+      return heapreplace(this.nodes, x, this.cmp);
+    };
+
+    Heap.prototype.pushpop = function(x) {
+      return heappushpop(this.nodes, x, this.cmp);
+    };
+
+    Heap.prototype.heapify = function() {
+      return heapify(this.nodes, this.cmp);
+    };
+
+    Heap.prototype.updateItem = function(x) {
+      return updateItem(this.nodes, x, this.cmp);
+    };
+
+    Heap.prototype.clear = function() {
+      return this.nodes = [];
+    };
+
+    Heap.prototype.empty = function() {
+      return this.nodes.length === 0;
+    };
+
+    Heap.prototype.size = function() {
+      return this.nodes.length;
+    };
+
+    Heap.prototype.clone = function() {
+      var heap;
+      heap = new Heap();
+      heap.nodes = this.nodes.slice(0);
+      return heap;
+    };
+
+    Heap.prototype.toArray = function() {
+      return this.nodes.slice(0);
+    };
+
+    Heap.prototype.insert = Heap.prototype.push;
+
+    Heap.prototype.top = Heap.prototype.peek;
+
+    Heap.prototype.front = Heap.prototype.peek;
+
+    Heap.prototype.has = Heap.prototype.contains;
+
+    Heap.prototype.copy = Heap.prototype.clone;
+
+    return Heap;
+
+  })();
+
+  (function(root, factory) {
+    if (typeof define === 'function' && define.amd) {
+      return define([], factory);
+    } else if (typeof exports === 'object') {
+      return module.exports = factory();
+    } else {
+      return root.Heap = factory();
+    }
+  })(this, function() {
+    return Heap;
+  });
+
+}).call(this);
+
+},{}],"node_modules/heap/index.js":[function(require,module,exports) {
+module.exports = require('./lib/heap');
+
+},{"./lib/heap":"node_modules/heap/lib/heap.js"}],"node_modules/easystarjs/src/easystar.js":[function(require,module,exports) {
+/**
+*   EasyStar.js
+*   github.com/prettymuchbryce/EasyStarJS
+*   Licensed under the MIT license.
+*
+*   Implementation By Bryce Neal (@prettymuchbryce)
+**/
+
+var EasyStar = {}
+var Instance = require('./instance');
+var Node = require('./node');
+var Heap = require('heap');
+
+const CLOSED_LIST = 0;
+const OPEN_LIST = 1;
+
+module.exports = EasyStar;
+
+var nextInstanceId = 1;
+
+EasyStar.js = function() {
+    var STRAIGHT_COST = 1.0;
+    var DIAGONAL_COST = 1.4;
+    var syncEnabled = false;
+    var pointsToAvoid = {};
+    var collisionGrid;
+    var costMap = {};
+    var pointsToCost = {};
+    var directionalConditions = {};
+    var allowCornerCutting = true;
+    var iterationsSoFar;
+    var instances = {};
+    var instanceQueue = [];
+    var iterationsPerCalculation = Number.MAX_VALUE;
+    var acceptableTiles;
+    var diagonalsEnabled = false;
+
+    /**
+    * Sets the collision grid that EasyStar uses.
+    *
+    * @param {Array|Number} tiles An array of numbers that represent
+    * which tiles in your grid should be considered
+    * acceptable, or "walkable".
+    **/
+    this.setAcceptableTiles = function(tiles) {
+        if (tiles instanceof Array) {
+            // Array
+            acceptableTiles = tiles;
+        } else if (!isNaN(parseFloat(tiles)) && isFinite(tiles)) {
+            // Number
+            acceptableTiles = [tiles];
+        }
+    };
+
+    /**
+    * Enables sync mode for this EasyStar instance..
+    * if you're into that sort of thing.
+    **/
+    this.enableSync = function() {
+        syncEnabled = true;
+    };
+
+    /**
+    * Disables sync mode for this EasyStar instance.
+    **/
+    this.disableSync = function() {
+        syncEnabled = false;
+    };
+
+    /**
+     * Enable diagonal pathfinding.
+     */
+    this.enableDiagonals = function() {
+        diagonalsEnabled = true;
+    }
+
+    /**
+     * Disable diagonal pathfinding.
+     */
+    this.disableDiagonals = function() {
+        diagonalsEnabled = false;
+    }
+
+    /**
+    * Sets the collision grid that EasyStar uses.
+    *
+    * @param {Array} grid The collision grid that this EasyStar instance will read from.
+    * This should be a 2D Array of Numbers.
+    **/
+    this.setGrid = function(grid) {
+        collisionGrid = grid;
+
+        //Setup cost map
+        for (var y = 0; y < collisionGrid.length; y++) {
+            for (var x = 0; x < collisionGrid[0].length; x++) {
+                if (!costMap[collisionGrid[y][x]]) {
+                    costMap[collisionGrid[y][x]] = 1
+                }
+            }
+        }
+    };
+
+    /**
+    * Sets the tile cost for a particular tile type.
+    *
+    * @param {Number} The tile type to set the cost for.
+    * @param {Number} The multiplicative cost associated with the given tile.
+    **/
+    this.setTileCost = function(tileType, cost) {
+        costMap[tileType] = cost;
+    };
+
+    /**
+    * Sets the an additional cost for a particular point.
+    * Overrides the cost from setTileCost.
+    *
+    * @param {Number} x The x value of the point to cost.
+    * @param {Number} y The y value of the point to cost.
+    * @param {Number} The multiplicative cost associated with the given point.
+    **/
+    this.setAdditionalPointCost = function(x, y, cost) {
+        if (pointsToCost[y] === undefined) {
+            pointsToCost[y] = {};
+        }
+        pointsToCost[y][x] = cost;
+    };
+
+    /**
+    * Remove the additional cost for a particular point.
+    *
+    * @param {Number} x The x value of the point to stop costing.
+    * @param {Number} y The y value of the point to stop costing.
+    **/
+    this.removeAdditionalPointCost = function(x, y) {
+        if (pointsToCost[y] !== undefined) {
+            delete pointsToCost[y][x];
+        }
+    }
+
+    /**
+    * Remove all additional point costs.
+    **/
+    this.removeAllAdditionalPointCosts = function() {
+        pointsToCost = {};
+    }
+
+    /**
+    * Sets a directional condition on a tile
+    *
+    * @param {Number} x The x value of the point.
+    * @param {Number} y The y value of the point.
+    * @param {Array.<String>} allowedDirections A list of all the allowed directions that can access
+    * the tile.
+    **/
+    this.setDirectionalCondition = function(x, y, allowedDirections) {
+        if (directionalConditions[y] === undefined) {
+            directionalConditions[y] = {};
+        }
+        directionalConditions[y][x] = allowedDirections;
+    };
+
+    /**
+    * Remove all directional conditions
+    **/
+    this.removeAllDirectionalConditions = function() {
+        directionalConditions = {};
+    };
+
+    /**
+    * Sets the number of search iterations per calculation.
+    * A lower number provides a slower result, but more practical if you
+    * have a large tile-map and don't want to block your thread while
+    * finding a path.
+    *
+    * @param {Number} iterations The number of searches to prefrom per calculate() call.
+    **/
+    this.setIterationsPerCalculation = function(iterations) {
+        iterationsPerCalculation = iterations;
+    };
+
+    /**
+    * Avoid a particular point on the grid,
+    * regardless of whether or not it is an acceptable tile.
+    *
+    * @param {Number} x The x value of the point to avoid.
+    * @param {Number} y The y value of the point to avoid.
+    **/
+    this.avoidAdditionalPoint = function(x, y) {
+        if (pointsToAvoid[y] === undefined) {
+            pointsToAvoid[y] = {};
+        }
+        pointsToAvoid[y][x] = 1;
+    };
+
+    /**
+    * Stop avoiding a particular point on the grid.
+    *
+    * @param {Number} x The x value of the point to stop avoiding.
+    * @param {Number} y The y value of the point to stop avoiding.
+    **/
+    this.stopAvoidingAdditionalPoint = function(x, y) {
+        if (pointsToAvoid[y] !== undefined) {
+            delete pointsToAvoid[y][x];
+        }
+    };
+
+    /**
+    * Enables corner cutting in diagonal movement.
+    **/
+    this.enableCornerCutting = function() {
+        allowCornerCutting = true;
+    };
+
+    /**
+    * Disables corner cutting in diagonal movement.
+    **/
+    this.disableCornerCutting = function() {
+        allowCornerCutting = false;
+    };
+
+    /**
+    * Stop avoiding all additional points on the grid.
+    **/
+    this.stopAvoidingAllAdditionalPoints = function() {
+        pointsToAvoid = {};
+    };
+
+    /**
+    * Find a path.
+    *
+    * @param {Number} startX The X position of the starting point.
+    * @param {Number} startY The Y position of the starting point.
+    * @param {Number} endX The X position of the ending point.
+    * @param {Number} endY The Y position of the ending point.
+    * @param {Function} callback A function that is called when your path
+    * is found, or no path is found.
+    * @return {Number} A numeric, non-zero value which identifies the created instance. This value can be passed to cancelPath to cancel the path calculation.
+    *
+    **/
+    this.findPath = function(startX, startY, endX, endY, callback) {
+        // Wraps the callback for sync vs async logic
+        var callbackWrapper = function(result) {
+            if (syncEnabled) {
+                callback(result);
+            } else {
+                setTimeout(function() {
+                    callback(result);
+                });
+            }
+        }
+
+        // No acceptable tiles were set
+        if (acceptableTiles === undefined) {
+            throw new Error("You can't set a path without first calling setAcceptableTiles() on EasyStar.");
+        }
+        // No grid was set
+        if (collisionGrid === undefined) {
+            throw new Error("You can't set a path without first calling setGrid() on EasyStar.");
+        }
+
+        // Start or endpoint outside of scope.
+        if (startX < 0 || startY < 0 || endX < 0 || endY < 0 ||
+        startX > collisionGrid[0].length-1 || startY > collisionGrid.length-1 ||
+        endX > collisionGrid[0].length-1 || endY > collisionGrid.length-1) {
+            throw new Error("Your start or end point is outside the scope of your grid.");
+        }
+
+        // Start and end are the same tile.
+        if (startX===endX && startY===endY) {
+            callbackWrapper([]);
+            return;
+        }
+
+        // End point is not an acceptable tile.
+        var endTile = collisionGrid[endY][endX];
+        var isAcceptable = false;
+        for (var i = 0; i < acceptableTiles.length; i++) {
+            if (endTile === acceptableTiles[i]) {
+                isAcceptable = true;
+                break;
+            }
+        }
+
+        if (isAcceptable === false) {
+            callbackWrapper(null);
+            return;
+        }
+
+        // Create the instance
+        var instance = new Instance();
+        instance.openList = new Heap(function(nodeA, nodeB) {
+            return nodeA.bestGuessDistance() - nodeB.bestGuessDistance();
+        });
+        instance.isDoneCalculating = false;
+        instance.nodeHash = {};
+        instance.startX = startX;
+        instance.startY = startY;
+        instance.endX = endX;
+        instance.endY = endY;
+        instance.callback = callbackWrapper;
+
+        instance.openList.push(coordinateToNode(instance, instance.startX,
+            instance.startY, null, STRAIGHT_COST));
+
+        var instanceId = nextInstanceId ++;
+        instances[instanceId] = instance;
+        instanceQueue.push(instanceId);
+        return instanceId;
+    };
+
+    /**
+     * Cancel a path calculation.
+     *
+     * @param {Number} instanceId The instance ID of the path being calculated
+     * @return {Boolean} True if an instance was found and cancelled.
+     *
+     **/
+    this.cancelPath = function(instanceId) {
+        if (instanceId in instances) {
+            delete instances[instanceId];
+            // No need to remove it from instanceQueue
+            return true;
+        }
+        return false;
+    };
+
+    /**
+    * This method steps through the A* Algorithm in an attempt to
+    * find your path(s). It will search 4-8 tiles (depending on diagonals) for every calculation.
+    * You can change the number of calculations done in a call by using
+    * easystar.setIteratonsPerCalculation().
+    **/
+    this.calculate = function() {
+        if (instanceQueue.length === 0 || collisionGrid === undefined || acceptableTiles === undefined) {
+            return;
+        }
+        for (iterationsSoFar = 0; iterationsSoFar < iterationsPerCalculation; iterationsSoFar++) {
+            if (instanceQueue.length === 0) {
+                return;
+            }
+
+            if (syncEnabled) {
+                // If this is a sync instance, we want to make sure that it calculates synchronously.
+                iterationsSoFar = 0;
+            }
+
+            var instanceId = instanceQueue[0];
+            var instance = instances[instanceId];
+            if (typeof instance == 'undefined') {
+                // This instance was cancelled
+                instanceQueue.shift();
+                continue;
+            }
+
+            // Couldn't find a path.
+            if (instance.openList.size() === 0) {
+                instance.callback(null);
+                delete instances[instanceId];
+                instanceQueue.shift();
+                continue;
+            }
+
+            var searchNode = instance.openList.pop();
+
+            // Handles the case where we have found the destination
+            if (instance.endX === searchNode.x && instance.endY === searchNode.y) {
+                var path = [];
+                path.push({x: searchNode.x, y: searchNode.y});
+                var parent = searchNode.parent;
+                while (parent!=null) {
+                    path.push({x: parent.x, y:parent.y});
+                    parent = parent.parent;
+                }
+                path.reverse();
+                var ip = path;
+                instance.callback(ip);
+                delete instances[instanceId];
+                instanceQueue.shift();
+                continue;
+            }
+
+            searchNode.list = CLOSED_LIST;
+
+            if (searchNode.y > 0) {
+                checkAdjacentNode(instance, searchNode,
+                    0, -1, STRAIGHT_COST * getTileCost(searchNode.x, searchNode.y-1));
+            }
+            if (searchNode.x < collisionGrid[0].length-1) {
+                checkAdjacentNode(instance, searchNode,
+                    1, 0, STRAIGHT_COST * getTileCost(searchNode.x+1, searchNode.y));
+            }
+            if (searchNode.y < collisionGrid.length-1) {
+                checkAdjacentNode(instance, searchNode,
+                    0, 1, STRAIGHT_COST * getTileCost(searchNode.x, searchNode.y+1));
+            }
+            if (searchNode.x > 0) {
+                checkAdjacentNode(instance, searchNode,
+                    -1, 0, STRAIGHT_COST * getTileCost(searchNode.x-1, searchNode.y));
+            }
+            if (diagonalsEnabled) {
+                if (searchNode.x > 0 && searchNode.y > 0) {
+
+                    if (allowCornerCutting ||
+                        (isTileWalkable(collisionGrid, acceptableTiles, searchNode.x, searchNode.y-1, searchNode) &&
+                        isTileWalkable(collisionGrid, acceptableTiles, searchNode.x-1, searchNode.y, searchNode))) {
+
+                        checkAdjacentNode(instance, searchNode,
+                            -1, -1, DIAGONAL_COST * getTileCost(searchNode.x-1, searchNode.y-1));
+                    }
+                }
+                if (searchNode.x < collisionGrid[0].length-1 && searchNode.y < collisionGrid.length-1) {
+
+                    if (allowCornerCutting ||
+                        (isTileWalkable(collisionGrid, acceptableTiles, searchNode.x, searchNode.y+1, searchNode) &&
+                        isTileWalkable(collisionGrid, acceptableTiles, searchNode.x+1, searchNode.y, searchNode))) {
+
+                        checkAdjacentNode(instance, searchNode,
+                            1, 1, DIAGONAL_COST * getTileCost(searchNode.x+1, searchNode.y+1));
+                    }
+                }
+                if (searchNode.x < collisionGrid[0].length-1 && searchNode.y > 0) {
+
+                    if (allowCornerCutting ||
+                        (isTileWalkable(collisionGrid, acceptableTiles, searchNode.x, searchNode.y-1, searchNode) &&
+                        isTileWalkable(collisionGrid, acceptableTiles, searchNode.x+1, searchNode.y, searchNode))) {
+
+                        checkAdjacentNode(instance, searchNode,
+                            1, -1, DIAGONAL_COST * getTileCost(searchNode.x+1, searchNode.y-1));
+                    }
+                }
+                if (searchNode.x > 0 && searchNode.y < collisionGrid.length-1) {
+
+                    if (allowCornerCutting ||
+                        (isTileWalkable(collisionGrid, acceptableTiles, searchNode.x, searchNode.y+1, searchNode) &&
+                        isTileWalkable(collisionGrid, acceptableTiles, searchNode.x-1, searchNode.y, searchNode))) {
+
+                        checkAdjacentNode(instance, searchNode,
+                            -1, 1, DIAGONAL_COST * getTileCost(searchNode.x-1, searchNode.y+1));
+                    }
+                }
+            }
+
+        }
+    };
+
+    // Private methods follow
+    var checkAdjacentNode = function(instance, searchNode, x, y, cost) {
+        var adjacentCoordinateX = searchNode.x+x;
+        var adjacentCoordinateY = searchNode.y+y;
+
+        if ((pointsToAvoid[adjacentCoordinateY] === undefined ||
+             pointsToAvoid[adjacentCoordinateY][adjacentCoordinateX] === undefined) &&
+            isTileWalkable(collisionGrid, acceptableTiles, adjacentCoordinateX, adjacentCoordinateY, searchNode)) {
+            var node = coordinateToNode(instance, adjacentCoordinateX,
+                adjacentCoordinateY, searchNode, cost);
+
+            if (node.list === undefined) {
+                node.list = OPEN_LIST;
+                instance.openList.push(node);
+            } else if (searchNode.costSoFar + cost < node.costSoFar) {
+                node.costSoFar = searchNode.costSoFar + cost;
+                node.parent = searchNode;
+                instance.openList.updateItem(node);
+            }
+        }
+    };
+
+    // Helpers
+    var isTileWalkable = function(collisionGrid, acceptableTiles, x, y, sourceNode) {
+        var directionalCondition = directionalConditions[y] && directionalConditions[y][x];
+        if (directionalCondition) {
+            var direction = calculateDirection(sourceNode.x - x, sourceNode.y - y)
+            var directionIncluded = function () {
+                for (var i = 0; i < directionalCondition.length; i++) {
+                    if (directionalCondition[i] === direction) return true
+                }
+                return false
+            }
+            if (!directionIncluded()) return false
+        }
+        for (var i = 0; i < acceptableTiles.length; i++) {
+            if (collisionGrid[y][x] === acceptableTiles[i]) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    /**
+     * -1, -1 | 0, -1  | 1, -1
+     * -1,  0 | SOURCE | 1,  0
+     * -1,  1 | 0,  1  | 1,  1
+     */
+    var calculateDirection = function (diffX, diffY) {
+        if (diffX === 0 && diffY === -1) return EasyStar.TOP
+        else if (diffX === 1 && diffY === -1) return EasyStar.TOP_RIGHT
+        else if (diffX === 1 && diffY === 0) return EasyStar.RIGHT
+        else if (diffX === 1 && diffY === 1) return EasyStar.BOTTOM_RIGHT
+        else if (diffX === 0 && diffY === 1) return EasyStar.BOTTOM
+        else if (diffX === -1 && diffY === 1) return EasyStar.BOTTOM_LEFT
+        else if (diffX === -1 && diffY === 0) return EasyStar.LEFT
+        else if (diffX === -1 && diffY === -1) return EasyStar.TOP_LEFT
+        throw new Error('These differences are not valid: ' + diffX + ', ' + diffY)
+    };
+
+    var getTileCost = function(x, y) {
+        return (pointsToCost[y] && pointsToCost[y][x]) || costMap[collisionGrid[y][x]]
+    };
+
+    var coordinateToNode = function(instance, x, y, parent, cost) {
+        if (instance.nodeHash[y] !== undefined) {
+            if (instance.nodeHash[y][x] !== undefined) {
+                return instance.nodeHash[y][x];
+            }
+        } else {
+            instance.nodeHash[y] = {};
+        }
+        var simpleDistanceToTarget = getDistance(x, y, instance.endX, instance.endY);
+        if (parent!==null) {
+            var costSoFar = parent.costSoFar + cost;
+        } else {
+            costSoFar = 0;
+        }
+        var node = new Node(parent,x,y,costSoFar,simpleDistanceToTarget);
+        instance.nodeHash[y][x] = node;
+        return node;
+    };
+
+    var getDistance = function(x1,y1,x2,y2) {
+        if (diagonalsEnabled) {
+            // Octile distance
+            var dx = Math.abs(x1 - x2);
+            var dy = Math.abs(y1 - y2);
+            if (dx < dy) {
+                return DIAGONAL_COST * dx + dy;
+            } else {
+                return DIAGONAL_COST * dy + dx;
+            }
+        } else {
+            // Manhattan distance
+            var dx = Math.abs(x1 - x2);
+            var dy = Math.abs(y1 - y2);
+            return (dx + dy);
+        }
+    };
+}
+
+EasyStar.TOP = 'TOP'
+EasyStar.TOP_RIGHT = 'TOP_RIGHT'
+EasyStar.RIGHT = 'RIGHT'
+EasyStar.BOTTOM_RIGHT = 'BOTTOM_RIGHT'
+EasyStar.BOTTOM = 'BOTTOM'
+EasyStar.BOTTOM_LEFT = 'BOTTOM_LEFT'
+EasyStar.LEFT = 'LEFT'
+EasyStar.TOP_LEFT = 'TOP_LEFT'
+
+},{"./instance":"node_modules/easystarjs/src/instance.js","./node":"node_modules/easystarjs/src/node.js","heap":"node_modules/heap/index.js"}],"src/common/aiHelpers.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.wait = exports.findPath = void 0;
+
+var _easystarjs = _interopRequireDefault(require("easystarjs"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const findPath = (_ref) => {
+  let {
+    aiPathGrid,
+    tx,
+    ty,
+    rx,
+    ry,
+    walkableId
+  } = _ref;
+  return new Promise(resolve => {
+    // TODO: Not sure you'll want to do this every single time, seems intensive.
+    const easystar = new _easystarjs.default.js();
+    easystar.enableDiagonals();
+    easystar.enableCornerCutting();
+    easystar.setGrid(aiPathGrid);
+    easystar.setAcceptableTiles([walkableId]);
+    easystar.findPath(tx, ty, rx, ry, function (path) {
+      if (path === null || path !== null && path.length === 0) {
+        console.log("Path was not found.");
+        resolve([]);
+      } else {
+        console.log("Path was found. The first Point is " + path[0].x + " " + path[0].y);
+        resolve(path);
+      }
+    }); // Just calculate once (if you run in to issues, may need to do it every frame. Def so for a changing map landscape)
+
+    easystar.calculate();
+  });
+};
+
+exports.findPath = findPath;
+
+const wait = ms => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+};
+
+exports.wait = wait;
+},{"easystarjs":"node_modules/easystarjs/src/easystar.js"}],"src/states/aiFollowPathState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9591,31 +10563,125 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      cache = _ref.cache,
-      _ref$onEntry = _ref.onEntry,
-      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
-      _ref$onExit = _ref.onExit,
-      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
-  var _isComplete = false;
-  return {
-    id: id,
-    isComplete: function isComplete() {
-      return _isComplete;
-    },
-    enter: function enter(props) {
-      return onEntry();
-    },
-    update: function update() {},
-    exit: function exit() {
-      return onExit();
+var _kontra = require("kontra");
+
+var _helpers = require("../common/helpers");
+
+var _spriteFunctions = require("../common/spriteFunctions");
+
+var _aiHelpers = require("../common/aiHelpers");
+
+var _default = (_ref) => {
+  let {
+    props,
+    onEntry = () => {},
+    onExit = () => {}
+  } = _ref;
+  const destQueue = (0, _helpers.Queue)();
+  const {
+    aiPathGrid,
+    sprite
+  } = props; // TODO: Stick in a config (you may have one than one in future also).
+
+  const walkableId = 102;
+  const tx = Math.floor(sprite.x / 16);
+  const ty = Math.floor(sprite.y / 16);
+  let walkableTiles = []; // We need to grab a random point on the aiPathGrid but only if it's walkable.
+
+  for (let i = 0; i < aiPathGrid.length; i++) {
+    for (let j = 0; j < aiPathGrid[i].length; j++) {
+      if (aiPathGrid[i][j] === walkableId) {
+        walkableTiles.push((0, _kontra.Vector)(j, i));
+      }
     }
+  }
+
+  if (!walkableTiles.length) {
+    throw "No walkable tiles were found."; // TODO: const errors please
+  }
+
+  const randomWalkable = walkableTiles[(0, _helpers.getRandomIntInclusive)(0, walkableTiles.length - 1)];
+  let rx = randomWalkable.x;
+  let ry = randomWalkable.y;
+  console.log(randomWalkable);
+  let _isComplete = false;
+  let current = (0, _kontra.Vector)(sprite.x, sprite.y);
+  let tileDest = null;
+  let destination = null;
+  return {
+    id: "followPath",
+    isComplete: () => _isComplete,
+    enter: async props => {
+      // TODO: This isn't a hugely performant method. ES should be running at all times
+      // and instantiate only once.
+      const calculatedPath = await (0, _aiHelpers.findPath)({
+        aiPathGrid,
+        tx,
+        ty,
+        rx,
+        ry,
+        walkableId
+      }); // Exit early on errored path (could be a sign of something sinister)
+
+      if (!calculatedPath.length) {
+        _isComplete = true;
+        return;
+      } // Let set to '1' to avoid pointless backtrack on first segment
+      // Give the destination a little variation as well to make it more natural
+
+
+      for (let i = 1; i < calculatedPath.length; i++) {
+        destQueue.enqueue((0, _kontra.Vector)(calculatedPath[i].x * 16 + (0, _helpers.getRandomIntInclusive)(0, 16), calculatedPath[i].y * 16 + (0, _helpers.getRandomIntInclusive)(0, 16)));
+      }
+
+      tileDest = destQueue.dequeue();
+      destination = (0, _kontra.Vector)(tileDest.x, tileDest.y);
+      console.log("First point to go to:");
+      console.log(tileDest);
+      onEntry();
+    },
+    update: () => {
+      if (!destination) {
+        _isComplete = true;
+        return;
+      } // Note: No need for acc at this stage
+
+
+      let vel = (0, _kontra.Vector)(0, 0); // Current vector towards target
+
+      let distanceToTarget = destination.subtract(current).length(); // Cease all movement if arrived, otherwise just carry on
+
+      if (distanceToTarget > 1) {
+        vel = destination.subtract(current).normalize().scale(0.75);
+        sprite.x += vel.x;
+        sprite.y += vel.y;
+        current = (0, _kontra.Vector)(sprite.x, sprite.y);
+      } else {
+        destination = destQueue.dequeue();
+        console.log("NEXT SEGMENT:");
+        console.log(destination);
+      }
+
+      (0, _spriteFunctions.flipSprite)({
+        direction: vel,
+        sprite
+      }); // Do some animations
+
+      const isMoving = vel.x !== 0 || vel.y !== 0;
+
+      if (!sprite.manualAnimation) {
+        sprite.playAnimation(isMoving ? "walk" : "idle");
+      } // Call this to ensure animations are player
+
+
+      sprite.advance();
+    },
+    exit: () => onExit()
   };
 };
 
 exports.default = _default;
-},{}],"src/states/healthyState.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../common/helpers":"src/common/helpers.js","../common/spriteFunctions":"src/common/spriteFunctions.js","../common/aiHelpers":"src/common/aiHelpers.js"}],"src/states/aiIdleState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9623,26 +10689,24 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      cache = _ref.cache,
-      _ref$onEntry = _ref.onEntry,
-      onEntry = _ref$onEntry === void 0 ? function () {} : _ref$onEntry,
-      _ref$onExit = _ref.onExit,
-      onExit = _ref$onExit === void 0 ? function () {} : _ref$onExit;
-  var _isComplete = false;
+var _default = (_ref) => {
+  let {
+    props,
+    onEntry = () => {},
+    onUpdate = () => {},
+    onExit = () => {}
+  } = _ref;
+  let _isComplete = false;
   return {
-    id: id,
-    isComplete: function isComplete() {
-      return _isComplete;
+    id: "idle",
+    isComplete: () => _isComplete,
+    enter: props => onEntry(),
+    update: () => {
+      props.sprite.playAnimation("idle");
+      props.sprite.advance();
+      onUpdate();
     },
-    enter: function enter(props) {
-      return onEntry();
-    },
-    update: function update() {},
-    exit: function exit() {
-      return onExit();
-    }
+    exit: () => onExit()
   };
 };
 
@@ -9657,186 +10721,150 @@ exports.default = void 0;
 
 var _stateManager = _interopRequireDefault(require("../managers/stateManager"));
 
-var _damagedState = _interopRequireDefault(require("../states/damagedState"));
+var _aiFollowPathState = _interopRequireDefault(require("../states/aiFollowPathState"));
 
-var _healthyState = _interopRequireDefault(require("../states/healthyState"));
+var _aiIdleState = _interopRequireDefault(require("../states/aiIdleState"));
 
-var _spriteFunctions = require("./spriteFunctions");
+var _spriteFunctions = require("../common/spriteFunctions");
 
 var _helpers = require("../common/helpers");
+
+var _aiHelpers = require("../common/aiHelpers");
 
 var _kontra = require("kontra");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      x = _ref.x,
-      y = _ref.y,
-      _ref$z = _ref.z,
-      z = _ref$z === void 0 ? 1 : _ref$z,
-      _ref$customProperties = _ref.customProperties,
-      customProperties = _ref$customProperties === void 0 ? {} : _ref$customProperties,
-      _ref$entityData = _ref.entityData,
-      entityData = _ref$entityData === void 0 ? null : _ref$entityData,
-      _ref$collisionMethod = _ref.collisionMethod,
-      collisionMethod = _ref$collisionMethod === void 0 ? function (layer, sprite) {} : _ref$collisionMethod;
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+// TODO: Considering looking at an FSM lib...
+const Brain = () => {
+  const entityStateMachine = (0, _stateManager.default)();
+  let brainData = {};
+  /* Push an idle state to kick things off (can probably make this in to
+      json data later on and auto-create all this) */
+
+  const behaviours = {
+    idleAndRoam: () => {
+      entityStateMachine.push((0, _aiIdleState.default)({
+        props: {
+          sprite: brainData.sprite
+        },
+        onEntry: async () => {
+          // Sticking this here rather than in update. No idea if it's right.
+          await (0, _aiHelpers.wait)((0, _helpers.getRandomIntInclusive)(500, 1500));
+          entityStateMachine.popState("idle");
+        },
+        onExit: () => behaviours.followPath()
+      }));
+    },
+    followPath: () => {
+      entityStateMachine.push((0, _aiFollowPathState.default)({
+        props: brainData,
+        onExit: () => {
+          // Hmm... this is a bit weird I feel...
+          behaviours.idleAndRoam();
+        }
+      }));
+    }
+  };
+  return {
+    bootstrap: props => brainData = _objectSpread({}, props),
+    update: () => entityStateMachine.update(),
+    start: () => behaviours.idleAndRoam()
+  };
+};
+
+var _default = (_ref) => {
+  let {
+    id,
+    x,
+    y,
+    z = 1,
+    customProperties = {},
+    entityData = null,
+    aiPathGrid = null,
+    collisionMethod = (layer, sprite) => {}
+  } = _ref;
 
   if (!id) {
     throw new Error("Entity is fairly useless without an id, you should add one.");
   }
 
-  var entityStateMachine = (0, _stateManager.default)();
-  var name = entityData.name,
-      type = entityData.type,
-      animations = entityData.animations,
-      frameWidth = entityData.frameWidth,
-      frameHeight = entityData.frameHeight,
-      sheet = entityData.sheet,
-      _entityData$collision = entityData.collisionBodyOptions,
-      collisionBodyOptions = _entityData$collision === void 0 ? null : _entityData$collision,
-      _entityData$manualAni = entityData.manualAnimation,
-      manualAnimation = _entityData$manualAni === void 0 ? false : _entityData$manualAni,
-      _entityData$controlle = entityData.controlledByUser,
-      controlledByUser = _entityData$controlle === void 0 ? false : _entityData$controlle,
-      _entityData$controlle2 = entityData.controlledByAI,
-      controlledByAI = _entityData$controlle2 === void 0 ? false : _entityData$controlle2,
-      _entityData$collidesW = entityData.collidesWithTiles,
-      collidesWithTiles = _entityData$collidesW === void 0 ? true : _entityData$collidesW;
-  var spriteSheet = (0, _kontra.SpriteSheet)({
+  const entityStateMachine = (0, _stateManager.default)();
+  const {
+    name,
+    type,
+    animations,
+    frameWidth,
+    frameHeight,
+    sheet,
+    collisionBodyOptions = null,
+    manualAnimation = false,
+    controlledByUser = false,
+    controlledByAI = false,
+    collidesWithTiles = true
+  } = entityData;
+  let spriteSheet = (0, _kontra.SpriteSheet)({
     image: _kontra.imageAssets[sheet],
-    frameWidth: frameWidth,
-    frameHeight: frameHeight,
-    animations: animations
+    frameWidth,
+    frameHeight,
+    animations
   });
-  /* These are passable to states so they can act accordingly */
-
-  var current = (0, _kontra.Vector)(0, 0); // ...
-
-  var destination = (0, _kontra.Vector)(30, 160); //current = current.add(direction.normalize());
-
-  var targetDestination = null;
-  var movementDisabled = false;
-  var stopThinking = false;
+  const myBrain = Brain();
   /* Id should really be named 'class' since its re-used. */
 
-  var sprite = (0, _kontra.Sprite)({
+  const sprite = (0, _kontra.Sprite)({
     instId: (0, _helpers.uniqueId)(id),
-    id: id,
-    type: type,
-    name: name,
-    x: x,
-    y: y,
-    z: z,
+    id,
+    type,
+    name,
+    x,
+    y,
+    z,
     anchor: {
       x: 0.5,
       y: 0.5
     },
-    customProperties: customProperties,
+    customProperties,
     radius: 1,
     animations: spriteSheet.animations,
-    collidesWithTiles: collidesWithTiles,
-    controlledByUser: controlledByUser,
-    controlledByAI: controlledByAI,
-    collisionBodyOptions: collisionBodyOptions,
-    manualAnimation: manualAnimation,
-    onAttacked: function onAttacked() {
-      // Push an internal state for damage effect (whatever that's going to be)
-      console.log(id);
-    },
-    enableMovement: function enableMovement() {
-      return movementDisabled = false;
-    },
-    disableMovement: function disableMovement() {
-      return movementDisabled = true;
-    },
-    lookAt: function lookAt(_ref2) {
-      var x = _ref2.x,
-          y = _ref2.y;
+    collidesWithTiles,
+    controlledByUser,
+    controlledByAI,
+    collisionBodyOptions,
+    manualAnimation,
+    enableMovement: () => movementDisabled = false,
+    disableMovement: () => movementDisabled = true,
+    lookAt: (_ref2) => {
+      let {
+        x,
+        y
+      } = _ref2;
       (0, _spriteFunctions.flipSprite)({
         direction: {
           x: sprite.x > x ? -1 : 1,
           y: sprite.y > y ? -1 : 1
         },
-        sprite: sprite
+        sprite
       });
     },
-    update: function update() {
-      entityStateMachine.update(); //let direction = current.subtract(destination);
-      //current = current.add(direction);
-
-      if (targetDestination !== null && !stopThinking) {
-        /* You could also stick pathfinding in here or in AI when it's implemented */
-        // dir = {
-        //   x: sprite.x > targetDestination.x ? -1 : 1,
-        //   y: sprite.y > targetDestination.y ? -1 : 1
-        // };
-        // Don't rely on this, it's just a test
-        // if (dist(sprite, targetDestination) < 1) {
-        //   stopThinking = true;
-        //   const waitFor = getRandomIntInclusive(1000, 4000);
-        //   dir = { x: 0, y: 0 };
-        //   setTimeout(() => {
-        //     targetDestination = null;
-        //     stopThinking = false;
-        //   }, waitFor);
-        // }
-      } else {// Again I don't like the flag being like this. Should be a separate entity altogether really. but can test
-          // a roaming AI at least.
-          // if (!targetDestination) {
-          //   targetDestination = {
-          //     x: getRandomIntInclusive(90, 120),
-          //     y: getRandomIntInclusive(90, 120)
-          //   };
-          // }
-        } // const { directionNormal } = moveSprite({
-      //   // dir:
-      //   //   movementDisabled && targetDestination === null ? { x: 0, y: 0 } : dir,
-      //   dir: direction,
-      //   sprite,
-      //   checkCollision: (sprite) => collisionMethod("Collision", sprite)
-      // });
-      // Note: No need for acc at this stage
-      // TODO: Make speed value a config =========================v
-
-
-      var vel = (0, _kontra.Vector)(0, 0); // Durrent vector towards target
-
-      var distanceToTarget = destination.subtract(current).length(); // Cease all movement if arrived, otherwise just carry on
-
-      if (distanceToTarget > 10) {
-        vel = destination.subtract(current).normalize().scale(0.5);
-        sprite.x += vel.x;
-        sprite.y += vel.y;
-        current = (0, _kontra.Vector)(sprite.x, sprite.y);
-      } else {
-        destination = current;
-      } //flipSprite({ direction: directionNormal, sprite });
-
-
-      (0, _spriteFunctions.flipSprite)({
-        direction: vel,
-        sprite: sprite
-      }); // Do some animations
-      //const isMoving = directionNormal.x !== 0 || directionNormal.y !== 0;
-
-      var isMoving = vel.x !== 0 || vel.y !== 0;
-
-      if (!sprite.manualAnimation) {
-        sprite.playAnimation(isMoving ? "walk" : "idle");
-      } // Call this to ensure animations are player
-
-
-      sprite.advance();
-    }
-  }); // Temporary
-
-  current = (0, _kontra.Vector)(sprite.x, sprite.y);
+    update: () => myBrain.update()
+  });
+  myBrain.bootstrap({
+    sprite,
+    aiPathGrid
+  });
+  myBrain.start();
   return sprite;
 };
 
 exports.default = _default;
-},{"../managers/stateManager":"src/managers/stateManager.js","../states/damagedState":"src/states/damagedState.js","../states/healthyState":"src/states/healthyState.js","./spriteFunctions":"src/sprites/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/sprites/fixed.js":[function(require,module,exports) {
+},{"../managers/stateManager":"src/managers/stateManager.js","../states/aiFollowPathState":"src/states/aiFollowPathState.js","../states/aiIdleState":"src/states/aiIdleState.js","../common/spriteFunctions":"src/common/spriteFunctions.js","../common/helpers":"src/common/helpers.js","../common/aiHelpers":"src/common/aiHelpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/sprites/fixed.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9848,72 +10876,67 @@ var _helpers = require("../common/helpers");
 
 var _kontra = require("kontra");
 
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      x = _ref.x,
-      y = _ref.y,
-      _ref$z = _ref.z,
-      z = _ref$z === void 0 ? 1 : _ref$z,
-      _ref$customProperties = _ref.customProperties,
-      customProperties = _ref$customProperties === void 0 ? {} : _ref$customProperties,
-      _ref$entityData = _ref.entityData,
-      entityData = _ref$entityData === void 0 ? null : _ref$entityData,
-      _ref$collisionMethod = _ref.collisionMethod,
-      collisionMethod = _ref$collisionMethod === void 0 ? function (layer, sprite) {} : _ref$collisionMethod;
+var _default = (_ref) => {
+  let {
+    id,
+    x,
+    y,
+    z = 1,
+    customProperties = {},
+    entityData = null,
+    collisionMethod = (layer, sprite) => {}
+  } = _ref;
 
   if (!id) {
     throw new Error("Entity is fairly useless without an id, you should add one.");
   }
 
-  var name = entityData.name,
-      type = entityData.type,
-      animations = entityData.animations,
-      frameWidth = entityData.frameWidth,
-      frameHeight = entityData.frameHeight,
-      sheet = entityData.sheet,
-      _entityData$collision = entityData.collisionBodyOptions,
-      collisionBodyOptions = _entityData$collision === void 0 ? null : _entityData$collision,
-      _entityData$manualAni = entityData.manualAnimation,
-      manualAnimation = _entityData$manualAni === void 0 ? false : _entityData$manualAni,
-      _entityData$controlle = entityData.controlledByUser,
-      controlledByUser = _entityData$controlle === void 0 ? false : _entityData$controlle,
-      _entityData$controlle2 = entityData.controlledByAI,
-      controlledByAI = _entityData$controlle2 === void 0 ? false : _entityData$controlle2,
-      _entityData$collidesW = entityData.collidesWithTiles,
-      collidesWithTiles = _entityData$collidesW === void 0 ? true : _entityData$collidesW;
-  var spriteSheet = (0, _kontra.SpriteSheet)({
+  const {
+    name,
+    type,
+    animations,
+    frameWidth,
+    frameHeight,
+    sheet,
+    collisionBodyOptions = null,
+    manualAnimation = false,
+    controlledByUser = false,
+    controlledByAI = false,
+    collidesWithTiles = true
+  } = entityData;
+  let spriteSheet = (0, _kontra.SpriteSheet)({
     image: _kontra.imageAssets[sheet],
-    frameWidth: frameWidth,
-    frameHeight: frameHeight,
-    animations: animations
+    frameWidth,
+    frameHeight,
+    animations
   });
   /* Id should really be named 'class' since its re-used. */
 
-  var sprite = (0, _kontra.Sprite)({
+  const sprite = (0, _kontra.Sprite)({
     instId: (0, _helpers.uniqueId)(id),
-    id: id,
-    type: type,
-    name: name,
-    x: x,
-    y: y,
-    z: z,
+    id,
+    type,
+    name,
+    x,
+    y,
+    z,
     anchor: {
       x: 0.5,
       y: 0.5
     },
-    customProperties: customProperties,
+    customProperties,
     radius: 1,
     animations: spriteSheet.animations,
-    collidesWithTiles: collidesWithTiles,
-    controlledByUser: controlledByUser,
-    controlledByAI: controlledByAI,
-    collisionBodyOptions: collisionBodyOptions,
-    manualAnimation: manualAnimation,
-    onAttacked: function onAttacked() {
+    collidesWithTiles,
+    controlledByUser,
+    controlledByAI,
+    collisionBodyOptions,
+    manualAnimation,
+    onAttacked: () => {
       // Push an internal state for damage effect (whatever that's going to be)
       console.log(id);
     },
-    update: function update() {
+    update: () => {
       // Static entities may still have anims so add them in later.
       // Anim code...
       // Call this to ensure animations are player
@@ -9936,72 +10959,67 @@ var _helpers = require("../common/helpers");
 
 var _kontra = require("kontra");
 
-var _default = function _default(_ref) {
-  var id = _ref.id,
-      x = _ref.x,
-      y = _ref.y,
-      _ref$z = _ref.z,
-      z = _ref$z === void 0 ? 1 : _ref$z,
-      _ref$customProperties = _ref.customProperties,
-      customProperties = _ref$customProperties === void 0 ? {} : _ref$customProperties,
-      _ref$entityData = _ref.entityData,
-      entityData = _ref$entityData === void 0 ? null : _ref$entityData,
-      _ref$collisionMethod = _ref.collisionMethod,
-      collisionMethod = _ref$collisionMethod === void 0 ? function (layer, sprite) {} : _ref$collisionMethod;
+var _default = (_ref) => {
+  let {
+    id,
+    x,
+    y,
+    z = 1,
+    customProperties = {},
+    entityData = null,
+    collisionMethod = (layer, sprite) => {}
+  } = _ref;
 
   if (!id) {
     throw new Error("Entity is fairly useless without an id, you should add one.");
   }
 
-  var name = entityData.name,
-      type = entityData.type,
-      animations = entityData.animations,
-      frameWidth = entityData.frameWidth,
-      frameHeight = entityData.frameHeight,
-      sheet = entityData.sheet,
-      _entityData$collision = entityData.collisionBodyOptions,
-      collisionBodyOptions = _entityData$collision === void 0 ? null : _entityData$collision,
-      _entityData$manualAni = entityData.manualAnimation,
-      manualAnimation = _entityData$manualAni === void 0 ? false : _entityData$manualAni,
-      _entityData$controlle = entityData.controlledByUser,
-      controlledByUser = _entityData$controlle === void 0 ? false : _entityData$controlle,
-      _entityData$controlle2 = entityData.controlledByAI,
-      controlledByAI = _entityData$controlle2 === void 0 ? false : _entityData$controlle2,
-      _entityData$collidesW = entityData.collidesWithTiles,
-      collidesWithTiles = _entityData$collidesW === void 0 ? true : _entityData$collidesW;
-  var spriteSheet = (0, _kontra.SpriteSheet)({
+  const {
+    name,
+    type,
+    animations,
+    frameWidth,
+    frameHeight,
+    sheet,
+    collisionBodyOptions = null,
+    manualAnimation = false,
+    controlledByUser = false,
+    controlledByAI = false,
+    collidesWithTiles = true
+  } = entityData;
+  let spriteSheet = (0, _kontra.SpriteSheet)({
     image: _kontra.imageAssets[sheet],
-    frameWidth: frameWidth,
-    frameHeight: frameHeight,
-    animations: animations
+    frameWidth,
+    frameHeight,
+    animations
   });
   /* Id should really be named 'class' since its re-used. */
 
-  var sprite = (0, _kontra.Sprite)({
+  const sprite = (0, _kontra.Sprite)({
     instId: (0, _helpers.uniqueId)(id),
-    id: id,
-    type: type,
-    name: name,
-    x: x,
-    y: y,
-    z: z,
+    id,
+    type,
+    name,
+    x,
+    y,
+    z,
     anchor: {
       x: 0.5,
       y: 0.5
     },
-    customProperties: customProperties,
+    customProperties,
     radius: 1,
     animations: spriteSheet.animations,
-    collidesWithTiles: collidesWithTiles,
-    controlledByUser: controlledByUser,
-    controlledByAI: controlledByAI,
-    collisionBodyOptions: collisionBodyOptions,
-    manualAnimation: manualAnimation,
-    onAttacked: function onAttacked() {
+    collidesWithTiles,
+    controlledByUser,
+    controlledByAI,
+    collisionBodyOptions,
+    manualAnimation,
+    onAttacked: () => {
       // Push an internal state for damage effect (whatever that's going to be)
       console.log(id);
     },
-    update: function update() {
+    update: () => {
       // Static entities may still have anims so add them in later.
       // Anim code...
       // Call this to ensure animations are player
@@ -10041,95 +11059,94 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 var _default = function _default() {
-  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
+  let options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
     dataKey: "assets/gameData/worldData.json"
   };
-  var dataKey = options.dataKey;
-  var worldData = _kontra.dataAssets[dataKey]; // TODO: Pass this in?
+  const {
+    dataKey
+  } = options;
+  const worldData = _kontra.dataAssets[dataKey]; // TODO: Pass this in?
 
-  var entityDataKey = "assets/gameData/entityData.json";
-  var entityTable = _kontra.dataAssets[entityDataKey]; // TODO: Move these commands out of here and in to some sort of helper layer.
+  const entityDataKey = "assets/gameData/entityData.json";
+  const entityTable = _kontra.dataAssets[entityDataKey]; // TODO: Move these commands out of here and in to some sort of helper layer.
 
-  var entitiesInStore = (0, _kontra.getStoreItem)("entities");
+  const entitiesInStore = (0, _kontra.getStoreItem)("entities");
 
-  var _getEntityFromStore = function getEntityFromStore(id) {
-    return entitiesInStore.length ? entitiesInStore.find(function (e) {
-      return e.id === id;
-    }) : null;
-  };
+  const _getEntityFromStore = id => entitiesInStore.length ? entitiesInStore.find(e => e.id === id) : null;
 
   return {
-    getAllEntitiesOfType: function getAllEntitiesOfType(type) {
-      var existingEntities = (0, _kontra.getStoreItem)("entities");
-      return existingEntities ? existingEntities.filter(function (ent) {
-        return ent.type === type;
-      }) : [];
+    getAllEntitiesOfType: type => {
+      const existingEntities = (0, _kontra.getStoreItem)("entities");
+      return existingEntities ? existingEntities.filter(ent => ent.type === type) : [];
     },
-    getAllEntities: function getAllEntities() {
-      return (0, _kontra.getStoreItem)("entities");
-    },
-    getEntityFromStore: function getEntityFromStore(id) {
-      return _getEntityFromStore(id);
-    },
-    resetEntityStates: function resetEntityStates() {
-      return (0, _kontra.setStoreItem)("entities", []);
-    },
-    savePickup: function savePickup(entityData) {
-      var id = entityData.id,
-          type = entityData.type,
-          ttl = entityData.ttl;
-      var existingEntities = (0, _kontra.getStoreItem)("entities");
-      var existingEntity = existingEntities ? existingEntities.find(function (x) {
-        return x.id === id;
-      }) : null;
+    getAllEntities: () => (0, _kontra.getStoreItem)("entities"),
+    getEntityFromStore: id => _getEntityFromStore(id),
+    resetEntityStates: () => (0, _kontra.setStoreItem)("entities", []),
+    savePickup: entityData => {
+      const {
+        id,
+        type,
+        ttl
+      } = entityData;
+      const existingEntities = (0, _kontra.getStoreItem)("entities");
+      const existingEntity = existingEntities ? existingEntities.find(x => x.id === id) : null;
       /* This needs cleaning up */
 
-      (0, _kontra.setStoreItem)("entities", existingEntities ? existingEntities.filter(function (ent) {
-        return ent.id !== id;
-      }).concat([{
-        id: id,
-        type: type,
-        ttl: ttl,
+      (0, _kontra.setStoreItem)("entities", existingEntities ? existingEntities.filter(ent => ent.id !== id).concat([{
+        id,
+        type,
+        ttl,
         qty: existingEntity ? existingEntity.qty + 1 : 1
       }]) : [{
-        id: id,
-        type: type,
-        ttl: ttl,
+        id,
+        type,
+        ttl,
         qty: 1
       }]);
     },
-    createWorld: function createWorld(_ref) {
-      var areaId = _ref.areaId,
-          playerStartId = _ref.playerStartId;
+    createWorld: (_ref) => {
+      let {
+        areaId,
+        playerStartId
+      } = _ref;
+      const {
+        entities,
+        mapKey
+      } = worldData.find(x => x.areaId === areaId);
+      const map = _kontra.dataAssets[mapKey];
+      const tileEngine = (0, _kontra.TileEngine)(map);
+      const aiPathLayer = tileEngine.layers.find(x => x.id === 2);
+      let aiPathGrid = []; //tileEngine.tileAtLayer('Collision', {x: 50, y: 50});  //=> 1
 
-      var _worldData$find = worldData.find(function (x) {
-        return x.areaId === areaId;
-      }),
-          entities = _worldData$find.entities,
-          mapKey = _worldData$find.mapKey;
+      for (let i = 0; i < aiPathLayer.width; i++) {
+        aiPathGrid.push([]);
 
-      var map = _kontra.dataAssets[mapKey];
-      var tileEngine = (0, _kontra.TileEngine)(map);
-      var playerStart = entities.find(function (x) {
-        return x.customProperties.playerStartId === playerStartId;
-      });
-      var playerEntityData = entityTable.find(function (x) {
-        return x.id === "player";
-      });
-      var player = (0, _player.default)({
+        for (let j = 0; j < aiPathLayer.height; j++) {
+          const t = tileEngine.tileAtLayer("AIPath", {
+            row: i,
+            col: j
+          });
+          aiPathGrid[i].push(t);
+        }
+      }
+
+      console.log(aiPathGrid);
+      const playerStart = entities.find(x => x.customProperties.playerStartId === playerStartId);
+      const playerEntityData = entityTable.find(x => x.id === "player");
+      const player = (0, _player.default)({
         id: "player",
         x: playerStart.x,
         y: playerStart.y,
         entityData: playerEntityData,
-        collisionMethod: function collisionMethod(layer, sprite) {
+        collisionMethod: (layer, sprite) => {
           // If 16x16
-          var spriteBody = {
+          const spriteBody = {
             x: 2,
             y: 8,
             width: 11,
             height: 8
           };
-          var t = {
+          const t = {
             width: spriteBody.width,
             height: spriteBody.height,
             x: sprite.x + spriteBody.x,
@@ -10142,49 +11159,53 @@ var _default = function _default() {
       });
       tileEngine.addObject(player);
       return {
-        mapKey: mapKey,
-        tileEngine: tileEngine,
-        player: player,
-        sprites: entities.map(function (entity) {
+        mapKey,
+        tileEngine,
+        aiPathGrid,
+        player,
+        sprites: entities.map(entity => {
           // TODO: Tidy all this up
 
           /* Check if entity exists in store as it may have been destroyed
           or collected. TODO: Move the pickup check out of here, it's a bit
           confusing alongside other field entity types. */
-          var id = entity.id;
-          var ent = null;
-          var entityData = entityTable.find(function (ent) {
-            return ent.id === id;
-          });
+          const {
+            id
+          } = entity;
+          let ent = null;
+          const entityData = entityTable.find(ent => ent.id === id);
 
           switch (entityData.type) {
             case _consts.ENTITY_TYPE.PICKUP:
-              var alreadyCollected = _getEntityFromStore(id);
+              const alreadyCollected = _getEntityFromStore(id);
 
               if (alreadyCollected) return null;
               ent = (0, _pickup.default)(_objectSpread(_objectSpread({}, entity), {}, {
-                entityData: entityData,
-                collisionMethod: function collisionMethod(layer, sprite) {
-                  return tileEngine.layerCollidesWith(layer, sprite);
-                }
+                entityData,
+                collisionMethod: (layer, sprite) => tileEngine.layerCollidesWith(layer, sprite)
               }));
               break;
 
             case _consts.ENTITY_TYPE.NPC:
               ent = (0, _npc.default)(_objectSpread(_objectSpread({}, entity), {}, {
-                entityData: entityData,
-                collisionMethod: function collisionMethod(layer, sprite) {
-                  return tileEngine.layerCollidesWith(layer, sprite);
-                }
+                entityData,
+                aiPathGrid,
+                collisionMethod: (layer, sprite) => tileEngine.layerCollidesWith(layer, sprite)
               }));
               break;
 
-            case _consts.ENTITY_TYPE.FIXED || _consts.ENTITY_TYPE.DOOR:
+            case _consts.ENTITY_TYPE.DOOR:
+              // Doors may be animated, this is just temporary usage.
               ent = (0, _fixed.default)(_objectSpread(_objectSpread({}, entity), {}, {
-                entityData: entityData,
-                collisionMethod: function collisionMethod(layer, sprite) {
-                  return tileEngine.layerCollidesWith(layer, sprite);
-                }
+                entityData,
+                collisionMethod: (layer, sprite) => tileEngine.layerCollidesWith(layer, sprite)
+              }));
+              break;
+
+            case _consts.ENTITY_TYPE.FIXED:
+              ent = (0, _fixed.default)(_objectSpread(_objectSpread({}, entity), {}, {
+                entityData,
+                collisionMethod: (layer, sprite) => tileEngine.layerCollidesWith(layer, sprite)
               }));
               break;
 
@@ -10196,9 +11217,7 @@ var _default = function _default() {
 
           tileEngine.addObject(ent);
           return ent;
-        }).filter(function (e) {
-          return e;
-        }).concat([player])
+        }).filter(e => e).concat([player])
       };
     }
   };
@@ -10214,13 +11233,9 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = void 0;
 
 var _default = function _default() {
-  var reactions = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  let reactions = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
   return {
-    get: function get(type) {
-      return reactions.find(function (reaction) {
-        return reaction.type === type;
-      });
-    }
+    get: type => reactions.find(reaction => reaction.type === type)
   };
 };
 
@@ -10259,7 +11274,7 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 /* Screen size (16:9) */
-var resolution = {
+const resolution = {
   width: 256,
   height: 192,
   scale: 3
@@ -10267,11 +11282,11 @@ var resolution = {
 /* Canvas initialization */
 // Make absolutely sure we have to use two canvases (I'm not convinced)
 
-var _init = (0, _kontra.init)("gameCanvas"),
-    gameCanvas = _init.canvas;
-
-var scaledCanvas = document.getElementById("scaledCanvas");
-var rootElement = document.getElementById("root");
+const {
+  canvas: gameCanvas
+} = (0, _kontra.init)("gameCanvas");
+const scaledCanvas = document.getElementById("scaledCanvas");
+const rootElement = document.getElementById("root");
 /* Set correct scales to be universal */
 
 gameCanvas.width = resolution.width;
@@ -10286,13 +11301,13 @@ rootElement.style.width = resolution.width * resolution.scale + "px";
 rootElement.style.height = resolution.height * resolution.scale + "px";
 /* Remove smoothing */
 
-var gameCanvasCtx = gameCanvas.getContext("2d");
+const gameCanvasCtx = gameCanvas.getContext("2d");
 gameCanvasCtx.imageSmoothingEnabled = false;
 gameCanvasCtx.webkitImageSmoothingEnabled = false;
 gameCanvasCtx.mozImageSmoothingEnabled = false;
 gameCanvasCtx.msImageSmoothingEnabled = false;
 gameCanvasCtx.oImageSmoothingEnabled = false;
-var ctx = scaledCanvas.getContext("2d");
+const ctx = scaledCanvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 ctx.webkitImageSmoothingEnabled = false;
 ctx.mozImageSmoothingEnabled = false;
@@ -10300,44 +11315,42 @@ ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 /* Primary field scene */
 
-var FieldScene = function FieldScene(sceneProps) {
+const FieldScene = sceneProps => {
   /* World creation (can we not have entities just in store, it's a bit confusing) */
-  var _WorldManager = (0, _worldManager.default)(),
-      createWorld = _WorldManager.createWorld,
-      savePickup = _WorldManager.savePickup,
-      getAllEntitiesOfType = _WorldManager.getAllEntitiesOfType,
-      resetEntityStates = _WorldManager.resetEntityStates;
-
-  var _createWorld = createWorld(sceneProps),
-      sprites = _createWorld.sprites,
-      player = _createWorld.player,
-      tileEngine = _createWorld.tileEngine;
-
-  var spriteCache = sprites.filter(function (spr) {
-    return spr.isAlive();
-  }); // Temporary: Use this to erase storage data
+  const {
+    createWorld,
+    savePickup,
+    getAllEntitiesOfType,
+    resetEntityStates
+  } = (0, _worldManager.default)();
+  const {
+    sprites,
+    player,
+    tileEngine
+  } = createWorld(sceneProps);
+  let spriteCache = sprites.filter(spr => spr.isAlive()); // Temporary: Use this to erase storage data
 
   resetEntityStates();
   /* Main states creation */
 
-  var sceneStateMachine = (0, _stateManager.default)();
-  var screenEffectsStateMachine = (0, _stateManager.default)();
+  const sceneStateMachine = (0, _stateManager.default)();
+  const screenEffectsStateMachine = (0, _stateManager.default)();
   /* Decide what happens on different player interaction events (was separated, seemed pointless at this stage) */
 
-  var reactionManager = (0, _reactionManager.default)([{
+  const reactionManager = (0, _reactionManager.default)([{
     type: _consts.ENTITY_TYPE.DOOR,
 
     /* First available refers to the first given collision. So it might not always be what
     what you want it to be. This needs to be made a bit more robust. */
     reactionEvent: function reactionEvent(interactible) {
-      var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+      let actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
       // TODO: Entities should manage their own animations (same problem seen elsewhere)
       //interactible.playAnimation("default");
       screenEffectsStateMachine.push((0, _curtainState.default)({
         id: "curtain",
-        ctx: ctx,
+        ctx,
         direction: 1,
-        onFadeComplete: function onFadeComplete() {
+        onFadeComplete: () => {
           (0, _events.allOff)([_events.EV_SCENECHANGE]);
           /* Player start becomes part of the collider data so we attempt to use that. */
 
@@ -10351,9 +11364,11 @@ var FieldScene = function FieldScene(sceneProps) {
   }, {
     type: _consts.ENTITY_TYPE.NPC,
     reactionEvent: function reactionEvent(interactible) {
-      var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+      let actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
       console.log(interactible);
-      var customProperties = interactible.customProperties;
+      const {
+        customProperties
+      } = interactible;
       if (!Object.keys(customProperties).length) return;
 
       if (customProperties.triggerConvo) {
@@ -10362,23 +11377,15 @@ var FieldScene = function FieldScene(sceneProps) {
           // What's this for?
           startId: customProperties.triggerConvo,
           // I feel these might be better done within the state... perhaps the same elsewhere too.
-          onEntry: function onEntry() {
-            return actors.map(function (spr) {
-              return spr.disableMovement();
-            });
-          },
-          onExit: function onExit() {
-            return actors.map(function (spr) {
-              return spr.enableMovement();
-            });
-          }
+          onEntry: () => actors.map(spr => spr.disableMovement()),
+          onExit: () => actors.map(spr => spr.enableMovement())
         }));
       }
     }
   }, {
     type: _consts.ENTITY_TYPE.PICKUP,
     reactionEvent: function reactionEvent(interactible) {
-      var actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+      let actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
       interactible.ttl = 0;
       savePickup(interactible);
     }
@@ -10388,38 +11395,32 @@ var FieldScene = function FieldScene(sceneProps) {
 
   sceneStateMachine.push((0, _fieldState.default)({
     id: "field",
-    sprites: sprites,
-    tileEngine: tileEngine,
-    reactionManager: reactionManager,
-    getAllEntitiesOfType: getAllEntitiesOfType
+    sprites,
+    tileEngine,
+    reactionManager,
+    getAllEntitiesOfType
   }));
   /* Open up the first scene with a fade */
 
   screenEffectsStateMachine.push((0, _curtainState.default)({
     id: "curtain",
-    ctx: ctx,
+    ctx,
     direction: -1
   }));
   /* Primary loop */
 
   return (0, _kontra.GameLoop)({
-    update: function update() {
+    update: () => {
       /* Add a flag to sprite to enable/disable collision checks */
 
       /* Check for anything dead (GC does the rest) */
-      spriteCache = spriteCache.filter(function (spr) {
-        return spr.isAlive();
-      });
+      spriteCache = spriteCache.filter(spr => spr.isAlive());
       /* Player to useable collision with other entities (not tiles) */
 
-      var playerCollidingWith = (0, _helpers.sortByDist)(player, (0, _helpers.circleCollision)(player, spriteCache.filter(function (s) {
-        return s.id !== "player";
-      })));
+      const playerCollidingWith = (0, _helpers.sortByDist)(player, (0, _helpers.circleCollision)(player, spriteCache.filter(s => s.id !== "player")));
       /* Update all sprites */
 
-      spriteCache.map(function (sprite) {
-        return sprite.update();
-      }); // ...
+      spriteCache.map(sprite => sprite.update()); // ...
 
       player.isColliding = playerCollidingWith.length > 0;
       /* Origin is the controller of the scene, so 9/10 that'll probably be the player */
@@ -10444,16 +11445,12 @@ var FieldScene = function FieldScene(sceneProps) {
       tileEngine.sy = player.y - resolution.height / 2; //player.y - 120;
       //}
     },
-    render: function render() {
+    render: () => {
       /* Instruct tileEngine to update its frame */
       tileEngine.render();
       /* Edit z-order based on 'y' then change render order */
 
-      spriteCache.sort(function (a, b) {
-        return Math.round(a.y - a.z) - Math.round(b.y - b.z);
-      }).forEach(function (sprite) {
-        return sprite.render();
-      });
+      spriteCache.sort((a, b) => Math.round(a.y - a.z) - Math.round(b.y - b.z)).forEach(sprite => sprite.render());
       /* Update any screen effects that are running */
 
       screenEffectsStateMachine.update();
@@ -10467,11 +11464,11 @@ var FieldScene = function FieldScene(sceneProps) {
 TODO: Can we also const the dataKeys across the board plz. */
 
 
-(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/tiledata/test3.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/entityimages/little_bob.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json").then(function (assets) {
+(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/tiledata/test3.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/entityimages/little_bob.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json").then(assets => {
   (0, _kontra.initKeys)(); /// Note: There's now a scene manager in kontra that can be used
   // Hook up player start todo
 
-  var sceneManager = (0, _sceneManager.default)({
+  const sceneManager = (0, _sceneManager.default)({
     sceneObject: FieldScene
   });
   /* First load instigates a player start so this might be found from saveData
@@ -10486,9 +11483,7 @@ TODO: Can we also const the dataKeys across the board plz. */
     areaId: "area2",
     playerStartId: "area2_entrance"
   });
-  (0, _events.on)(_events.EV_SCENECHANGE, function (props) {
-    return sceneManager.loadScene(_objectSpread({}, props));
-  });
+  (0, _events.on)(_events.EV_SCENECHANGE, props => sceneManager.loadScene(_objectSpread({}, props)));
 });
 },{"kontra":"node_modules/kontra/kontra.mjs","./common/helpers":"src/common/helpers.js","./common/consts":"src/common/consts.js","./common/events":"src/common/events.js","./states/startConvoState":"src/states/startConvoState.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js","./managers/sceneManager":"src/managers/sceneManager.js","./managers/worldManager":"src/managers/worldManager.js","./managers/reactionManager":"src/managers/reactionManager.js","./managers/stateManager":"src/managers/stateManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
@@ -10518,7 +11513,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53993" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50071" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
