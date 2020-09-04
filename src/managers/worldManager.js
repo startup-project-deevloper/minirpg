@@ -69,8 +69,6 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
         }
       }
 
-      console.log(aiPathGrid);
-
       const playerStart = entities.find(
         x => x.customProperties.playerStartId === playerStartId
       );
