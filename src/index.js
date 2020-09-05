@@ -174,9 +174,10 @@ const FieldScene = (sceneProps) => {
         player,
         circleCollision(
           player,
-          spriteCache.filter((s) => s.id !== "player")
+          spriteCache
+            .filter(s => s.id !== "player" && s.collidesWithPlayer)
         )
-      );
+      )
 
       /* Update all sprites */
       spriteCache.map((sprite) => sprite.update());

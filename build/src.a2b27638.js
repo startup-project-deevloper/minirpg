@@ -9285,7 +9285,8 @@ var _default = () => {
       if (!currentState) return;
       currentState.exit();
       states = states.filter(x => x.id !== id);
-    }
+    },
+    clearStates: () => states.length = 0
   };
 };
 
@@ -9411,8 +9412,8 @@ var _default = (_ref) => {
     collisionBodyOptions = null,
     manualAnimation = false,
     controlledByUser = false,
-    controlledByAI = false,
-    collidesWithTiles = true
+    collidesWithTiles = true,
+    collidesWithPlayer = false
   } = entityData;
   let spriteSheet = (0, _kontra.SpriteSheet)({
     image: _kontra.imageAssets[sheet],
@@ -9444,12 +9445,12 @@ var _default = (_ref) => {
       y: 0.5
     },
     customProperties,
-    radius: 1,
+    radius: 2,
     animations: spriteSheet.animations,
     collidesWithTiles,
     controlledByUser,
-    controlledByAI,
     collisionBodyOptions,
+    collidesWithPlayer,
     manualAnimation,
     onAttacked: () => {
       // Push an internal state for damage effect (whatever that's going to be)
@@ -10746,6 +10747,13 @@ const Brain = () => {
       json data later on and auto-create all this) */
 
   const behaviours = {
+    talkMode: () => {
+      entityStateMachine.push((0, _aiIdleState.default)({
+        props: {
+          sprite: brainData.sprite
+        }
+      }));
+    },
     idleAndRoam: () => {
       entityStateMachine.push((0, _aiIdleState.default)({
         props: {
@@ -10772,7 +10780,12 @@ const Brain = () => {
   return {
     bootstrap: props => brainData = _objectSpread({}, props),
     update: () => entityStateMachine.update(),
-    start: () => behaviours.idleAndRoam()
+    start: () => behaviours.idleAndRoam(),
+    talkMode: () => behaviours.talkMode(),
+    reset: () => {
+      entityStateMachine.clearStates();
+      behaviours.idleAndRoam();
+    }
   };
 };
 
@@ -10802,8 +10815,8 @@ var _default = (_ref) => {
     collisionBodyOptions = null,
     manualAnimation = false,
     controlledByUser = false,
-    controlledByAI = false,
-    collidesWithTiles = true
+    collidesWithTiles = true,
+    collidesWithPlayer = true
   } = entityData;
   let spriteSheet = (0, _kontra.SpriteSheet)({
     image: _kontra.imageAssets[sheet],
@@ -10831,11 +10844,11 @@ var _default = (_ref) => {
     animations: spriteSheet.animations,
     collidesWithTiles,
     controlledByUser,
-    controlledByAI,
     collisionBodyOptions,
+    collidesWithPlayer,
     manualAnimation,
-    enableMovement: () => movementDisabled = false,
-    disableMovement: () => movementDisabled = true,
+    enableMovement: () => myBrain.reset(),
+    disableMovement: () => myBrain.talkMode(),
     lookAt: (_ref2) => {
       let {
         x,
@@ -10897,8 +10910,8 @@ var _default = (_ref) => {
     collisionBodyOptions = null,
     manualAnimation = false,
     controlledByUser = false,
-    controlledByAI = false,
-    collidesWithTiles = true
+    collidesWithTiles = true,
+    collidesWithPlayer = true
   } = entityData;
   let spriteSheet = (0, _kontra.SpriteSheet)({
     image: _kontra.imageAssets[sheet],
@@ -10925,8 +10938,8 @@ var _default = (_ref) => {
     animations: spriteSheet.animations,
     collidesWithTiles,
     controlledByUser,
-    controlledByAI,
     collisionBodyOptions,
+    collidesWithPlayer,
     manualAnimation,
     onAttacked: () => {
       // Push an internal state for damage effect (whatever that's going to be)
@@ -10980,8 +10993,8 @@ var _default = (_ref) => {
     collisionBodyOptions = null,
     manualAnimation = false,
     controlledByUser = false,
-    controlledByAI = false,
-    collidesWithTiles = true
+    collidesWithTiles = true,
+    collidesWithPlayer = true
   } = entityData;
   let spriteSheet = (0, _kontra.SpriteSheet)({
     image: _kontra.imageAssets[sheet],
@@ -11008,8 +11021,8 @@ var _default = (_ref) => {
     animations: spriteSheet.animations,
     collidesWithTiles,
     controlledByUser,
-    controlledByAI,
     collisionBodyOptions,
+    collidesWithPlayer,
     manualAnimation,
     onAttacked: () => {
       // Push an internal state for damage effect (whatever that's going to be)
@@ -11412,7 +11425,7 @@ const FieldScene = sceneProps => {
       spriteCache = spriteCache.filter(spr => spr.isAlive());
       /* Player to useable collision with other entities (not tiles) */
 
-      const playerCollidingWith = (0, _helpers.sortByDist)(player, (0, _helpers.circleCollision)(player, spriteCache.filter(s => s.id !== "player")));
+      const playerCollidingWith = (0, _helpers.sortByDist)(player, (0, _helpers.circleCollision)(player, spriteCache.filter(s => s.id !== "player" && s.collidesWithPlayer)));
       /* Update all sprites */
 
       spriteCache.map(sprite => sprite.update()); // ...
@@ -11513,7 +11526,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54676" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56399" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
