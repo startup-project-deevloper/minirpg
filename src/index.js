@@ -13,6 +13,9 @@ import { circleCollision, sortByDist } from "./common/helpers";
 import { ENTITY_TYPE } from "./common/consts";
 import { allOff, on, emit, EV_SCENECHANGE } from "./common/events";
 
+/* Store services */
+import store from "./services/store";
+
 /* States for global use */
 import startConvo from "./states/startConvoState";
 import fieldState from "./states/fieldState";
@@ -65,23 +68,17 @@ ctx.msImageSmoothingEnabled = false;
 ctx.oImageSmoothingEnabled = false;
 
 /* Primary field scene */
-const FieldScene = (sceneProps) => {
+const FieldScene = sceneProps => {
   /* World creation (can we not have entities just in store, it's a bit confusing) */
-  const {
-    createWorld,
-    savePickup,
-    resetEntityStates,
-    getProgressData
-  } = WorldManager();
-
+  const { createWorld } = WorldManager();
   const { sprites, player, tileEngine } = createWorld(sceneProps);
 
-  let spriteCache = sprites.filter((spr) => spr.isAlive());
+  let spriteCache = sprites.filter(spr => spr.isAlive());
 
   // Temporary: Use this to erase storage data
   // NOTE: This brings to light problems with integrity of data and allowing
   // to push the same data (such as quests).
-  //resetEntityStates();
+  //store.resetEntityStates();
 
   /* Main states creation */
   const sceneStateMachine = StateMachine();
@@ -120,24 +117,28 @@ const FieldScene = (sceneProps) => {
 
         /* So we 'could' get the data from the sprite but it's too static. Instead
         we should use the lookup table and ask it for what we need. */
-        const interactibleProgressData = getProgressData()
+        const interactibleProgressData = store
+          .getProgressDataStore()
           .find(i => i.id === interactible.id);
-        
+
         if (!Object.keys(customProperties).length) return;
 
         if (customProperties.triggerConvo) {
+          player.disableMovement();
+
           sceneStateMachine.push(
             startConvo({
               startId: interactibleProgressData.triggerConvo, //customProperties.triggerConvo,
               // I feel these might be better done within the state... perhaps the same elsewhere too.
-              onEntry: () => actors.map((spr) => {
-                spr.disableMovement()
-                spr.lookAt({
-                  x: player.x,
-                  y: player.y
-                });
-              }),
-              onExit: () => actors.map((spr) => spr.enableMovement())
+              onEntry: () =>
+                actors.filter(x => x.id !== "player").map(spr => {
+                  spr.disableMovement();
+                  spr.lookAt({
+                    x: player.x,
+                    y: player.y
+                  });
+                }),
+              onExit: () => actors.map(spr => spr.enableMovement())
             })
           );
         }
@@ -147,7 +148,7 @@ const FieldScene = (sceneProps) => {
       type: ENTITY_TYPE.PICKUP,
       reactionEvent: (interactible, actors = []) => {
         interactible.ttl = 0;
-        savePickup(interactible);
+        store.updateEntityData(interactible);
       }
     }
   ]);
@@ -177,20 +178,19 @@ const FieldScene = (sceneProps) => {
     update: () => {
       /* Add a flag to sprite to enable/disable collision checks */
       /* Check for anything dead (GC does the rest) */
-      spriteCache = spriteCache.filter((spr) => spr.isAlive());
+      spriteCache = spriteCache.filter(spr => spr.isAlive());
 
       /* Player to useable collision with other entities (not tiles) */
       const playerCollidingWith = sortByDist(
         player,
         circleCollision(
           player,
-          spriteCache
-            .filter(s => s.id !== "player" && s.collidesWithPlayer)
+          spriteCache.filter(s => s.id !== "player" && s.collidesWithPlayer)
         )
-      )
+      );
 
       /* Update all sprites */
-      spriteCache.map((sprite) => sprite.update());
+      spriteCache.map(sprite => sprite.update());
 
       // ...
       player.isColliding = playerCollidingWith.length > 0;
@@ -227,7 +227,7 @@ const FieldScene = (sceneProps) => {
       /* Edit z-order based on 'y' then change render order */
       spriteCache
         .sort((a, b) => Math.round(a.y - a.z) - Math.round(b.y - b.z))
-        .forEach((sprite) => sprite.render());
+        .forEach(sprite => sprite.render());
 
       /* Update any screen effects that are running */
       screenEffectsStateMachine.update();
@@ -264,8 +264,8 @@ load(
   "assets/gameData/conversationData.json",
   "assets/gameData/entityData.json",
   "assets/gameData/worldData.json",
-  "assets/gameData/questData.json",
-).then((assets) => {
+  "assets/gameData/questData.json"
+).then(assets => {
   initKeys();
 
   /// Note: There's now a scene manager in kontra that can be used
@@ -281,5 +281,5 @@ load(
   */
   sceneManager.loadScene({ areaId: "area1", playerStartId: "area1_entrance" });
 
-  on(EV_SCENECHANGE, (props) => sceneManager.loadScene({ ...props }));
+  on(EV_SCENECHANGE, props => sceneManager.loadScene({ ...props }));
 });

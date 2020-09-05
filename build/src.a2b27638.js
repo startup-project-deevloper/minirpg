@@ -6484,7 +6484,103 @@ const ENTITY_TYPE = {
   PLAYER: 99
 };
 exports.ENTITY_TYPE = ENTITY_TYPE;
-},{}],"node_modules/mithril/render/vnode.js":[function(require,module,exports) {
+},{}],"src/services/store.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _kontra = require("kontra");
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+const Store = () => {
+  console.info("Initialized store.");
+  const worldDataKey = "assets/gameData/worldData.json";
+  const entityDataKey = "assets/gameData/entityData.json";
+  /* NOTE: This brings to light problems with integrity of data and allowing to
+  push the same data (such as quests).*/
+
+  return {
+    resetEntityStates: () => {
+      console.log("Entity states were reset.");
+      (0, _kontra.setStoreItem)("entities", []);
+      (0, _kontra.setStoreItem)("quests", []);
+    },
+    pushProgress: item => {
+      const existing = (0, _kontra.getStoreItem)("progressData");
+      (0, _kontra.setStoreItem)("progressData", [...existing, item]);
+    },
+    updateProgress: updated => {
+      const d = (0, _kontra.getStoreItem)("progressData").map(item => {
+        if (item.id === updated.props.entityId) {
+          return _objectSpread(_objectSpread({}, item), {}, {
+            triggerConvo: updated.props.id
+          });
+        }
+
+        return item;
+      });
+      (0, _kontra.setStoreItem)("progressData", d);
+    },
+    updateQuestData: d => {
+      const currentQuests = (0, _kontra.getStoreItem)("quests");
+
+      if (currentQuests.find(x => x.id === d.id)) {
+        throw new Error("You should not push the same quest data twice.");
+      }
+
+      (0, _kontra.setStoreItem)("quests", [...currentQuests, d]);
+    },
+    updateEntityData: updatedEntity => {
+      const {
+        id,
+        type,
+        ttl
+      } = updatedEntity;
+      const existingEntities = (0, _kontra.getStoreItem)("entities");
+      const existingEntity = existingEntities ? existingEntities.find(x => x.id === id) : null;
+      /* This needs cleaning up */
+
+      (0, _kontra.setStoreItem)("entities", existingEntities ? existingEntities.filter(ent => ent.id !== id).concat([{
+        id,
+        type,
+        ttl,
+        qty: existingEntity ? existingEntity.qty + 1 : 1
+      }]) : [{
+        id,
+        type,
+        ttl,
+        qty: 1
+      }]);
+    },
+    getMapData: mapKey => _kontra.dataAssets[mapKey],
+    getWorldData: () => _kontra.dataAssets[worldDataKey],
+    getEntityData: () => _kontra.dataAssets[entityDataKey],
+    getProgressDataStore: () => (0, _kontra.getStoreItem)("progressData"),
+    getEntityDataStore: () => (0, _kontra.getStoreItem)("entities"),
+    getQuestDataStore: () => {},
+    getAllEntitiesOfType: type => {
+      const entityDataStore = (0, _kontra.getStoreItem)("entities");
+      return entityDataStore ? entityDataStore.filter(ent => ent.type === type) : [];
+    },
+    getEntityFromStore: id => {
+      const entityDataStore = (0, _kontra.getStoreItem)("entities");
+      return entityDataStore && entityDataStore.length ? entityDataStore.find(e => e.id === id) : null;
+    }
+  };
+};
+
+var _default = Store();
+
+exports.default = _default;
+},{"kontra":"node_modules/kontra/kontra.mjs"}],"node_modules/mithril/render/vnode.js":[function(require,module,exports) {
 "use strict"
 
 function Vnode(tag, key, attrs, children, text, dom) {
@@ -11164,6 +11260,8 @@ var _consts = require("../common/consts");
 
 var _events = require("../common/events");
 
+var _store = _interopRequireDefault(require("../services/store"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
@@ -11172,105 +11270,33 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-var _default = function _default() {
-  let options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
-    dataKey: "assets/gameData/worldData.json"
-  };
-  const {
-    dataKey
-  } = options;
-  const worldData = _kontra.dataAssets[dataKey]; // TODO: Pass this in?
-
-  const entityDataKey = "assets/gameData/entityData.json";
-  const entityTable = _kontra.dataAssets[entityDataKey]; // TODO: Move these commands out of here and in to some sort of helper layer.
-
-  const entitiesInStore = (0, _kontra.getStoreItem)("entities");
-
-  const _getEntityFromStore = id => entitiesInStore && entitiesInStore.length ? entitiesInStore.find(e => e.id === id) : null; //// TESTING TODO: Move this later on
-
-
-  let progressCache = [];
-  (0, _events.on)(_events.EV_UPDATECONVOTRIGGER, d => {
-    progressCache = progressCache.map(item => {
-      if (item.id === d.props.entityId) {
-        return _objectSpread(_objectSpread({}, item), {}, {
-          triggerConvo: d.props.id
-        });
-      }
-
-      return item;
-    });
-  });
+var _default = () => {
   /* Not sure if we're doing quest giving in the world manager frankly,
-    or even the progress cache. So will move all this later on. */
+  or even the progress cache. So will move all this later on. */
 
   /* I'm not 100% sure if an integrity check needs to be done to make sure
   the right convo is loaded. As it technically the data should be fairly pristine.
   Keep an eye on it anyway. */
-
-  (0, _events.on)(_events.EV_GIVEQUEST, d => {
-    console.log("Got a give quest command:");
-    console.log(d);
-    const currentQuests = (0, _kontra.getStoreItem)("quests") || [];
-
-    if (currentQuests.find(x => x.id === d.id)) {
-      throw new Error("You should not push the same quest data twice.");
-    }
-
-    (0, _kontra.setStoreItem)("quests", [...currentQuests, d]);
-  }); ////
-  // TODO: I think it's time to move entity and quest stuff out of world manager.
+  (0, _events.on)(_events.EV_GIVEQUEST, d => _store.default.updateQuestData(d));
+  (0, _events.on)(_events.EV_UPDATECONVOTRIGGER, d => _store.default.updateProgress(d)); // TODO: I think it's time to move entity and quest stuff out of world manager.
 
   return {
-    getProgressData: () => progressCache,
-    getAllEntitiesOfType: type => {
-      const existingEntities = (0, _kontra.getStoreItem)("entities");
-      return existingEntities ? existingEntities.filter(ent => ent.type === type) : [];
-    },
-    getAllEntities: () => (0, _kontra.getStoreItem)("entities"),
-    getEntityFromStore: id => _getEntityFromStore(id),
-    // NOTE: This brings to light problems with integrity of data and allowing
-    // to push the same data (such as quests).
-    resetEntityStates: () => {
-      console.log("Entity states were reset.");
-      (0, _kontra.setStoreItem)("entities", []);
-      (0, _kontra.setStoreItem)("quests", []);
-    },
-    savePickup: entityData => {
-      const {
-        id,
-        type,
-        ttl
-      } = entityData;
-      const existingEntities = (0, _kontra.getStoreItem)("entities");
-      const existingEntity = existingEntities ? existingEntities.find(x => x.id === id) : null;
-      /* This needs cleaning up */
-
-      (0, _kontra.setStoreItem)("entities", existingEntities ? existingEntities.filter(ent => ent.id !== id).concat([{
-        id,
-        type,
-        ttl,
-        qty: existingEntity ? existingEntity.qty + 1 : 1
-      }]) : [{
-        id,
-        type,
-        ttl,
-        qty: 1
-      }]);
-    },
     createWorld: (_ref) => {
       let {
         areaId,
         playerStartId
       } = _ref;
+
       const {
         entities,
         mapKey
-      } = worldData.find(x => x.areaId === areaId);
-      const map = _kontra.dataAssets[mapKey];
+      } = _store.default.getWorldData().find(x => x.areaId === areaId);
+
+      const map = _store.default.getMapData(mapKey);
+
       const tileEngine = (0, _kontra.TileEngine)(map);
       const aiPathLayer = tileEngine.layers.find(x => x.id === 2);
-      let aiPathGrid = []; //tileEngine.tileAtLayer('Collision', {x: 50, y: 50});  //=> 1
+      let aiPathGrid = [];
 
       for (let i = 0; i < aiPathLayer.width; i++) {
         aiPathGrid.push([]);
@@ -11285,7 +11311,9 @@ var _default = function _default() {
       }
 
       const playerStart = entities.find(x => x.customProperties.playerStartId === playerStartId);
-      const playerEntityData = entityTable.find(x => x.id === "player");
+
+      const playerEntityData = _store.default.getEntityData().find(x => x.id === "player");
+
       const player = (0, _player.default)({
         id: "player",
         x: playerStart.x,
@@ -11307,8 +11335,7 @@ var _default = function _default() {
             anchor: sprite.anchor
           };
           return tileEngine.layerCollidesWith(layer, t);
-        } // tileEngine.layerCollidesWith(layer, sprite)
-
+        }
       });
       tileEngine.addObject(player);
       return {
@@ -11326,18 +11353,18 @@ var _default = function _default() {
             id
           } = entity;
           let ent = null;
-          const entityData = entityTable.find(ent => ent.id === id);
+
+          const entityData = _store.default.getEntityData().find(ent => ent.id === id);
 
           if (entity.customProperties) {
-            progressCache.push(_objectSpread({
+            _store.default.pushProgress(_objectSpread({
               id: entity.id
             }, entity.customProperties));
-            console.log("Progress cache needs saving to store.");
           }
 
           switch (entityData.type) {
             case _consts.ENTITY_TYPE.PICKUP:
-              const alreadyCollected = _getEntityFromStore(id);
+              const alreadyCollected = _store.default.getEntityFromStore(id);
 
               if (alreadyCollected) return null;
               ent = (0, _pickup.default)(_objectSpread(_objectSpread({}, entity), {}, {
@@ -11384,7 +11411,7 @@ var _default = function _default() {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","../sprites/player":"src/sprites/player.js","../sprites/npc":"src/sprites/npc.js","../sprites/fixed":"src/sprites/fixed.js","../sprites/pickup":"src/sprites/pickup.js","../common/consts":"src/common/consts.js","../common/events":"src/common/events.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../sprites/player":"src/sprites/player.js","../sprites/npc":"src/sprites/npc.js","../sprites/fixed":"src/sprites/fixed.js","../sprites/pickup":"src/sprites/pickup.js","../common/consts":"src/common/consts.js","../common/events":"src/common/events.js","../services/store":"src/services/store.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -11410,6 +11437,8 @@ var _helpers = require("./common/helpers");
 var _consts = require("./common/consts");
 
 var _events = require("./common/events");
+
+var _store = _interopRequireDefault(require("./services/store"));
 
 var _startConvoState = _interopRequireDefault(require("./states/startConvoState"));
 
@@ -11478,10 +11507,7 @@ ctx.oImageSmoothingEnabled = false;
 const FieldScene = sceneProps => {
   /* World creation (can we not have entities just in store, it's a bit confusing) */
   const {
-    createWorld,
-    savePickup,
-    resetEntityStates,
-    getProgressData
+    createWorld
   } = (0, _worldManager.default)();
   const {
     sprites,
@@ -11491,7 +11517,7 @@ const FieldScene = sceneProps => {
   let spriteCache = sprites.filter(spr => spr.isAlive()); // Temporary: Use this to erase storage data
   // NOTE: This brings to light problems with integrity of data and allowing
   // to push the same data (such as quests).
-  //resetEntityStates();
+  //store.resetEntityStates();
 
   /* Main states creation */
 
@@ -11533,15 +11559,17 @@ const FieldScene = sceneProps => {
       /* So we 'could' get the data from the sprite but it's too static. Instead
       we should use the lookup table and ask it for what we need. */
 
-      const interactibleProgressData = getProgressData().find(i => i.id === interactible.id);
+      const interactibleProgressData = _store.default.getProgressDataStore().find(i => i.id === interactible.id);
+
       if (!Object.keys(customProperties).length) return;
 
       if (customProperties.triggerConvo) {
+        player.disableMovement();
         sceneStateMachine.push((0, _startConvoState.default)({
           startId: interactibleProgressData.triggerConvo,
           //customProperties.triggerConvo,
           // I feel these might be better done within the state... perhaps the same elsewhere too.
-          onEntry: () => actors.map(spr => {
+          onEntry: () => actors.filter(x => x.id !== "player").map(spr => {
             spr.disableMovement();
             spr.lookAt({
               x: player.x,
@@ -11557,7 +11585,8 @@ const FieldScene = sceneProps => {
     reactionEvent: function reactionEvent(interactible) {
       let actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
       interactible.ttl = 0;
-      savePickup(interactible);
+
+      _store.default.updateEntityData(interactible);
     }
   }]); // TODO: Can we please not have to pass everything in like this? It's a bit too coupled.
 
@@ -11659,7 +11688,7 @@ TODO: Can we also const the dataKeys across the board plz. */
   });
   (0, _events.on)(_events.EV_SCENECHANGE, props => sceneManager.loadScene(_objectSpread({}, props)));
 });
-},{"kontra":"node_modules/kontra/kontra.mjs","./common/helpers":"src/common/helpers.js","./common/consts":"src/common/consts.js","./common/events":"src/common/events.js","./states/startConvoState":"src/states/startConvoState.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js","./managers/sceneManager":"src/managers/sceneManager.js","./managers/worldManager":"src/managers/worldManager.js","./managers/reactionManager":"src/managers/reactionManager.js","./managers/stateManager":"src/managers/stateManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","./common/helpers":"src/common/helpers.js","./common/consts":"src/common/consts.js","./common/events":"src/common/events.js","./services/store":"src/services/store.js","./states/startConvoState":"src/states/startConvoState.js","./states/fieldState":"src/states/fieldState.js","./states/curtainState":"src/states/curtainState.js","./managers/sceneManager":"src/managers/sceneManager.js","./managers/worldManager":"src/managers/worldManager.js","./managers/reactionManager":"src/managers/reactionManager.js","./managers/stateManager":"src/managers/stateManager.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -11687,7 +11716,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51770" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50780" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

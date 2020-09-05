@@ -1,109 +1,34 @@
-import { dataAssets, TileEngine, setStoreItem, getStoreItem } from "kontra";
+import { TileEngine } from "kontra";
 import Player from "../sprites/player";
 import Npc from "../sprites/npc";
 import Fixed from "../sprites/fixed";
 import Pickup from "../sprites/pickup";
 import { ENTITY_TYPE } from "../common/consts";
 import { on, EV_UPDATECONVOTRIGGER, EV_GIVEQUEST } from "../common/events";
+import store from "../services/store";
 
-export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
-  const { dataKey } = options;
-  const worldData = dataAssets[dataKey];
-
-  // TODO: Pass this in?
-  const entityDataKey = "assets/gameData/entityData.json";
-  const entityTable = dataAssets[entityDataKey];
-
-  // TODO: Move these commands out of here and in to some sort of helper layer.
-  const entitiesInStore = getStoreItem("entities");
-  const getEntityFromStore = id =>
-    entitiesInStore && entitiesInStore.length
-      ? entitiesInStore.find(e => e.id === id)
-      : null;
-
-  //// TESTING TODO: Move this later on
-  let progressCache = []
-
-  on(EV_UPDATECONVOTRIGGER, d => {
-    progressCache = progressCache.map(item => {
-      if (item.id === d.props.entityId) {
-        return {
-          ...item,
-          triggerConvo: d.props.id
-        }
-      }
-      return item;
-    })
-  })
-
+export default () => {
   /* Not sure if we're doing quest giving in the world manager frankly,
-    or even the progress cache. So will move all this later on. */
+  or even the progress cache. So will move all this later on. */
   /* I'm not 100% sure if an integrity check needs to be done to make sure
   the right convo is loaded. As it technically the data should be fairly pristine.
   Keep an eye on it anyway. */
-  on(EV_GIVEQUEST, d => {
-    console.log("Got a give quest command:");
-    console.log(d);
-
-    const currentQuests = getStoreItem("quests") || [];
-
-    if (currentQuests.find(x => x.id === d.id)) {
-      throw new Error("You should not push the same quest data twice.");
-    }
-
-    setStoreItem("quests", [...currentQuests, d])
-  })
-  ////
+  on(EV_GIVEQUEST, d => store.updateQuestData(d));
+  on(EV_UPDATECONVOTRIGGER, d => store.updateProgress(d));
 
   // TODO: I think it's time to move entity and quest stuff out of world manager.
   return {
-    getProgressData: () => progressCache,
-    getAllEntitiesOfType: type => {
-      const existingEntities = getStoreItem("entities");
-      return existingEntities
-        ? existingEntities.filter(ent => ent.type === type)
-        : [];
-    },
-    getAllEntities: () => getStoreItem("entities"),
-    getEntityFromStore: id => getEntityFromStore(id),
-    // NOTE: This brings to light problems with integrity of data and allowing
-    // to push the same data (such as quests).
-    resetEntityStates: () => {
-      console.log("Entity states were reset.");
-      setStoreItem("entities", [])
-      setStoreItem("quests", [])
-    },
-    savePickup: entityData => {
-      const { id, type, ttl } = entityData;
-      const existingEntities = getStoreItem("entities");
-      const existingEntity = existingEntities
-        ? existingEntities.find(x => x.id === id)
-        : null;
-
-      /* This needs cleaning up */
-      setStoreItem(
-        "entities",
-        existingEntities
-          ? existingEntities.filter(ent => ent.id !== id).concat([
-            {
-              id,
-              type,
-              ttl,
-              qty: existingEntity ? existingEntity.qty + 1 : 1
-            }
-          ])
-          : [{ id, type, ttl, qty: 1 }]
-      );
-    },
     createWorld: ({ areaId, playerStartId }) => {
-      const { entities, mapKey } = worldData.find(x => x.areaId === areaId);
-      const map = dataAssets[mapKey];
+      const { entities, mapKey } = store
+        .getWorldData()
+        .find(x => x.areaId === areaId);
+
+      const map = store.getMapData(mapKey);
       const tileEngine = TileEngine(map);
 
       const aiPathLayer = tileEngine.layers.find(x => x.id === 2);
       let aiPathGrid = [];
 
-      //tileEngine.tileAtLayer('Collision', {x: 50, y: 50});  //=> 1
       for (let i = 0; i < aiPathLayer.width; i++) {
         aiPathGrid.push([]);
         for (let j = 0; j < aiPathLayer.height; j++) {
@@ -116,7 +41,9 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
         x => x.customProperties.playerStartId === playerStartId
       );
 
-      const playerEntityData = entityTable.find(x => x.id === "player");
+      const playerEntityData = store
+        .getEntityData()
+        .find(x => x.id === "player");
 
       const player = Player({
         id: "player",
@@ -142,7 +69,6 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
 
           return tileEngine.layerCollidesWith(layer, t);
         }
-        // tileEngine.layerCollidesWith(layer, sprite)
       });
 
       tileEngine.addObject(player);
@@ -162,22 +88,19 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
 
             let ent = null;
 
-            const entityData = entityTable.find(ent => ent.id === id);
+            const entityData = store.getEntityData().find(ent => ent.id === id);
 
             if (entity.customProperties) {
-              progressCache.push({
+              store.pushProgress({
                 id: entity.id,
                 ...entity.customProperties
-              })
-
-              console.log("Progress cache needs saving to store.");
+              });
             }
 
             switch (entityData.type) {
               case ENTITY_TYPE.PICKUP:
-                const alreadyCollected = getEntityFromStore(id);
+                const alreadyCollected = store.getEntityFromStore(id);
                 if (alreadyCollected) return null;
-
                 ent = Pickup({
                   ...entity,
                   entityData,
@@ -217,7 +140,6 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
 
             /* May wish to add a flag if you want to add it to tilemap or not */
             tileEngine.addObject(ent);
-
             return ent;
           })
           .filter(e => e)
