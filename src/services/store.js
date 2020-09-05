@@ -40,7 +40,7 @@ const Store = () => {
       const currentQuests = getStoreItem("quests");
 
       if (!currentQuests) {
-        setStoreItem("quests", []);
+        setStoreItem("quests", [d]);
         return;
       }
 
