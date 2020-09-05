@@ -14,6 +14,15 @@ const Brain = () => {
   /* Push an idle state to kick things off (can probably make this in to
       json data later on and auto-create all this) */
   const behaviours = {
+    talkMode: () => {
+      entityStateMachine.push(
+        aiIdleState({
+          props: {
+            sprite: brainData.sprite
+          }
+        })
+      );
+    },
     idleAndRoam: () => {
       entityStateMachine.push(
         aiIdleState({
@@ -45,7 +54,12 @@ const Brain = () => {
   return {
     bootstrap: props => (brainData = { ...props }),
     update: () => entityStateMachine.update(),
-    start: () => behaviours.idleAndRoam()
+    start: () => behaviours.idleAndRoam(),
+    talkMode: () => behaviours.talkMode(),
+    reset: () => {
+      entityStateMachine.clearStates();
+      behaviours.idleAndRoam();
+    }
   };
 };
 
@@ -57,15 +71,13 @@ export default ({
   customProperties = {},
   entityData = null,
   aiPathGrid = null,
-  collisionMethod = (layer, sprite) => {}
+  collisionMethod = (layer, sprite) => { }
 }) => {
   if (!id) {
     throw new Error(
       "Entity is fairly useless without an id, you should add one."
     );
   }
-
-  const entityStateMachine = StateMachine();
 
   const {
     name,
@@ -77,8 +89,8 @@ export default ({
     collisionBodyOptions = null,
     manualAnimation = false,
     controlledByUser = false,
-    controlledByAI = false,
-    collidesWithTiles = true
+    collidesWithTiles = true,
+    collidesWithPlayer = true
   } = entityData;
 
   let spriteSheet = SpriteSheet({
@@ -105,11 +117,11 @@ export default ({
     animations: spriteSheet.animations,
     collidesWithTiles,
     controlledByUser,
-    controlledByAI,
     collisionBodyOptions,
+    collidesWithPlayer,
     manualAnimation,
-    enableMovement: () => (movementDisabled = false),
-    disableMovement: () => (movementDisabled = true),
+    enableMovement: () => myBrain.reset(),
+    disableMovement: () => myBrain.talkMode(),
     lookAt: ({ x, y }) => {
       flipSprite({
         direction: {

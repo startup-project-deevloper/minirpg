@@ -26,8 +26,8 @@ export default ({
     collisionBodyOptions = null,
     manualAnimation = false,
     controlledByUser = false,
-    controlledByAI = false,
-    collidesWithTiles = true
+    collidesWithTiles = true,
+    collidesWithPlayer = true
   } = entityData;
 
   let spriteSheet = SpriteSheet({
@@ -52,8 +52,8 @@ export default ({
     animations: spriteSheet.animations,
     collidesWithTiles,
     controlledByUser,
-    controlledByAI,
     collisionBodyOptions,
+    collidesWithPlayer,
     manualAnimation,
     onAttacked: () => {
       // Push an internal state for damage effect (whatever that's going to be)

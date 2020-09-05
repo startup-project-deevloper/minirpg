@@ -38,6 +38,7 @@ export default () => {
 
       currentState.exit();
       states = states.filter(x => x.id !== id);
-    }
+    },
+    clearStates: () => states.length = 0
   };
 };

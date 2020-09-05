@@ -10,6 +10,7 @@
     "collisionBodyOptions": null,
     "manualAnimation": false,
     "controlledByUser": true,
+    "collidesWithPlayer": false,
     "animations": {
       "idle": {
         "frames": [0, 1, 2, 3],
@@ -31,6 +32,7 @@
     "frameHeight": 16,
     "collisionBodyOptions": null,
     "manualAnimation": false,
+    "collidesWithPlayer": true,
     "animations": {
       "idle": {
         "frames": [0, 1, 2, 3],
@@ -52,6 +54,7 @@
     "frameHeight": 16,
     "collisionBodyOptions": null,
     "manualAnimation": false,
+    "collidesWithPlayer": true,
     "animations": {
       "idle": {
         "frames": [0, 1, 2, 3],
@@ -73,7 +76,7 @@
     "frameHeight": 16,
     "collisionBodyOptions": null,
     "manualAnimation": false,
-    "controlledByAI": true,
+    "collidesWithPlayer": true,
     "animations": {
       "idle": {
         "frames": [0, 1, 2, 3],
@@ -96,6 +99,7 @@
     "frameHeight": 16,
     "collisionBodyOptions": null,
     "manualAnimation": false,
+    "collidesWithPlayer": true,
     "animations": {
       "idle": {
         "frames": [89],
@@ -116,6 +120,7 @@
       "offsetX": 0
     },
     "manualAnimation": true,
+    "collidesWithPlayer": true,
     "animations": {
       "idle": {
         "frames": [33],
@@ -139,6 +144,7 @@
     "frameHeight": 16,
     "collisionBodyOptions": null,
     "manualAnimation": false,
+    "collidesWithPlayer": true,
     "animations": {
       "idle": {
         "frames": [39],
@@ -156,6 +162,7 @@
     "frameHeight": 16,
     "collisionBodyOptions": null,
     "manualAnimation": false,
+    "collidesWithPlayer": false,
     "animations": {
       "idle": {
         "frames": [86],
@@ -173,6 +180,7 @@
     "frameHeight": 16,
     "collisionBodyOptions": null,
     "manualAnimation": false,
+    "collidesWithPlayer": false,
     "animations": {
       "idle": {
         "frames": [100],

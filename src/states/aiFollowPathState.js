@@ -32,9 +32,6 @@ export default ({ props, onEntry = () => {}, onExit = () => {} }) => {
 
   let rx = randomWalkable.x;
   let ry = randomWalkable.y;
-
-  console.log(randomWalkable);
-
   let isComplete = false;
   let current = Vector(sprite.x, sprite.y);
   let tileDest = null;
@@ -75,9 +72,6 @@ export default ({ props, onEntry = () => {}, onExit = () => {} }) => {
       tileDest = destQueue.dequeue();
       destination = Vector(tileDest.x, tileDest.y);
 
-      console.log("First point to go to:");
-      console.log(tileDest);
-
       onEntry();
     },
     update: () => {
@@ -100,8 +94,6 @@ export default ({ props, onEntry = () => {}, onExit = () => {} }) => {
         current = Vector(sprite.x, sprite.y);
       } else {
         destination = destQueue.dequeue();
-        console.log("NEXT SEGMENT:");
-        console.log(destination);
       }
 
       flipSprite({ direction: vel, sprite });
