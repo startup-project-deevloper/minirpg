@@ -1,0 +1,12 @@
+[
+    {
+        "id": "bobsBoots",
+        "name": "Bob's Boots",
+        "parts": [
+            {
+                "index": 1,
+                "description": "Daryl wants you to get their boots from Bob."
+            }
+        ]
+    }
+]

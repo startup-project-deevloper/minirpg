@@ -6299,7 +6299,7 @@ exports.default = _default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.emit = exports.allOff = exports.off = exports.on = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
+exports.emit = exports.allOff = exports.off = exports.on = exports.EV_GIVEQUEST = exports.EV_UPDATECONVOTRIGGER = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
 
 var _kontra = require("kontra");
 
@@ -6315,6 +6315,10 @@ const EV_SCENECHANGE = "ev.sceneChange";
 exports.EV_SCENECHANGE = EV_SCENECHANGE;
 const EV_INTERACTION = "ev.onInteraction";
 exports.EV_INTERACTION = EV_INTERACTION;
+const EV_UPDATECONVOTRIGGER = "ev.onUpdateConvoTrigger";
+exports.EV_UPDATECONVOTRIGGER = EV_UPDATECONVOTRIGGER;
+const EV_GIVEQUEST = "ev.onGiveQuest";
+exports.EV_GIVEQUEST = EV_GIVEQUEST;
 let registry = {};
 
 const on = (e, fn) => {
@@ -8732,6 +8736,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = exports.MODES = void 0;
 
+var _events = require("./events");
+
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
@@ -8816,7 +8822,8 @@ var _default = (_ref) => {
       id,
       to,
       choices,
-      actions
+      actions,
+      dataActions
     } = currentNode; // Wait if choices are presented.
 
     if (choices.length) return _objectSpread(_objectSpread({}, currentNode), {}, {
@@ -8830,6 +8837,21 @@ var _default = (_ref) => {
 
       if (actions.some(action => action === "cancel")) {
         onChatCancelled();
+      }
+
+      if (dataActions && dataActions.length) {
+        dataActions.forEach(d => {
+          // TODO: Might be best to use a 'type' rather than id
+          switch (d.id) {
+            case "giveQuest":
+              (0, _events.emit)(_events.EV_GIVEQUEST, d);
+              break;
+
+            case "updateConvoTrigger":
+              (0, _events.emit)(_events.EV_UPDATECONVOTRIGGER, d);
+              break;
+          }
+        });
       }
 
       _isComplete = true;
@@ -8856,7 +8878,7 @@ var _default = (_ref) => {
 };
 
 exports.default = _default;
-},{}],"src/input/onPush.js":[function(require,module,exports) {
+},{"./events":"src/common/events.js"}],"src/input/onPush.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -8984,7 +9006,7 @@ var _default = (_ref) => {
   });
 
   return {
-    id,
+    id: "conversation",
     isComplete: () => _isComplete,
     enter: props => onEntry(),
     update: () => onInteractionPushed(),
@@ -9005,6 +9027,8 @@ var _kontra = require("kontra");
 
 var _mithril = _interopRequireDefault(require("mithril"));
 
+var _consts = require("../common/consts");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 let mounted = false;
@@ -9015,7 +9039,7 @@ const Shell = (_ref) => {
   let {
     attrs
   } = _ref;
-  const entitiesInStore = (0, _kontra.getStoreItem)("entities");
+  const itemsInStore = (0, _kontra.getStoreItem)("entities").filter(x => x.type === _consts.ENTITY_TYPE.PICKUP);
   const dataKey = "assets/gameData/entityData.json";
   const itemsInData = _kontra.dataAssets[dataKey];
   return {
@@ -9027,22 +9051,16 @@ const Shell = (_ref) => {
       class: "dialogueBoxOuter"
     }, [(0, _mithril.default)("div", {
       class: "dialogue"
-    }, [attrs.items.length ? (0, _mithril.default)("dl", {
+    }, [itemsInStore.length ? (0, _mithril.default)("dl", {
       class: "itemListing"
-    }, attrs.items.map(item => {
+    }, itemsInStore.map(item => {
       const data = itemsInData.find((_ref2) => {
         let {
           id
         } = _ref2;
         return id === item.id;
       });
-      const storedItem = entitiesInStore.find((_ref3) => {
-        let {
-          id
-        } = _ref3;
-        return id === item.id;
-      });
-      const qty = storedItem ? storedItem.qty : 0;
+      const qty = item ? item.qty : 0;
       return (0, _mithril.default)("dd", {
         class: "itemNode",
         onclick: () => attrs.onItemSelected(data)
@@ -9070,6 +9088,78 @@ var _default = {
   unmount: () => _mithril.default.mount(document.getElementById("ui"), null)
 };
 exports.default = _default;
+},{"kontra":"node_modules/kontra/kontra.mjs","mithril":"node_modules/mithril/index.js","../common/consts":"src/common/consts.js"}],"src/ui/questlog.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _kontra = require("kontra");
+
+var _mithril = _interopRequireDefault(require("mithril"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+let mounted = false;
+/* still deciding how to work the UI either with
+sngular instances of mithril or otherwise. */
+
+const Shell = (_ref) => {
+  let {
+    attrs
+  } = _ref;
+  const questsInStore = (0, _kontra.getStoreItem)("quests");
+  const dataKey = "assets/gameData/questData.json";
+  const questsInData = _kontra.dataAssets[dataKey];
+  return {
+    oninit: () => mounted = true,
+    onremove: () => mounted = false,
+    view: () => (0, _mithril.default)("div", {
+      class: "uiShell"
+    }, [(0, _mithril.default)("div", {
+      class: "dialogueBoxOuter"
+    }, [(0, _mithril.default)("div", {
+      class: "dialogue"
+    }, [questsInStore.length ? (0, _mithril.default)("dl", {
+      class: "questListing"
+    }, questsInStore.map((_ref2) => {
+      let {
+        props
+      } = _ref2;
+      const data = questsInData.find((_ref3) => {
+        let {
+          id
+        } = _ref3;
+        return id === props.questId;
+      });
+      const currentSegment = data.parts.find(p => p.index === props.questPart);
+      return (0, _mithril.default)("dd", {
+        class: "questNode",
+        onclick: () => attrs.onQuestSelected(data)
+      }, [(0, _mithril.default)("h4", data.name), (0, _mithril.default)("h5", currentSegment.description)]);
+    })) : (0, _mithril.default)("p", "No quests."), (0, _mithril.default)("div", {
+      class: "choiceWindow"
+    }, (0, _mithril.default)("button", {
+      class: "choiceBox",
+      onclick: () => attrs.onQuestlogClosed()
+    }, "Close"))])])])
+  };
+};
+
+var _default = {
+  isBusy: () => mounted,
+  mount: function mount() {
+    let attrs = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+    _mithril.default.mount(document.getElementById("ui"), {
+      view: () => (0, _mithril.default)(Shell, attrs)
+    });
+  },
+  unmount: () => _mithril.default.mount(document.getElementById("ui"), null)
+};
+exports.default = _default;
 },{"kontra":"node_modules/kontra/kontra.mjs","mithril":"node_modules/mithril/index.js"}],"src/states/fieldState.js":[function(require,module,exports) {
 "use strict";
 
@@ -9080,7 +9170,7 @@ exports.default = void 0;
 
 var _inventory = _interopRequireDefault(require("../ui/inventory"));
 
-var _consts = require("../common/consts");
+var _questlog = _interopRequireDefault(require("../ui/questlog"));
 
 var _onPush = _interopRequireDefault(require("../input/onPush"));
 
@@ -9090,7 +9180,6 @@ var _default = (_ref) => {
   let {
     id,
     reactionManager,
-    getAllEntitiesOfType = () => {},
     onEntry = () => {},
     onExit = () => {}
   } = _ref;
@@ -9145,13 +9234,22 @@ var _default = (_ref) => {
     /* Get you a list of all items that are being held in data */
 
     _inventory.default.mount({
-      items: getAllEntitiesOfType(_consts.ENTITY_TYPE.PICKUP),
       onInventoryClosed: () => _inventory.default.unmount(),
       onItemSelected: itemData => {
         console.log(itemData);
       }
     }); // Don't forget to unmount it when it's done also!
 
+  });
+  const onQuestlogOpened = (0, _onPush.default)("q", () => {
+    if (_questlog.default.isBusy()) return;
+
+    _questlog.default.mount({
+      onQuestlogClosed: () => _questlog.default.unmount(),
+      onQuestSelected: questData => {
+        console.log(questData);
+      }
+    });
   });
   return {
     id,
@@ -9162,13 +9260,14 @@ var _default = (_ref) => {
       onInteractionPushed(props);
       onAttackPushed(props);
       onInventoryOpened();
+      onQuestlogOpened();
     },
     exit: () => onExit()
   };
 };
 
 exports.default = _default;
-},{"../ui/inventory":"src/ui/inventory.js","../common/consts":"src/common/consts.js","../input/onPush":"src/input/onPush.js"}],"src/states/curtainState.js":[function(require,module,exports) {
+},{"../ui/inventory":"src/ui/inventory.js","../ui/questlog":"src/ui/questlog.js","../input/onPush":"src/input/onPush.js"}],"src/states/curtainState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -10781,7 +10880,11 @@ const Brain = () => {
     bootstrap: props => brainData = _objectSpread({}, props),
     update: () => entityStateMachine.update(),
     start: () => behaviours.idleAndRoam(),
-    talkMode: () => behaviours.talkMode(),
+    talkMode: () => {
+      // TODO: Bug, sometimes stops animations when you clear state like this.
+      entityStateMachine.clearStates();
+      behaviours.talkMode();
+    },
     reset: () => {
       entityStateMachine.clearStates();
       behaviours.idleAndRoam();
@@ -11059,6 +11162,8 @@ var _pickup = _interopRequireDefault(require("../sprites/pickup"));
 
 var _consts = require("../common/consts");
 
+var _events = require("../common/events");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
@@ -11081,16 +11186,56 @@ var _default = function _default() {
 
   const entitiesInStore = (0, _kontra.getStoreItem)("entities");
 
-  const _getEntityFromStore = id => entitiesInStore && entitiesInStore.length ? entitiesInStore.find(e => e.id === id) : null;
+  const _getEntityFromStore = id => entitiesInStore && entitiesInStore.length ? entitiesInStore.find(e => e.id === id) : null; //// TESTING TODO: Move this later on
+
+
+  let progressCache = [];
+  (0, _events.on)(_events.EV_UPDATECONVOTRIGGER, d => {
+    progressCache = progressCache.map(item => {
+      if (item.id === d.props.entityId) {
+        return _objectSpread(_objectSpread({}, item), {}, {
+          triggerConvo: d.props.id
+        });
+      }
+
+      return item;
+    });
+  });
+  /* Not sure if we're doing quest giving in the world manager frankly,
+    or even the progress cache. So will move all this later on. */
+
+  /* I'm not 100% sure if an integrity check needs to be done to make sure
+  the right convo is loaded. As it technically the data should be fairly pristine.
+  Keep an eye on it anyway. */
+
+  (0, _events.on)(_events.EV_GIVEQUEST, d => {
+    console.log("Got a give quest command:");
+    console.log(d);
+    const currentQuests = (0, _kontra.getStoreItem)("quests") || [];
+
+    if (currentQuests.find(x => x.id === d.id)) {
+      throw new Error("You should not push the same quest data twice.");
+    }
+
+    (0, _kontra.setStoreItem)("quests", [...currentQuests, d]);
+  }); ////
+  // TODO: I think it's time to move entity and quest stuff out of world manager.
 
   return {
+    getProgressData: () => progressCache,
     getAllEntitiesOfType: type => {
       const existingEntities = (0, _kontra.getStoreItem)("entities");
       return existingEntities ? existingEntities.filter(ent => ent.type === type) : [];
     },
     getAllEntities: () => (0, _kontra.getStoreItem)("entities"),
     getEntityFromStore: id => _getEntityFromStore(id),
-    resetEntityStates: () => (0, _kontra.setStoreItem)("entities", []),
+    // NOTE: This brings to light problems with integrity of data and allowing
+    // to push the same data (such as quests).
+    resetEntityStates: () => {
+      console.log("Entity states were reset.");
+      (0, _kontra.setStoreItem)("entities", []);
+      (0, _kontra.setStoreItem)("quests", []);
+    },
     savePickup: entityData => {
       const {
         id,
@@ -11183,6 +11328,13 @@ var _default = function _default() {
           let ent = null;
           const entityData = entityTable.find(ent => ent.id === id);
 
+          if (entity.customProperties) {
+            progressCache.push(_objectSpread({
+              id: entity.id
+            }, entity.customProperties));
+            console.log("Progress cache needs saving to store.");
+          }
+
           switch (entityData.type) {
             case _consts.ENTITY_TYPE.PICKUP:
               const alreadyCollected = _getEntityFromStore(id);
@@ -11232,7 +11384,7 @@ var _default = function _default() {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","../sprites/player":"src/sprites/player.js","../sprites/npc":"src/sprites/npc.js","../sprites/fixed":"src/sprites/fixed.js","../sprites/pickup":"src/sprites/pickup.js","../common/consts":"src/common/consts.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../sprites/player":"src/sprites/player.js","../sprites/npc":"src/sprites/npc.js","../sprites/fixed":"src/sprites/fixed.js","../sprites/pickup":"src/sprites/pickup.js","../common/consts":"src/common/consts.js","../common/events":"src/common/events.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -11328,8 +11480,8 @@ const FieldScene = sceneProps => {
   const {
     createWorld,
     savePickup,
-    getAllEntitiesOfType,
-    resetEntityStates
+    resetEntityStates,
+    getProgressData
   } = (0, _worldManager.default)();
   const {
     sprites,
@@ -11337,8 +11489,10 @@ const FieldScene = sceneProps => {
     tileEngine
   } = createWorld(sceneProps);
   let spriteCache = sprites.filter(spr => spr.isAlive()); // Temporary: Use this to erase storage data
+  // NOTE: This brings to light problems with integrity of data and allowing
+  // to push the same data (such as quests).
+  //resetEntityStates();
 
-  resetEntityStates();
   /* Main states creation */
 
   const sceneStateMachine = (0, _stateManager.default)();
@@ -11373,19 +11527,27 @@ const FieldScene = sceneProps => {
     type: _consts.ENTITY_TYPE.NPC,
     reactionEvent: function reactionEvent(interactible) {
       let actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-      console.log(interactible);
       const {
         customProperties
       } = interactible;
+      /* So we 'could' get the data from the sprite but it's too static. Instead
+      we should use the lookup table and ask it for what we need. */
+
+      const interactibleProgressData = getProgressData().find(i => i.id === interactible.id);
       if (!Object.keys(customProperties).length) return;
 
       if (customProperties.triggerConvo) {
         sceneStateMachine.push((0, _startConvoState.default)({
-          id: "conversation",
-          // What's this for?
-          startId: customProperties.triggerConvo,
+          startId: interactibleProgressData.triggerConvo,
+          //customProperties.triggerConvo,
           // I feel these might be better done within the state... perhaps the same elsewhere too.
-          onEntry: () => actors.map(spr => spr.disableMovement()),
+          onEntry: () => actors.map(spr => {
+            spr.disableMovement();
+            spr.lookAt({
+              x: player.x,
+              y: player.y
+            });
+          }),
           onExit: () => actors.map(spr => spr.enableMovement())
         }));
       }
@@ -11405,8 +11567,7 @@ const FieldScene = sceneProps => {
     id: "field",
     sprites,
     tileEngine,
-    reactionManager,
-    getAllEntitiesOfType
+    reactionManager
   }));
   /* Open up the first scene with a fade */
 
@@ -11477,7 +11638,7 @@ const FieldScene = sceneProps => {
 TODO: Can we also const the dataKeys across the board plz. */
 
 
-(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/tiledata/test3.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/entityimages/little_bob.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json").then(assets => {
+(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/tiledata/test3.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/entityimages/little_bob.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json", "assets/gameData/questData.json").then(assets => {
   (0, _kontra.initKeys)(); /// Note: There's now a scene manager in kontra that can be used
   // Hook up player start todo
 
@@ -11493,8 +11654,8 @@ TODO: Can we also const the dataKeys across the board plz. */
   */
 
   sceneManager.loadScene({
-    areaId: "area2",
-    playerStartId: "area2_entrance"
+    areaId: "area1",
+    playerStartId: "area1_entrance"
   });
   (0, _events.on)(_events.EV_SCENECHANGE, props => sceneManager.loadScene(_objectSpread({}, props)));
 });
@@ -11526,7 +11687,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56399" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51770" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -70,15 +70,18 @@ const FieldScene = (sceneProps) => {
   const {
     createWorld,
     savePickup,
-    getAllEntitiesOfType,
-    resetEntityStates
+    resetEntityStates,
+    getProgressData
   } = WorldManager();
+
   const { sprites, player, tileEngine } = createWorld(sceneProps);
 
   let spriteCache = sprites.filter((spr) => spr.isAlive());
 
   // Temporary: Use this to erase storage data
-  resetEntityStates();
+  // NOTE: This brings to light problems with integrity of data and allowing
+  // to push the same data (such as quests).
+  //resetEntityStates();
 
   /* Main states creation */
   const sceneStateMachine = StateMachine();
@@ -113,19 +116,27 @@ const FieldScene = (sceneProps) => {
     {
       type: ENTITY_TYPE.NPC,
       reactionEvent: (interactible, actors = []) => {
-        console.log(interactible);
-
         const { customProperties } = interactible;
 
+        /* So we 'could' get the data from the sprite but it's too static. Instead
+        we should use the lookup table and ask it for what we need. */
+        const interactibleProgressData = getProgressData()
+          .find(i => i.id === interactible.id);
+        
         if (!Object.keys(customProperties).length) return;
 
         if (customProperties.triggerConvo) {
           sceneStateMachine.push(
             startConvo({
-              id: "conversation", // What's this for?
-              startId: customProperties.triggerConvo,
+              startId: interactibleProgressData.triggerConvo, //customProperties.triggerConvo,
               // I feel these might be better done within the state... perhaps the same elsewhere too.
-              onEntry: () => actors.map((spr) => spr.disableMovement()),
+              onEntry: () => actors.map((spr) => {
+                spr.disableMovement()
+                spr.lookAt({
+                  x: player.x,
+                  y: player.y
+                });
+              }),
               onExit: () => actors.map((spr) => spr.enableMovement())
             })
           );
@@ -148,8 +159,7 @@ const FieldScene = (sceneProps) => {
       id: "field",
       sprites,
       tileEngine,
-      reactionManager,
-      getAllEntitiesOfType
+      reactionManager
     })
   );
 
@@ -253,7 +263,8 @@ load(
   "assets/entityimages/little_bob.png",
   "assets/gameData/conversationData.json",
   "assets/gameData/entityData.json",
-  "assets/gameData/worldData.json"
+  "assets/gameData/worldData.json",
+  "assets/gameData/questData.json",
 ).then((assets) => {
   initKeys();
 
@@ -268,7 +279,7 @@ load(
   so long as you specify the right id for it. That being said, you do have to make sure
   both of them exist in the same context, otherwise you'll never get access to it.
   */
-  sceneManager.loadScene({ areaId: "area2", playerStartId: "area2_entrance" });
+  sceneManager.loadScene({ areaId: "area1", playerStartId: "area1_entrance" });
 
   on(EV_SCENECHANGE, (props) => sceneManager.loadScene({ ...props }));
 });

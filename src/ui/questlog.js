@@ -1,18 +1,15 @@
 import { dataAssets, getStoreItem } from "kontra";
 import m from "mithril";
-import { ENTITY_TYPE } from "../common/consts";
 
 let mounted = false;
 
 /* still deciding how to work the UI either with
 sngular instances of mithril or otherwise. */
 const Shell = ({ attrs }) => {
-    const itemsInStore = getStoreItem("entities")
-        .filter(x => x.type === ENTITY_TYPE.PICKUP);
-        
-    const dataKey = "assets/gameData/entityData.json";
-    const itemsInData = dataAssets[dataKey];
-
+    const questsInStore = getStoreItem("quests");
+    const dataKey = "assets/gameData/questData.json";
+    const questsInData = dataAssets[dataKey];
+    
     return {
         oninit: () => mounted = true,
         onremove: () => mounted = false,
@@ -20,29 +17,28 @@ const Shell = ({ attrs }) => {
             m("div", { class: "uiShell" }, [
                 m("div", { class: "dialogueBoxOuter" }, [
                     m("div", { class: "dialogue" }, [
-                        itemsInStore.length ? m("dl",
-                            { class: "itemListing" },
-                            itemsInStore.map(item => {
-                                const data = itemsInData.find(({ id }) => id === item.id);
-                                const qty = item ? item.qty : 0;
+                        questsInStore.length ? m("dl",
+                            { class: "questListing" },
+                            questsInStore.map(({ props }) => {
+                                const data = questsInData.find(({ id }) => id === props.questId);
+                                const currentSegment = data.parts.find(p => p.index === props.questPart);
 
                                 return m("dd", {
-                                    class: "itemNode",
-                                    onclick: () => attrs.onItemSelected(data)
+                                    class: "questNode",
+                                    onclick: () => attrs.onQuestSelected(data)
                                 }, [
-                                    m("img", { src: data.thumb }),
-                                    m("h4", `${data.name}: x${qty}`),
-                                    m("h5", data.description)
+                                    m("h4", data.name),
+                                    m("h5", currentSegment.description)
                                 ])
                             })
-                        ) : m("p", "No items."),
+                        ) : m("p", "No quests."),
                         m("div",
                             { class: "choiceWindow" },
                             m(
                                 "button",
                                 {
                                     class: "choiceBox",
-                                    onclick: () => attrs.onInventoryClosed()
+                                    onclick: () => attrs.onQuestlogClosed()
                                 },
                                 "Close"
                             )

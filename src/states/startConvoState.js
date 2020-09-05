@@ -64,7 +64,7 @@ export default ({
   });
 
   return {
-    id,
+    id: "conversation",
     isComplete: () => isComplete,
     enter: props => onEntry(),
     update: () => onInteractionPushed(),

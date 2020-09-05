@@ -6,6 +6,8 @@ export const EV_CONVONEXT = "ev.convoNext";
 export const EV_CONVOCHOICE = "ev.convoChoice";
 export const EV_SCENECHANGE = "ev.sceneChange";
 export const EV_INTERACTION = "ev.onInteraction";
+export const EV_UPDATECONVOTRIGGER = "ev.onUpdateConvoTrigger";
+export const EV_GIVEQUEST = "ev.onGiveQuest";
 
 let registry = {};
 
