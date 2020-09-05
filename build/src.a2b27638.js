@@ -6299,7 +6299,7 @@ exports.default = _default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.emit = exports.allOff = exports.off = exports.on = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
+exports.emit = exports.allOff = exports.off = exports.on = exports.EV_GIVEQUEST = exports.EV_UPDATECONVOTRIGGER = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
 
 var _kontra = require("kontra");
 
@@ -6315,6 +6315,10 @@ const EV_SCENECHANGE = "ev.sceneChange";
 exports.EV_SCENECHANGE = EV_SCENECHANGE;
 const EV_INTERACTION = "ev.onInteraction";
 exports.EV_INTERACTION = EV_INTERACTION;
+const EV_UPDATECONVOTRIGGER = "ev.onUpdateConvoTrigger";
+exports.EV_UPDATECONVOTRIGGER = EV_UPDATECONVOTRIGGER;
+const EV_GIVEQUEST = "ev.onGiveQuest";
+exports.EV_GIVEQUEST = EV_GIVEQUEST;
 let registry = {};
 
 const on = (e, fn) => {
@@ -8732,6 +8736,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = exports.MODES = void 0;
 
+var _events = require("./events");
+
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
@@ -8816,7 +8822,8 @@ var _default = (_ref) => {
       id,
       to,
       choices,
-      actions
+      actions,
+      dataActions
     } = currentNode; // Wait if choices are presented.
 
     if (choices.length) return _objectSpread(_objectSpread({}, currentNode), {}, {
@@ -8832,14 +8839,18 @@ var _default = (_ref) => {
         onChatCancelled();
       }
 
-      if (actions.some(action => action.includes("changeStartIdTo"))) {
-        const strs = actions.filter(str => str.includes("changeStartIdTo"));
-        strs.forEach(str => {
-          const splitToId = str.split(".");
-          console.log(splitToId[splitToId.length - 1]); // How the hell do I get this changed back on Daryl...
-          // is it worth making some sort of table instead?
-          // Might be worth using events actually...
-          // broadcast out to update certain parameters
+      if (dataActions && dataActions.length) {
+        dataActions.forEach(d => {
+          // TODO: Might be best to use a 'type' rather than id
+          switch (d.id) {
+            case "giveQuest":
+              (0, _events.emit)(_events.EV_GIVEQUEST, d);
+              break;
+
+            case "updateConvoTrigger":
+              (0, _events.emit)(_events.EV_UPDATECONVOTRIGGER, d);
+              break;
+          }
         });
       }
 
@@ -8867,7 +8878,7 @@ var _default = (_ref) => {
 };
 
 exports.default = _default;
-},{}],"src/input/onPush.js":[function(require,module,exports) {
+},{"./events":"src/common/events.js"}],"src/input/onPush.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -11070,6 +11081,8 @@ var _pickup = _interopRequireDefault(require("../sprites/pickup"));
 
 var _consts = require("../common/consts");
 
+var _events = require("../common/events");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
@@ -11092,10 +11105,32 @@ var _default = function _default() {
 
   const entitiesInStore = (0, _kontra.getStoreItem)("entities");
 
-  const _getEntityFromStore = id => entitiesInStore && entitiesInStore.length ? entitiesInStore.find(e => e.id === id) : null; //// TESTING
+  const _getEntityFromStore = id => entitiesInStore && entitiesInStore.length ? entitiesInStore.find(e => e.id === id) : null; //// TESTING TODO: Move this later on
 
 
-  let progressCache = []; ////
+  let progressCache = [];
+  (0, _events.on)(_events.EV_UPDATECONVOTRIGGER, d => {
+    progressCache = progressCache.map(item => {
+      if (item.id === d.props.entityId) {
+        return _objectSpread(_objectSpread({}, item), {}, {
+          triggerConvo: d.props.id
+        });
+      }
+
+      return item;
+    });
+    /* Not sure if we're doing quest giving in the world manager frankly,
+    or even the progress cache. So will move all this later on. */
+
+    /* I'm not 100% sure if an integrity check needs to be done to make sure
+    the right convo is loaded. As it technically the data should be fairly pristine.
+    Keep an eye on it anyway. */
+
+    (0, _events.on)(_events.EV_GIVEQUEST, d => {
+      console.log("Got a give quest command:");
+      console.log(d);
+    });
+  }); ////
 
   return {
     getProgressData: () => progressCache,
@@ -11257,7 +11292,7 @@ var _default = function _default() {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","../sprites/player":"src/sprites/player.js","../sprites/npc":"src/sprites/npc.js","../sprites/fixed":"src/sprites/fixed.js","../sprites/pickup":"src/sprites/pickup.js","../common/consts":"src/common/consts.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../sprites/player":"src/sprites/player.js","../sprites/npc":"src/sprites/npc.js","../sprites/fixed":"src/sprites/fixed.js","../sprites/pickup":"src/sprites/pickup.js","../common/consts":"src/common/consts.js","../common/events":"src/common/events.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {

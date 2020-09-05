@@ -43,8 +43,16 @@
         "to": null,
         "text": "Huh. Figures. I'll just go later or something.",
         "choices": [],
+        "dataActions": [
+            {
+                "id": "updateConvoTrigger",
+                "props": {
+                    "entityId": "daryl",
+                    "id": "area1.daryl.m5"
+                }
+            }
+        ],
         "actions": [
-            "changeStartIdTo.area1.daryl.m5",
             "cancel"
         ]
     },
@@ -66,8 +74,23 @@
         "to": null,
         "text": "Thanks! He should be in the next room.",
         "choices": [],
+        "dataActions": [
+            {
+                "id": "giveQuest",
+                "props": {
+                    "questId": "bobsBoots",
+                    "questPart": 1
+                }
+            },
+            {
+                "id": "updateConvoTrigger",
+                "props": {
+                    "entityId": "daryl",
+                    "id": "area1.daryl.m6"
+                }
+            }
+        ],
         "actions": [
-            "giveQuest.bobsBoots.1",
             "endConversation",
             "save"
         ]
@@ -92,12 +115,21 @@
                 "id": "m1b",
                 "actor": "player",
                 "from": "m1",
-                "to": "m3",
+                "to": "m3b",
                 "text": "Nope.",
                 "choices": [],
                 "actions": []
             }
         ],
+        "actions": []
+    },
+    {
+        "id": "area1.daryl.m6",
+        "actor": "daryl",
+        "from": null,
+        "to": null,
+        "text": "Did you manage to find my boots yet?",
+        "choices": [],
         "actions": []
     }
 ]

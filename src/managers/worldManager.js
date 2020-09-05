@@ -4,6 +4,7 @@ import Npc from "../sprites/npc";
 import Fixed from "../sprites/fixed";
 import Pickup from "../sprites/pickup";
 import { ENTITY_TYPE } from "../common/consts";
+import { on, EV_UPDATECONVOTRIGGER, EV_GIVEQUEST } from "../common/events";
 
 export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
   const { dataKey } = options;
@@ -20,8 +21,30 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
       ? entitiesInStore.find(e => e.id === id)
       : null;
 
-  //// TESTING
+  //// TESTING TODO: Move this later on
   let progressCache = []
+
+  on(EV_UPDATECONVOTRIGGER, d => {
+    progressCache = progressCache.map(item => {
+      if (item.id === d.props.entityId) {
+        return {
+          ...item,
+          triggerConvo: d.props.id
+        }
+      }
+      return item;
+    })
+
+    /* Not sure if we're doing quest giving in the world manager frankly,
+    or even the progress cache. So will move all this later on. */
+    /* I'm not 100% sure if an integrity check needs to be done to make sure
+    the right convo is loaded. As it technically the data should be fairly pristine.
+    Keep an eye on it anyway. */
+    on(EV_GIVEQUEST, d => {
+      console.log("Got a give quest command:");
+      console.log(d);
+    })
+  })
   ////
 
   return {

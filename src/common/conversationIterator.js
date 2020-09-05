@@ -1,3 +1,7 @@
+// TODO: Ensure you're definitely calling allOff and no events are hanging on
+// at load or scene change.
+import { allOff, on, emit, EV_UPDATECONVOTRIGGER, EV_GIVEQUEST } from "./events";
+
 export const MODES = {
   NOTRUNNING: 100,
   NEXTNODE: 200,
@@ -77,7 +81,7 @@ export default ({
 
     // TODO: Beware, if you're not checking for existent choices, this will error out,
     // or do something a little funky. May want to check for choices here instead?
-    const { id, to, choices, actions } = currentNode;
+    const { id, to, choices, actions, dataActions } = currentNode;
 
     // Wait if choices are presented.
     if (choices.length) return {
@@ -98,15 +102,17 @@ export default ({
         onChatCancelled();
       }
 
-      if (actions.some(action => action.includes("changeStartIdTo"))) {
-        const strs = actions.filter(str => str.includes("changeStartIdTo"));
-        strs.forEach(str => {
-          const splitToId = str.split(".");
-          console.log(splitToId[splitToId.length - 1]);
-          // How the hell do I get this changed back on Daryl...
-          // is it worth making some sort of table instead?
-          // Might be worth using events actually...
-          // broadcast out to update certain parameters
+      if (dataActions && dataActions.length) {
+        dataActions.forEach(d => {
+          // TODO: Might be best to use a 'type' rather than id
+          switch(d.id) {
+            case "giveQuest":
+              emit(EV_GIVEQUEST, d);
+              break;
+            case "updateConvoTrigger":
+              emit(EV_UPDATECONVOTRIGGER, d);
+              break;
+          }
         })
       }
 
