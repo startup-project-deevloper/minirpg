@@ -15,6 +15,12 @@ const Store = () => {
     },
     pushProgress: item => {
       const existing = getStoreItem("progressData");
+
+      if (!existing) {
+        setStoreItem("progressData", []);
+        return;
+      }
+
       setStoreItem("progressData", [...existing, item]);
     },
     updateProgress: updated => {
@@ -32,6 +38,11 @@ const Store = () => {
     },
     updateQuestData: d => {
       const currentQuests = getStoreItem("quests");
+
+      if (!currentQuests) {
+        setStoreItem("quests", []);
+        return;
+      }
 
       if (currentQuests.find(x => x.id === d.id)) {
         throw new Error("You should not push the same quest data twice.");

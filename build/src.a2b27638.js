@@ -6515,6 +6515,12 @@ const Store = () => {
     },
     pushProgress: item => {
       const existing = (0, _kontra.getStoreItem)("progressData");
+
+      if (!existing) {
+        (0, _kontra.setStoreItem)("progressData", []);
+        return;
+      }
+
       (0, _kontra.setStoreItem)("progressData", [...existing, item]);
     },
     updateProgress: updated => {
@@ -6531,6 +6537,11 @@ const Store = () => {
     },
     updateQuestData: d => {
       const currentQuests = (0, _kontra.getStoreItem)("quests");
+
+      if (!currentQuests) {
+        (0, _kontra.setStoreItem)("quests", []);
+        return;
+      }
 
       if (currentQuests.find(x => x.id === d.id)) {
         throw new Error("You should not push the same quest data twice.");
@@ -11716,7 +11727,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50780" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55114" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
