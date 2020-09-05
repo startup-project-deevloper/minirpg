@@ -17,7 +17,7 @@ const Store = () => {
       const existing = getStoreItem("progressData");
 
       if (!existing) {
-        setStoreItem("progressData", []);
+        setStoreItem("progressData", [item]);
         return;
       }
 
