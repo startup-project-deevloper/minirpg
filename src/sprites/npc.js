@@ -55,7 +55,11 @@ const Brain = () => {
     bootstrap: props => (brainData = { ...props }),
     update: () => entityStateMachine.update(),
     start: () => behaviours.idleAndRoam(),
-    talkMode: () => behaviours.talkMode(),
+    talkMode: () => {
+      // TODO: Bug, sometimes stops animations when you clear state like this.
+      entityStateMachine.clearStates();
+      behaviours.talkMode()
+    },
     reset: () => {
       entityStateMachine.clearStates();
       behaviours.idleAndRoam();

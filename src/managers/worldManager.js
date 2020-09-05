@@ -34,19 +34,28 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
       }
       return item;
     })
+  })
 
-    /* Not sure if we're doing quest giving in the world manager frankly,
+  /* Not sure if we're doing quest giving in the world manager frankly,
     or even the progress cache. So will move all this later on. */
-    /* I'm not 100% sure if an integrity check needs to be done to make sure
-    the right convo is loaded. As it technically the data should be fairly pristine.
-    Keep an eye on it anyway. */
-    on(EV_GIVEQUEST, d => {
-      console.log("Got a give quest command:");
-      console.log(d);
-    })
+  /* I'm not 100% sure if an integrity check needs to be done to make sure
+  the right convo is loaded. As it technically the data should be fairly pristine.
+  Keep an eye on it anyway. */
+  on(EV_GIVEQUEST, d => {
+    console.log("Got a give quest command:");
+    console.log(d);
+
+    const currentQuests = getStoreItem("quests") || [];
+
+    if (currentQuests.find(x => x.id === d.id)) {
+      throw new Error("You should not push the same quest data twice.");
+    }
+
+    setStoreItem("quests", [...currentQuests, d])
   })
   ////
 
+  // TODO: I think it's time to move entity and quest stuff out of world manager.
   return {
     getProgressData: () => progressCache,
     getAllEntitiesOfType: type => {
@@ -57,7 +66,13 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
     },
     getAllEntities: () => getStoreItem("entities"),
     getEntityFromStore: id => getEntityFromStore(id),
-    resetEntityStates: () => setStoreItem("entities", []),
+    // NOTE: This brings to light problems with integrity of data and allowing
+    // to push the same data (such as quests).
+    resetEntityStates: () => {
+      console.log("Entity states were reset.");
+      setStoreItem("entities", [])
+      setStoreItem("quests", [])
+    },
     savePickup: entityData => {
       const { id, type, ttl } = entityData;
       const existingEntities = getStoreItem("entities");
@@ -70,13 +85,13 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
         "entities",
         existingEntities
           ? existingEntities.filter(ent => ent.id !== id).concat([
-              {
-                id,
-                type,
-                ttl,
-                qty: existingEntity ? existingEntity.qty + 1 : 1
-              }
-            ])
+            {
+              id,
+              type,
+              ttl,
+              qty: existingEntity ? existingEntity.qty + 1 : 1
+            }
+          ])
           : [{ id, type, ttl, qty: 1 }]
       );
     },
@@ -150,16 +165,13 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
             const entityData = entityTable.find(ent => ent.id === id);
 
             if (entity.customProperties) {
-              console.log(entity.id);
-              console.log(entity.customProperties);
-
               progressCache.push({
                 id: entity.id,
                 ...entity.customProperties
               })
-            }
 
-            console.log(progressCache)
+              console.log("Progress cache needs saving to store.");
+            }
 
             switch (entityData.type) {
               case ENTITY_TYPE.PICKUP:

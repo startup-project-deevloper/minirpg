@@ -9006,7 +9006,7 @@ var _default = (_ref) => {
   });
 
   return {
-    id,
+    id: "conversation",
     isComplete: () => _isComplete,
     enter: props => onEntry(),
     update: () => onInteractionPushed(),
@@ -9027,6 +9027,8 @@ var _kontra = require("kontra");
 
 var _mithril = _interopRequireDefault(require("mithril"));
 
+var _consts = require("../common/consts");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 let mounted = false;
@@ -9037,7 +9039,7 @@ const Shell = (_ref) => {
   let {
     attrs
   } = _ref;
-  const entitiesInStore = (0, _kontra.getStoreItem)("entities");
+  const itemsInStore = (0, _kontra.getStoreItem)("entities").filter(x => x.type === _consts.ENTITY_TYPE.PICKUP);
   const dataKey = "assets/gameData/entityData.json";
   const itemsInData = _kontra.dataAssets[dataKey];
   return {
@@ -9049,22 +9051,16 @@ const Shell = (_ref) => {
       class: "dialogueBoxOuter"
     }, [(0, _mithril.default)("div", {
       class: "dialogue"
-    }, [attrs.items.length ? (0, _mithril.default)("dl", {
+    }, [itemsInStore.length ? (0, _mithril.default)("dl", {
       class: "itemListing"
-    }, attrs.items.map(item => {
+    }, itemsInStore.map(item => {
       const data = itemsInData.find((_ref2) => {
         let {
           id
         } = _ref2;
         return id === item.id;
       });
-      const storedItem = entitiesInStore.find((_ref3) => {
-        let {
-          id
-        } = _ref3;
-        return id === item.id;
-      });
-      const qty = storedItem ? storedItem.qty : 0;
+      const qty = item ? item.qty : 0;
       return (0, _mithril.default)("dd", {
         class: "itemNode",
         onclick: () => attrs.onItemSelected(data)
@@ -9092,6 +9088,78 @@ var _default = {
   unmount: () => _mithril.default.mount(document.getElementById("ui"), null)
 };
 exports.default = _default;
+},{"kontra":"node_modules/kontra/kontra.mjs","mithril":"node_modules/mithril/index.js","../common/consts":"src/common/consts.js"}],"src/ui/questlog.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _kontra = require("kontra");
+
+var _mithril = _interopRequireDefault(require("mithril"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+let mounted = false;
+/* still deciding how to work the UI either with
+sngular instances of mithril or otherwise. */
+
+const Shell = (_ref) => {
+  let {
+    attrs
+  } = _ref;
+  const questsInStore = (0, _kontra.getStoreItem)("quests");
+  const dataKey = "assets/gameData/questData.json";
+  const questsInData = _kontra.dataAssets[dataKey];
+  return {
+    oninit: () => mounted = true,
+    onremove: () => mounted = false,
+    view: () => (0, _mithril.default)("div", {
+      class: "uiShell"
+    }, [(0, _mithril.default)("div", {
+      class: "dialogueBoxOuter"
+    }, [(0, _mithril.default)("div", {
+      class: "dialogue"
+    }, [questsInStore.length ? (0, _mithril.default)("dl", {
+      class: "questListing"
+    }, questsInStore.map((_ref2) => {
+      let {
+        props
+      } = _ref2;
+      const data = questsInData.find((_ref3) => {
+        let {
+          id
+        } = _ref3;
+        return id === props.questId;
+      });
+      const currentSegment = data.parts.find(p => p.index === props.questPart);
+      return (0, _mithril.default)("dd", {
+        class: "questNode",
+        onclick: () => attrs.onQuestSelected(data)
+      }, [(0, _mithril.default)("h4", data.name), (0, _mithril.default)("h5", currentSegment.description)]);
+    })) : (0, _mithril.default)("p", "No quests."), (0, _mithril.default)("div", {
+      class: "choiceWindow"
+    }, (0, _mithril.default)("button", {
+      class: "choiceBox",
+      onclick: () => attrs.onQuestlogClosed()
+    }, "Close"))])])])
+  };
+};
+
+var _default = {
+  isBusy: () => mounted,
+  mount: function mount() {
+    let attrs = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+    _mithril.default.mount(document.getElementById("ui"), {
+      view: () => (0, _mithril.default)(Shell, attrs)
+    });
+  },
+  unmount: () => _mithril.default.mount(document.getElementById("ui"), null)
+};
+exports.default = _default;
 },{"kontra":"node_modules/kontra/kontra.mjs","mithril":"node_modules/mithril/index.js"}],"src/states/fieldState.js":[function(require,module,exports) {
 "use strict";
 
@@ -9102,7 +9170,7 @@ exports.default = void 0;
 
 var _inventory = _interopRequireDefault(require("../ui/inventory"));
 
-var _consts = require("../common/consts");
+var _questlog = _interopRequireDefault(require("../ui/questlog"));
 
 var _onPush = _interopRequireDefault(require("../input/onPush"));
 
@@ -9112,7 +9180,6 @@ var _default = (_ref) => {
   let {
     id,
     reactionManager,
-    getAllEntitiesOfType = () => {},
     onEntry = () => {},
     onExit = () => {}
   } = _ref;
@@ -9167,13 +9234,22 @@ var _default = (_ref) => {
     /* Get you a list of all items that are being held in data */
 
     _inventory.default.mount({
-      items: getAllEntitiesOfType(_consts.ENTITY_TYPE.PICKUP),
       onInventoryClosed: () => _inventory.default.unmount(),
       onItemSelected: itemData => {
         console.log(itemData);
       }
     }); // Don't forget to unmount it when it's done also!
 
+  });
+  const onQuestlogOpened = (0, _onPush.default)("q", () => {
+    if (_questlog.default.isBusy()) return;
+
+    _questlog.default.mount({
+      onQuestlogClosed: () => _questlog.default.unmount(),
+      onQuestSelected: questData => {
+        console.log(questData);
+      }
+    });
   });
   return {
     id,
@@ -9184,13 +9260,14 @@ var _default = (_ref) => {
       onInteractionPushed(props);
       onAttackPushed(props);
       onInventoryOpened();
+      onQuestlogOpened();
     },
     exit: () => onExit()
   };
 };
 
 exports.default = _default;
-},{"../ui/inventory":"src/ui/inventory.js","../common/consts":"src/common/consts.js","../input/onPush":"src/input/onPush.js"}],"src/states/curtainState.js":[function(require,module,exports) {
+},{"../ui/inventory":"src/ui/inventory.js","../ui/questlog":"src/ui/questlog.js","../input/onPush":"src/input/onPush.js"}],"src/states/curtainState.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -10803,7 +10880,11 @@ const Brain = () => {
     bootstrap: props => brainData = _objectSpread({}, props),
     update: () => entityStateMachine.update(),
     start: () => behaviours.idleAndRoam(),
-    talkMode: () => behaviours.talkMode(),
+    talkMode: () => {
+      // TODO: Bug, sometimes stops animations when you clear state like this.
+      entityStateMachine.clearStates();
+      behaviours.talkMode();
+    },
     reset: () => {
       entityStateMachine.clearStates();
       behaviours.idleAndRoam();
@@ -11119,18 +11200,26 @@ var _default = function _default() {
 
       return item;
     });
-    /* Not sure if we're doing quest giving in the world manager frankly,
+  });
+  /* Not sure if we're doing quest giving in the world manager frankly,
     or even the progress cache. So will move all this later on. */
 
-    /* I'm not 100% sure if an integrity check needs to be done to make sure
-    the right convo is loaded. As it technically the data should be fairly pristine.
-    Keep an eye on it anyway. */
+  /* I'm not 100% sure if an integrity check needs to be done to make sure
+  the right convo is loaded. As it technically the data should be fairly pristine.
+  Keep an eye on it anyway. */
 
-    (0, _events.on)(_events.EV_GIVEQUEST, d => {
-      console.log("Got a give quest command:");
-      console.log(d);
-    });
+  (0, _events.on)(_events.EV_GIVEQUEST, d => {
+    console.log("Got a give quest command:");
+    console.log(d);
+    const currentQuests = (0, _kontra.getStoreItem)("quests") || [];
+
+    if (currentQuests.find(x => x.id === d.id)) {
+      throw new Error("You should not push the same quest data twice.");
+    }
+
+    (0, _kontra.setStoreItem)("quests", [...currentQuests, d]);
   }); ////
+  // TODO: I think it's time to move entity and quest stuff out of world manager.
 
   return {
     getProgressData: () => progressCache,
@@ -11140,7 +11229,13 @@ var _default = function _default() {
     },
     getAllEntities: () => (0, _kontra.getStoreItem)("entities"),
     getEntityFromStore: id => _getEntityFromStore(id),
-    resetEntityStates: () => (0, _kontra.setStoreItem)("entities", []),
+    // NOTE: This brings to light problems with integrity of data and allowing
+    // to push the same data (such as quests).
+    resetEntityStates: () => {
+      console.log("Entity states were reset.");
+      (0, _kontra.setStoreItem)("entities", []);
+      (0, _kontra.setStoreItem)("quests", []);
+    },
     savePickup: entityData => {
       const {
         id,
@@ -11234,14 +11329,11 @@ var _default = function _default() {
           const entityData = entityTable.find(ent => ent.id === id);
 
           if (entity.customProperties) {
-            console.log(entity.id);
-            console.log(entity.customProperties);
             progressCache.push(_objectSpread({
               id: entity.id
             }, entity.customProperties));
+            console.log("Progress cache needs saving to store.");
           }
-
-          console.log(progressCache);
 
           switch (entityData.type) {
             case _consts.ENTITY_TYPE.PICKUP:
@@ -11388,7 +11480,6 @@ const FieldScene = sceneProps => {
   const {
     createWorld,
     savePickup,
-    getAllEntitiesOfType,
     resetEntityStates,
     getProgressData
   } = (0, _worldManager.default)();
@@ -11398,8 +11489,10 @@ const FieldScene = sceneProps => {
     tileEngine
   } = createWorld(sceneProps);
   let spriteCache = sprites.filter(spr => spr.isAlive()); // Temporary: Use this to erase storage data
+  // NOTE: This brings to light problems with integrity of data and allowing
+  // to push the same data (such as quests).
+  //resetEntityStates();
 
-  resetEntityStates();
   /* Main states creation */
 
   const sceneStateMachine = (0, _stateManager.default)();
@@ -11434,7 +11527,6 @@ const FieldScene = sceneProps => {
     type: _consts.ENTITY_TYPE.NPC,
     reactionEvent: function reactionEvent(interactible) {
       let actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-      console.log(interactible);
       const {
         customProperties
       } = interactible;
@@ -11442,17 +11534,20 @@ const FieldScene = sceneProps => {
       we should use the lookup table and ask it for what we need. */
 
       const interactibleProgressData = getProgressData().find(i => i.id === interactible.id);
-      console.log(interactibleProgressData);
       if (!Object.keys(customProperties).length) return;
 
       if (customProperties.triggerConvo) {
         sceneStateMachine.push((0, _startConvoState.default)({
-          id: "conversation",
-          // What's this for?
           startId: interactibleProgressData.triggerConvo,
           //customProperties.triggerConvo,
           // I feel these might be better done within the state... perhaps the same elsewhere too.
-          onEntry: () => actors.map(spr => spr.disableMovement()),
+          onEntry: () => actors.map(spr => {
+            spr.disableMovement();
+            spr.lookAt({
+              x: player.x,
+              y: player.y
+            });
+          }),
           onExit: () => actors.map(spr => spr.enableMovement())
         }));
       }
@@ -11472,8 +11567,7 @@ const FieldScene = sceneProps => {
     id: "field",
     sprites,
     tileEngine,
-    reactionManager,
-    getAllEntitiesOfType
+    reactionManager
   }));
   /* Open up the first scene with a fade */
 
@@ -11544,7 +11638,7 @@ const FieldScene = sceneProps => {
 TODO: Can we also const the dataKeys across the board plz. */
 
 
-(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/tiledata/test3.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/entityimages/little_bob.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json").then(assets => {
+(0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/tiledata/test3.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/entityimages/little_bob.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json", "assets/gameData/questData.json").then(assets => {
   (0, _kontra.initKeys)(); /// Note: There's now a scene manager in kontra that can be used
   // Hook up player start todo
 
@@ -11593,7 +11687,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61859" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51770" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

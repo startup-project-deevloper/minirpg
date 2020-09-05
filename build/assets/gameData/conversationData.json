@@ -1,5 +1,38 @@
 [
     {
+        "id": "area2.bob.m1",
+        "actor": "bob",
+        "from": null,
+        "to": null,
+        "text": "Can't talk right now. Busy.",
+        "choices": [],
+        "actions": [
+            "endConversation"
+        ]
+    },
+    {
+        "id": "area2.bob.m2",
+        "actor": "bob",
+        "from": null,
+        "to": null,
+        "text": "I do have Daryl's boots. But you haven't updated the quest data yet so this is the end of the current quest chain.",
+        "choices": [],
+        "actions": [
+            "endConversation"
+        ]
+    },
+    {
+        "id": "area1.sagani.m1",
+        "actor": "sagani",
+        "from": null,
+        "to": null,
+        "text": "Hmm? Oh, hello. Come back later and I'll teach you how to fight. We're not quite ready yet.",
+        "choices": [],
+        "actions": [
+            "endConversation"
+        ]
+    },
+    {
         "id": "area1.daryl.m1",
         "actor": "daryl",
         "from": null,
@@ -9,7 +42,7 @@
             {
                 "id": "m1a",
                 "actor": "player",
-                "from": "m1",
+                "from": null,
                 "to": "m2",
                 "text": "Sure.",
                 "choices": [],
@@ -18,7 +51,7 @@
             {
                 "id": "m1b",
                 "actor": "player",
-                "from": "m1",
+                "from": null,
                 "to": "m3",
                 "text": "Nope.",
                 "choices": [],
@@ -88,11 +121,17 @@
                     "entityId": "daryl",
                     "id": "area1.daryl.m6"
                 }
+            },
+            {
+                "id": "updateConvoTrigger",
+                "props": {
+                    "entityId": "bob",
+                    "id": "area2.bob.m2"
+                }
             }
         ],
         "actions": [
-            "endConversation",
-            "save"
+            "endConversation"
         ]
     },
     {
@@ -103,18 +142,18 @@
         "text": "Did you have a change of heart?",
         "choices": [
             {
-                "id": "m1a",
+                "id": "m1ab",
                 "actor": "player",
-                "from": "m1",
+                "from": null,
                 "to": "m2",
                 "text": "Yeah, I'll do it.",
                 "choices": [],
                 "actions": []
             },
             {
-                "id": "m1b",
+                "id": "m1bc",
                 "actor": "player",
-                "from": "m1",
+                "from": null,
                 "to": "m3b",
                 "text": "Nope.",
                 "choices": [],

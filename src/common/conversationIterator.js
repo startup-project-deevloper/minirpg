@@ -1,6 +1,6 @@
 // TODO: Ensure you're definitely calling allOff and no events are hanging on
 // at load or scene change.
-import { allOff, on, emit, EV_UPDATECONVOTRIGGER, EV_GIVEQUEST } from "./events";
+import { emit, EV_UPDATECONVOTRIGGER, EV_GIVEQUEST } from "./events";
 
 export const MODES = {
   NOTRUNNING: 100,

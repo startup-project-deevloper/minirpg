@@ -70,16 +70,18 @@ const FieldScene = (sceneProps) => {
   const {
     createWorld,
     savePickup,
-    getAllEntitiesOfType,
     resetEntityStates,
     getProgressData
   } = WorldManager();
+
   const { sprites, player, tileEngine } = createWorld(sceneProps);
 
   let spriteCache = sprites.filter((spr) => spr.isAlive());
 
   // Temporary: Use this to erase storage data
-  resetEntityStates();
+  // NOTE: This brings to light problems with integrity of data and allowing
+  // to push the same data (such as quests).
+  //resetEntityStates();
 
   /* Main states creation */
   const sceneStateMachine = StateMachine();
@@ -114,8 +116,6 @@ const FieldScene = (sceneProps) => {
     {
       type: ENTITY_TYPE.NPC,
       reactionEvent: (interactible, actors = []) => {
-        console.log(interactible);
-
         const { customProperties } = interactible;
 
         /* So we 'could' get the data from the sprite but it's too static. Instead
@@ -123,17 +123,20 @@ const FieldScene = (sceneProps) => {
         const interactibleProgressData = getProgressData()
           .find(i => i.id === interactible.id);
         
-        console.log(interactibleProgressData)
-
         if (!Object.keys(customProperties).length) return;
 
         if (customProperties.triggerConvo) {
           sceneStateMachine.push(
             startConvo({
-              id: "conversation", // What's this for?
               startId: interactibleProgressData.triggerConvo, //customProperties.triggerConvo,
               // I feel these might be better done within the state... perhaps the same elsewhere too.
-              onEntry: () => actors.map((spr) => spr.disableMovement()),
+              onEntry: () => actors.map((spr) => {
+                spr.disableMovement()
+                spr.lookAt({
+                  x: player.x,
+                  y: player.y
+                });
+              }),
               onExit: () => actors.map((spr) => spr.enableMovement())
             })
           );
@@ -156,8 +159,7 @@ const FieldScene = (sceneProps) => {
       id: "field",
       sprites,
       tileEngine,
-      reactionManager,
-      getAllEntitiesOfType
+      reactionManager
     })
   );
 
@@ -261,7 +263,8 @@ load(
   "assets/entityimages/little_bob.png",
   "assets/gameData/conversationData.json",
   "assets/gameData/entityData.json",
-  "assets/gameData/worldData.json"
+  "assets/gameData/worldData.json",
+  "assets/gameData/questData.json",
 ).then((assets) => {
   initKeys();
 
