@@ -71,7 +71,8 @@ const FieldScene = (sceneProps) => {
     createWorld,
     savePickup,
     getAllEntitiesOfType,
-    resetEntityStates
+    resetEntityStates,
+    getProgressData
   } = WorldManager();
   const { sprites, player, tileEngine } = createWorld(sceneProps);
 
@@ -117,13 +118,20 @@ const FieldScene = (sceneProps) => {
 
         const { customProperties } = interactible;
 
+        /* So we 'could' get the data from the sprite but it's too static. Instead
+        we should use the lookup table and ask it for what we need. */
+        const interactibleProgressData = getProgressData()
+          .find(i => i.id === interactible.id);
+        
+        console.log(interactibleProgressData)
+
         if (!Object.keys(customProperties).length) return;
 
         if (customProperties.triggerConvo) {
           sceneStateMachine.push(
             startConvo({
               id: "conversation", // What's this for?
-              startId: customProperties.triggerConvo,
+              startId: interactibleProgressData.triggerConvo, //customProperties.triggerConvo,
               // I feel these might be better done within the state... perhaps the same elsewhere too.
               onEntry: () => actors.map((spr) => spr.disableMovement()),
               onExit: () => actors.map((spr) => spr.enableMovement())
@@ -268,7 +276,7 @@ load(
   so long as you specify the right id for it. That being said, you do have to make sure
   both of them exist in the same context, otherwise you'll never get access to it.
   */
-  sceneManager.loadScene({ areaId: "area2", playerStartId: "area2_entrance" });
+  sceneManager.loadScene({ areaId: "area1", playerStartId: "area1_entrance" });
 
   on(EV_SCENECHANGE, (props) => sceneManager.loadScene({ ...props }));
 });

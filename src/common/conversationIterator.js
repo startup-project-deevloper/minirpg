@@ -98,6 +98,18 @@ export default ({
         onChatCancelled();
       }
 
+      if (actions.some(action => action.includes("changeStartIdTo"))) {
+        const strs = actions.filter(str => str.includes("changeStartIdTo"));
+        strs.forEach(str => {
+          const splitToId = str.split(".");
+          console.log(splitToId[splitToId.length - 1]);
+          // How the hell do I get this changed back on Daryl...
+          // is it worth making some sort of table instead?
+          // Might be worth using events actually...
+          // broadcast out to update certain parameters
+        })
+      }
+
       isComplete = true;
       onChatComplete(id);
       console.log("End reached, close the convo.");

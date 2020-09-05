@@ -8,7 +8,7 @@
         "y": 180,
         "id": "daryl",
         "customProperties": {
-          "triggerConvo": "m1"
+          "triggerConvo": "area1.daryl.m1"
         }
       },
       {

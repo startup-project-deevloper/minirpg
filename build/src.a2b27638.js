@@ -8832,6 +8832,17 @@ var _default = (_ref) => {
         onChatCancelled();
       }
 
+      if (actions.some(action => action.includes("changeStartIdTo"))) {
+        const strs = actions.filter(str => str.includes("changeStartIdTo"));
+        strs.forEach(str => {
+          const splitToId = str.split(".");
+          console.log(splitToId[splitToId.length - 1]); // How the hell do I get this changed back on Daryl...
+          // is it worth making some sort of table instead?
+          // Might be worth using events actually...
+          // broadcast out to update certain parameters
+        });
+      }
+
       _isComplete = true;
       onChatComplete(id);
       console.log("End reached, close the convo.");
@@ -11081,9 +11092,13 @@ var _default = function _default() {
 
   const entitiesInStore = (0, _kontra.getStoreItem)("entities");
 
-  const _getEntityFromStore = id => entitiesInStore && entitiesInStore.length ? entitiesInStore.find(e => e.id === id) : null;
+  const _getEntityFromStore = id => entitiesInStore && entitiesInStore.length ? entitiesInStore.find(e => e.id === id) : null; //// TESTING
+
+
+  let progressCache = []; ////
 
   return {
+    getProgressData: () => progressCache,
     getAllEntitiesOfType: type => {
       const existingEntities = (0, _kontra.getStoreItem)("entities");
       return existingEntities ? existingEntities.filter(ent => ent.type === type) : [];
@@ -11182,6 +11197,16 @@ var _default = function _default() {
           } = entity;
           let ent = null;
           const entityData = entityTable.find(ent => ent.id === id);
+
+          if (entity.customProperties) {
+            console.log(entity.id);
+            console.log(entity.customProperties);
+            progressCache.push(_objectSpread({
+              id: entity.id
+            }, entity.customProperties));
+          }
+
+          console.log(progressCache);
 
           switch (entityData.type) {
             case _consts.ENTITY_TYPE.PICKUP:
@@ -11329,7 +11354,8 @@ const FieldScene = sceneProps => {
     createWorld,
     savePickup,
     getAllEntitiesOfType,
-    resetEntityStates
+    resetEntityStates,
+    getProgressData
   } = (0, _worldManager.default)();
   const {
     sprites,
@@ -11377,13 +11403,19 @@ const FieldScene = sceneProps => {
       const {
         customProperties
       } = interactible;
+      /* So we 'could' get the data from the sprite but it's too static. Instead
+      we should use the lookup table and ask it for what we need. */
+
+      const interactibleProgressData = getProgressData().find(i => i.id === interactible.id);
+      console.log(interactibleProgressData);
       if (!Object.keys(customProperties).length) return;
 
       if (customProperties.triggerConvo) {
         sceneStateMachine.push((0, _startConvoState.default)({
           id: "conversation",
           // What's this for?
-          startId: customProperties.triggerConvo,
+          startId: interactibleProgressData.triggerConvo,
+          //customProperties.triggerConvo,
           // I feel these might be better done within the state... perhaps the same elsewhere too.
           onEntry: () => actors.map(spr => spr.disableMovement()),
           onExit: () => actors.map(spr => spr.enableMovement())
@@ -11493,8 +11525,8 @@ TODO: Can we also const the dataKeys across the board plz. */
   */
 
   sceneManager.loadScene({
-    areaId: "area2",
-    playerStartId: "area2_entrance"
+    areaId: "area1",
+    playerStartId: "area1_entrance"
   });
   (0, _events.on)(_events.EV_SCENECHANGE, props => sceneManager.loadScene(_objectSpread({}, props)));
 });
@@ -11526,7 +11558,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56399" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61859" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

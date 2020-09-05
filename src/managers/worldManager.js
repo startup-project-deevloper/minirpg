@@ -20,7 +20,12 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
       ? entitiesInStore.find(e => e.id === id)
       : null;
 
+  //// TESTING
+  let progressCache = []
+  ////
+
   return {
+    getProgressData: () => progressCache,
     getAllEntitiesOfType: type => {
       const existingEntities = getStoreItem("entities");
       return existingEntities
@@ -120,6 +125,18 @@ export default (options = { dataKey: "assets/gameData/worldData.json" }) => {
             let ent = null;
 
             const entityData = entityTable.find(ent => ent.id === id);
+
+            if (entity.customProperties) {
+              console.log(entity.id);
+              console.log(entity.customProperties);
+
+              progressCache.push({
+                id: entity.id,
+                ...entity.customProperties
+              })
+            }
+
+            console.log(progressCache)
 
             switch (entityData.type) {
               case ENTITY_TYPE.PICKUP:

@@ -1,17 +1,17 @@
 [
     {
-        "id": "m1",
+        "id": "area1.daryl.m1",
         "actor": "daryl",
         "from": null,
         "to": null,
-        "text": "This is the first message, what will you choose?",
+        "text": "Have you seen Bob? I left my boots with him and he hasn't returned them yet.",
         "choices": [
             {
                 "id": "m1a",
                 "actor": "player",
                 "from": "m1",
                 "to": "m2",
-                "text": "I will select A.",
+                "text": "Sure.",
                 "choices": [],
                 "actions": []
             },
@@ -20,7 +20,7 @@
                 "actor": "player",
                 "from": "m1",
                 "to": "m3",
-                "text": "I will select B.",
+                "text": "Nope.",
                 "choices": [],
                 "actions": []
             }
@@ -32,7 +32,7 @@
         "actor": "daryl",
         "from": "m1a",
         "to": "m4",
-        "text": "You have selected the A button.You have selected the A button.You have selected the A button.You have selected the A button.You have selected the A button.",
+        "text": "Oh what really?",
         "choices": [],
         "actions": []
     },
@@ -41,7 +41,19 @@
         "actor": "daryl",
         "from": "m1b",
         "to": null,
-        "text": "You have selected the B button.You have selected the B button.You have selected the B button.You have selected the B button.You have selected the B button.",
+        "text": "Huh. Figures. I'll just go later or something.",
+        "choices": [],
+        "actions": [
+            "changeStartIdTo.area1.daryl.m5",
+            "cancel"
+        ]
+    },
+    {
+        "id": "m3b",
+        "actor": "daryl",
+        "from": "m1b",
+        "to": null,
+        "text": "Alright then.",
         "choices": [],
         "actions": [
             "cancel"
@@ -52,11 +64,40 @@
         "actor": "daryl",
         "from": "m2",
         "to": null,
-        "text": "This should be the last in the chain for A.",
+        "text": "Thanks! He should be in the next room.",
         "choices": [],
         "actions": [
+            "giveQuest.bobsBoots.1",
             "endConversation",
             "save"
         ]
+    },
+    {
+        "id": "area1.daryl.m5",
+        "actor": "daryl",
+        "from": null,
+        "to": null,
+        "text": "Did you have a change of heart?",
+        "choices": [
+            {
+                "id": "m1a",
+                "actor": "player",
+                "from": "m1",
+                "to": "m2",
+                "text": "Yeah, I'll do it.",
+                "choices": [],
+                "actions": []
+            },
+            {
+                "id": "m1b",
+                "actor": "player",
+                "from": "m1",
+                "to": "m3",
+                "text": "Nope.",
+                "choices": [],
+                "actions": []
+            }
+        ],
+        "actions": []
     }
 ]
