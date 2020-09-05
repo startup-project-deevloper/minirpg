@@ -1,3 +1,7 @@
+// TODO: Ensure you're definitely calling allOff and no events are hanging on
+// at load or scene change.
+import { emit, EV_UPDATECONVOTRIGGER, EV_GIVEQUEST } from "./events";
+
 export const MODES = {
   NOTRUNNING: 100,
   NEXTNODE: 200,
@@ -77,7 +81,7 @@ export default ({
 
     // TODO: Beware, if you're not checking for existent choices, this will error out,
     // or do something a little funky. May want to check for choices here instead?
-    const { id, to, choices, actions } = currentNode;
+    const { id, to, choices, actions, dataActions } = currentNode;
 
     // Wait if choices are presented.
     if (choices.length) return {
@@ -96,6 +100,20 @@ export default ({
 
       if (actions.some(action => action === "cancel")) {
         onChatCancelled();
+      }
+
+      if (dataActions && dataActions.length) {
+        dataActions.forEach(d => {
+          // TODO: Might be best to use a 'type' rather than id
+          switch(d.id) {
+            case "giveQuest":
+              emit(EV_GIVEQUEST, d);
+              break;
+            case "updateConvoTrigger":
+              emit(EV_UPDATECONVOTRIGGER, d);
+              break;
+          }
+        })
       }
 
       isComplete = true;

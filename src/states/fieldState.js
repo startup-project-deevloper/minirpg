@@ -1,11 +1,10 @@
 import inventory from "../ui/inventory";
-import { ENTITY_TYPE } from "../common/consts";
+import questlog from "../ui/questlog";
 import onPush from "../input/onPush";
 
 export default ({
   id,
   reactionManager,
-  getAllEntitiesOfType = () => {},
   onEntry = () => {},
   onExit = () => {}
 }) => {
@@ -51,7 +50,6 @@ export default ({
 
     /* Get you a list of all items that are being held in data */
     inventory.mount({
-      items: getAllEntitiesOfType(ENTITY_TYPE.PICKUP),
       onInventoryClosed: () => inventory.unmount(),
       onItemSelected: itemData => {
         console.log(itemData);
@@ -59,6 +57,17 @@ export default ({
     });
 
     // Don't forget to unmount it when it's done also!
+  });
+
+  const onQuestlogOpened = onPush("q", () => {
+    if (questlog.isBusy()) return;
+
+    questlog.mount({
+      onQuestlogClosed: () => questlog.unmount(),
+      onQuestSelected: questData => {
+        console.log(questData)
+      }
+    });
   });
 
   return {
@@ -70,6 +79,7 @@ export default ({
       onInteractionPushed(props);
       onAttackPushed(props);
       onInventoryOpened();
+      onQuestlogOpened();
     },
     exit: () => onExit()
   };

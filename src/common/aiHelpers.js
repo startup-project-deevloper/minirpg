@@ -12,13 +12,13 @@ export const findPath = ({ aiPathGrid, tx, ty, rx, ry, walkableId }) => {
 
     easystar.findPath(tx, ty, rx, ry, function(path) {
       if (path === null || path !== null && path.length === 0) {
-        console.log("Path was not found.");
+        // console.log("Path was not found.");
 
         resolve([]);
       } else {
-        console.log(
-          "Path was found. The first Point is " + path[0].x + " " + path[0].y
-        );
+        // console.log(
+        //   "Path was found. The first Point is " + path[0].x + " " + path[0].y
+        // );
 
         resolve(path);
       }
