@@ -1,0 +1,174 @@
+[
+    {
+        "id": "area2.bob.m1",
+        "actor": "bob",
+        "from": null,
+        "to": null,
+        "text": "Can't talk right now. Busy.",
+        "choices": [],
+        "actions": [
+            "endConversation"
+        ]
+    },
+    {
+        "id": "area2.bob.m2",
+        "actor": "bob",
+        "from": null,
+        "to": null,
+        "text": "I do have Daryl's boots. But you haven't updated the quest data yet so this is the end of the current quest chain.",
+        "choices": [],
+        "actions": [
+            "endConversation"
+        ]
+    },
+    {
+        "id": "area1.sagani.m1",
+        "actor": "sagani",
+        "from": null,
+        "to": null,
+        "text": "Hmm? Oh, hello. Come back later and I'll teach you how to fight. We're not quite ready yet.",
+        "choices": [],
+        "actions": [
+            "endConversation"
+        ]
+    },
+    {
+        "id": "area1.daryl.m1",
+        "actor": "daryl",
+        "from": null,
+        "to": null,
+        "text": "Have you seen Bob? I left my boots with him and he hasn't returned them yet.",
+        "choices": [
+            {
+                "id": "m1a",
+                "actor": "player",
+                "from": null,
+                "to": "m2",
+                "text": "Sure.",
+                "choices": [],
+                "actions": []
+            },
+            {
+                "id": "m1b",
+                "actor": "player",
+                "from": null,
+                "to": "m3",
+                "text": "Nope.",
+                "choices": [],
+                "actions": []
+            }
+        ],
+        "actions": []
+    },
+    {
+        "id": "m2",
+        "actor": "daryl",
+        "from": "m1a",
+        "to": "m4",
+        "text": "Oh what really?",
+        "choices": [],
+        "actions": []
+    },
+    {
+        "id": "m3",
+        "actor": "daryl",
+        "from": "m1b",
+        "to": null,
+        "text": "Huh. Figures. I'll just go later or something.",
+        "choices": [],
+        "dataActions": [
+            {
+                "id": "updateConvoTrigger",
+                "props": {
+                    "entityId": "daryl",
+                    "id": "area1.daryl.m5"
+                }
+            }
+        ],
+        "actions": [
+            "cancel"
+        ]
+    },
+    {
+        "id": "m3b",
+        "actor": "daryl",
+        "from": "m1b",
+        "to": null,
+        "text": "Alright then.",
+        "choices": [],
+        "actions": [
+            "cancel"
+        ]
+    },
+    {
+        "id": "m4",
+        "actor": "daryl",
+        "from": "m2",
+        "to": null,
+        "text": "Thanks! He should be in the next room.",
+        "choices": [],
+        "dataActions": [
+            {
+                "id": "giveQuest",
+                "props": {
+                    "questId": "bobsBoots",
+                    "questPart": 1
+                }
+            },
+            {
+                "id": "updateConvoTrigger",
+                "props": {
+                    "entityId": "daryl",
+                    "id": "area1.daryl.m6"
+                }
+            },
+            {
+                "id": "updateConvoTrigger",
+                "props": {
+                    "entityId": "bob",
+                    "id": "area2.bob.m2"
+                }
+            }
+        ],
+        "actions": [
+            "endConversation"
+        ]
+    },
+    {
+        "id": "area1.daryl.m5",
+        "actor": "daryl",
+        "from": null,
+        "to": null,
+        "text": "Did you have a change of heart?",
+        "choices": [
+            {
+                "id": "m1ab",
+                "actor": "player",
+                "from": null,
+                "to": "m2",
+                "text": "Yeah, I'll do it.",
+                "choices": [],
+                "actions": []
+            },
+            {
+                "id": "m1bc",
+                "actor": "player",
+                "from": null,
+                "to": "m3b",
+                "text": "Nope.",
+                "choices": [],
+                "actions": []
+            }
+        ],
+        "actions": []
+    },
+    {
+        "id": "area1.daryl.m6",
+        "actor": "daryl",
+        "from": null,
+        "to": null,
+        "text": "Did you manage to find my boots yet?",
+        "choices": [],
+        "actions": []
+    }
+]
