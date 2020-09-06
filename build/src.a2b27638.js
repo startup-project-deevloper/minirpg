@@ -6507,6 +6507,7 @@ const ENTITY_TYPE = {
   NPC: 1,
   PICKUP: 2,
   DOOR: 3,
+  CHEST: 4,
   PLAYER: 99
 };
 exports.ENTITY_TYPE = ENTITY_TYPE;
@@ -6585,13 +6586,14 @@ const Store = () => {
       (0, _kontra.setStoreItem)("quests", [...currentQuests, d]);
     },
     updatePickupData: updatedEntity => {
+      const existing = (0, _kontra.getStoreItem)("entities") || [];
       const {
         customProperties,
         id,
         type,
         ttl
       } = updatedEntity;
-      (0, _kontra.setStoreItem)("entities", [...(0, _kontra.getStoreItem)("entities"), {
+      (0, _kontra.setStoreItem)("entities", [...existing, {
         worldId: customProperties.worldId,
         id,
         type,
@@ -6611,7 +6613,6 @@ const Store = () => {
     getEntityFromStore: function getEntityFromStore(id) {
       let customQuery = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "id";
       const entityDataStore = (0, _kontra.getStoreItem)("entities");
-      console.log(entityDataStore);
       return entityDataStore && entityDataStore.length ? entityDataStore.find(e => e[customQuery] === id) : null;
     }
   };
@@ -11390,6 +11391,95 @@ var _default = (_ref) => {
 };
 
 exports.default = _default;
+},{"../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/sprites/chest.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _helpers = require("../common/helpers");
+
+var _kontra = require("kontra");
+
+var _default = (_ref) => {
+  let {
+    id,
+    x,
+    y,
+    z = 1,
+    customProperties = {},
+    entityData = null,
+    collisionMethod = (layer, sprite) => {}
+  } = _ref;
+
+  if (!id) {
+    throw new Error("Entity is fairly useless without an id, you should add one.");
+  }
+
+  const {
+    name,
+    type,
+    animations,
+    frameWidth,
+    frameHeight,
+    sheet,
+    collisionBodyOptions = null,
+    manualAnimation = false,
+    controlledByUser = false,
+    collidesWithTiles = true,
+    collidesWithPlayer = true
+  } = entityData;
+  let spriteSheet = (0, _kontra.SpriteSheet)({
+    image: _kontra.imageAssets[sheet],
+    frameWidth,
+    frameHeight,
+    animations
+  });
+  let opened = false;
+  /* Id should really be named 'class' since its re-used. */
+
+  const sprite = (0, _kontra.Sprite)({
+    instId: (0, _helpers.uniqueId)(id),
+    id,
+    type,
+    name,
+    x,
+    y,
+    z,
+    anchor: {
+      x: 0.5,
+      y: 0.5
+    },
+    customProperties,
+    radius: 1,
+    animations: spriteSheet.animations,
+    collidesWithTiles,
+    controlledByUser,
+    collisionBodyOptions,
+    collidesWithPlayer,
+    manualAnimation,
+    open: () => {
+      if (opened) return;
+      sprite.playAnimation("open");
+      opened = true;
+    },
+    onAttacked: () => {
+      // Push an internal state for damage effect (whatever that's going to be)
+      console.log(id);
+    },
+    update: () => {
+      // Static entities may still have anims so add them in later.
+      // Anim code...
+      // Call this to ensure animations are player
+      sprite.advance();
+    }
+  });
+  return sprite;
+};
+
+exports.default = _default;
 },{"../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/managers/worldManager.js":[function(require,module,exports) {
 "use strict";
 
@@ -11400,6 +11490,10 @@ exports.default = void 0;
 
 var _kontra = require("kontra");
 
+var _consts = require("../common/consts");
+
+var _store = _interopRequireDefault(require("../services/store"));
+
 var _player = _interopRequireDefault(require("../sprites/player"));
 
 var _npc = _interopRequireDefault(require("../sprites/npc"));
@@ -11408,9 +11502,7 @@ var _fixed = _interopRequireDefault(require("../sprites/fixed"));
 
 var _pickup = _interopRequireDefault(require("../sprites/pickup"));
 
-var _consts = require("../common/consts");
-
-var _store = _interopRequireDefault(require("../services/store"));
+var _chest = _interopRequireDefault(require("../sprites/chest"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -11506,6 +11598,16 @@ var _default = () => {
               }));
               break;
 
+            case _consts.ENTITY_TYPE.CHEST:
+              const alreadyOpened = _store.default.getEntityFromStore(customProperties.worldId, "worldId");
+
+              ent = (0, _chest.default)(_objectSpread(_objectSpread({}, entity), {}, {
+                entityData,
+                collisionMethod: (layer, sprite) => tileEngine.layerCollidesWith(layer, sprite)
+              }));
+              if (alreadyOpened) ent.open();
+              break;
+
             case _consts.ENTITY_TYPE.NPC:
               ent = (0, _npc.default)(_objectSpread(_objectSpread({}, entity), {}, {
                 entityData,
@@ -11544,7 +11646,7 @@ var _default = () => {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","../sprites/player":"src/sprites/player.js","../sprites/npc":"src/sprites/npc.js","../sprites/fixed":"src/sprites/fixed.js","../sprites/pickup":"src/sprites/pickup.js","../common/consts":"src/common/consts.js","../services/store":"src/services/store.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../common/consts":"src/common/consts.js","../services/store":"src/services/store.js","../sprites/player":"src/sprites/player.js","../sprites/npc":"src/sprites/npc.js","../sprites/fixed":"src/sprites/fixed.js","../sprites/pickup":"src/sprites/pickup.js","../sprites/chest":"src/sprites/chest.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -11720,6 +11822,15 @@ const FieldScene = sceneProps => {
 
       _store.default.updatePickupData(interactible);
     }
+  }, {
+    type: _consts.ENTITY_TYPE.CHEST,
+    reactionEvent: function reactionEvent(interactible) {
+      let actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+      console.log("This is a chest.", interactible);
+      interactible.open();
+
+      _store.default.updatePickupData(interactible);
+    }
   }]); // TODO: Can we please not have to pass everything in like this? It's a bit too coupled.
 
   /* Start game within FieldState */
@@ -11864,7 +11975,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56981" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59618" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

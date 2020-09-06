@@ -111,6 +111,29 @@
     }
   },
   {
+    "id": "chest",
+    "name": "Chest",
+    "description": "Usually something inside.",
+    "type": 4,
+    "sheet": "assets/tileimages/test.png",
+    "thumb": "assets/entityimages/grass-tile.png",
+    "frameWidth": 16,
+    "frameHeight": 16,
+    "collisionBodyOptions": null,
+    "manualAnimation": false,
+    "collidesWithPlayer": true,
+    "animations": {
+      "idle": {
+        "frames": [81],
+        "frameRate": 1
+      },
+      "open": {
+        "frames": [82],
+        "frameRate": 1
+      }
+    }
+  },
+  {
     "id": "door",
     "name": "Door",
     "description": "A door to another area.",

@@ -66,9 +66,11 @@ const Store = () => {
       setStoreItem("quests", [...currentQuests, d]);
     },
     updatePickupData: updatedEntity => {
+      const existing = getStoreItem("entities") || [];
       const { customProperties, id, type, ttl } = updatedEntity;
+
       setStoreItem("entities", [
-        ...getStoreItem("entities"),
+        ...existing,
         { worldId: customProperties.worldId, id, type, ttl }
       ]);
     },
@@ -86,7 +88,6 @@ const Store = () => {
     },
     getEntityFromStore: (id, customQuery = "id") => {
       const entityDataStore = getStoreItem("entities");
-      console.log(entityDataStore);
       return entityDataStore && entityDataStore.length
         ? entityDataStore.find(e => e[customQuery] === id)
         : null;

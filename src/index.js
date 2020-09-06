@@ -136,9 +136,10 @@ const FieldScene = sceneProps => {
 
           sceneStateMachine.push(
             startConvo({
-              startId: interactibleProgressData !== undefined
-                ? interactibleProgressData.props.id
-                : customProperties.triggerConvo,
+              startId:
+                interactibleProgressData !== undefined
+                  ? interactibleProgressData.props.id
+                  : customProperties.triggerConvo,
 
               onEntry: () =>
                 actors.filter(x => x.id !== "player").map(spr => {
@@ -158,6 +159,14 @@ const FieldScene = sceneProps => {
       type: ENTITY_TYPE.PICKUP,
       reactionEvent: (interactible, actors = []) => {
         interactible.ttl = 0;
+        store.updatePickupData(interactible);
+      }
+    },
+    {
+      type: ENTITY_TYPE.CHEST,
+      reactionEvent: (interactible, actors = []) => {
+        console.log("This is a chest.", interactible);
+        interactible.open();
         store.updatePickupData(interactible);
       }
     }
