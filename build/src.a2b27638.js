@@ -6512,12 +6512,13 @@ const Store = () => {
       console.log("Entity states were reset.");
       (0, _kontra.setStoreItem)("entities", []);
       (0, _kontra.setStoreItem)("quests", []);
+      (0, _kontra.setStoreItem)("progressData", []);
     },
     pushProgress: item => {
       const existing = (0, _kontra.getStoreItem)("progressData");
 
       if (!existing) {
-        (0, _kontra.setStoreItem)("progressData", []);
+        (0, _kontra.setStoreItem)("progressData", [item]);
         return;
       }
 
@@ -6539,7 +6540,7 @@ const Store = () => {
       const currentQuests = (0, _kontra.getStoreItem)("quests");
 
       if (!currentQuests) {
-        (0, _kontra.setStoreItem)("quests", []);
+        (0, _kontra.setStoreItem)("quests", [d]);
         return;
       }
 
@@ -11679,6 +11680,10 @@ TODO: Can we also const the dataKeys across the board plz. */
 
 
 (0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/tiledata/test3.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/entityimages/little_bob.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json", "assets/gameData/questData.json").then(assets => {
+  // Optional
+  _store.default.resetEntityStates(); // Init
+
+
   (0, _kontra.initKeys)(); /// Note: There's now a scene manager in kontra that can be used
   // Hook up player start todo
 
@@ -11727,7 +11732,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55114" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50377" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
