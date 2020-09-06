@@ -6505,7 +6505,7 @@ const Store = () => {
   const worldDataKey = "assets/gameData/worldData.json";
   const entityDataKey = "assets/gameData/entityData.json";
   /* NOTE: This brings to light problems with integrity of data and allowing to
-  push the same data (such as quests).*/
+  push the same data (such as quests). Keep an eye on it. */
 
   return {
     resetEntityStates: () => {
@@ -6525,7 +6525,16 @@ const Store = () => {
       (0, _kontra.setStoreItem)("progressData", [...existing, item]);
     },
     updateProgress: updated => {
-      const d = (0, _kontra.getStoreItem)("progressData").map(item => {
+      // TODO: This all might break down if NPC is in multiple places, be careful.
+      const progressData = (0, _kontra.getStoreItem)("progressData");
+      const entryExists = progressData.some(x => x.props.entityId === updated.props.entityId);
+
+      if (!entryExists) {
+        (0, _kontra.setStoreItem)("progressData", [...progressData, updated]);
+        return;
+      }
+
+      (0, _kontra.setStoreItem)("progressData", progressData.map(item => {
         if (item.id === updated.props.entityId) {
           return _objectSpread(_objectSpread({}, item), {}, {
             triggerConvo: updated.props.id
@@ -6533,8 +6542,7 @@ const Store = () => {
         }
 
         return item;
-      });
-      (0, _kontra.setStoreItem)("progressData", d);
+      }));
     },
     updateQuestData: d => {
       const currentQuests = (0, _kontra.getStoreItem)("quests");
@@ -6558,8 +6566,6 @@ const Store = () => {
       } = updatedEntity;
       const existingEntities = (0, _kontra.getStoreItem)("entities");
       const existingEntity = existingEntities ? existingEntities.find(x => x.id === id) : null;
-      /* This needs cleaning up */
-
       (0, _kontra.setStoreItem)("entities", existingEntities ? existingEntities.filter(ent => ent.id !== id).concat([{
         id,
         type,
@@ -9663,8 +9669,8 @@ var _default = (_ref) => {
       // Push an internal state for damage effect (whatever that's going to be)
       console.log(id);
     },
-    enableMovement: () => movementDisabled = false,
-    disableMovement: () => movementDisabled = true,
+    onConvoEnter: () => movementDisabled = true,
+    onConvoExit: () => movementDisabled = false,
     lookAt: (_ref2) => {
       let {
         x,
@@ -9730,14 +9736,98 @@ var _default = (_ref) => {
 
       sprite.advance();
     }
-  }); // console.log("=> Sprite generated:", sprite.name, sprite.id);
-  // console.log(sprite);
-
+  });
   return sprite;
 };
 
 exports.default = _default;
-},{"../managers/stateManager":"src/managers/stateManager.js","../common/spriteFunctions":"src/common/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"node_modules/easystarjs/src/instance.js":[function(require,module,exports) {
+},{"../managers/stateManager":"src/managers/stateManager.js","../common/spriteFunctions":"src/common/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/states/aiIdleState.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _default = (_ref) => {
+  let {
+    props,
+    onEntry = () => {},
+    onUpdate = () => {},
+    onExit = () => {}
+  } = _ref;
+  let _isComplete = false;
+  return {
+    id: "idle",
+    isComplete: () => _isComplete,
+    enter: props => onEntry(),
+    update: () => {
+      props.sprite.playAnimation("idle");
+      props.sprite.advance();
+      onUpdate();
+    },
+    exit: () => onExit()
+  };
+};
+
+exports.default = _default;
+},{}],"src/ai/scripts/talkOnly.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _stateManager = _interopRequireDefault(require("../../managers/stateManager"));
+
+var _aiIdleState = _interopRequireDefault(require("../../states/aiIdleState"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var _default = () => {
+  const entityStateMachine = (0, _stateManager.default)();
+  let brainData = {};
+  const behaviours = {
+    talkMode: () => {
+      // Or, talk animation?
+      entityStateMachine.push((0, _aiIdleState.default)({
+        props: {
+          sprite: brainData.sprite
+        }
+      }));
+    },
+    idle: () => {
+      entityStateMachine.push((0, _aiIdleState.default)({
+        props: {
+          sprite: brainData.sprite
+        }
+      }));
+    }
+  };
+  return {
+    bootstrap: props => brainData = _objectSpread({}, props),
+    update: () => entityStateMachine.update(),
+    start: () => behaviours.idle(),
+    onConvoEnter: () => {
+      entityStateMachine.clearStates();
+      behaviours.talkMode();
+    },
+    onConvoExit: () => {
+      entityStateMachine.clearStates();
+      behaviours.idle();
+    }
+  };
+};
+
+exports.default = _default;
+},{"../../managers/stateManager":"src/managers/stateManager.js","../../states/aiIdleState":"src/states/aiIdleState.js"}],"node_modules/easystarjs/src/instance.js":[function(require,module,exports) {
 /**
  * Represents a single instance of EasyStar.
  * A path that is in the queue to eventually be found.
@@ -10886,7 +10976,7 @@ var _default = (_ref) => {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","../common/helpers":"src/common/helpers.js","../common/spriteFunctions":"src/common/spriteFunctions.js","../common/aiHelpers":"src/common/aiHelpers.js"}],"src/states/aiIdleState.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../common/helpers":"src/common/helpers.js","../common/spriteFunctions":"src/common/spriteFunctions.js","../common/aiHelpers":"src/common/aiHelpers.js"}],"src/ai/scripts/npcRoam.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -10894,49 +10984,15 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _default = (_ref) => {
-  let {
-    props,
-    onEntry = () => {},
-    onUpdate = () => {},
-    onExit = () => {}
-  } = _ref;
-  let _isComplete = false;
-  return {
-    id: "idle",
-    isComplete: () => _isComplete,
-    enter: props => onEntry(),
-    update: () => {
-      props.sprite.playAnimation("idle");
-      props.sprite.advance();
-      onUpdate();
-    },
-    exit: () => onExit()
-  };
-};
+var _stateManager = _interopRequireDefault(require("../../managers/stateManager"));
 
-exports.default = _default;
-},{}],"src/sprites/npc.js":[function(require,module,exports) {
-"use strict";
+var _aiHelpers = require("../../common/aiHelpers");
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
+var _helpers = require("../../common/helpers");
 
-var _stateManager = _interopRequireDefault(require("../managers/stateManager"));
+var _aiFollowPathState = _interopRequireDefault(require("../../states/aiFollowPathState"));
 
-var _aiFollowPathState = _interopRequireDefault(require("../states/aiFollowPathState"));
-
-var _aiIdleState = _interopRequireDefault(require("../states/aiIdleState"));
-
-var _spriteFunctions = require("../common/spriteFunctions");
-
-var _helpers = require("../common/helpers");
-
-var _aiHelpers = require("../common/aiHelpers");
-
-var _kontra = require("kontra");
+var _aiIdleState = _interopRequireDefault(require("../../states/aiIdleState"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -10946,13 +11002,9 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-// TODO: Considering looking at an FSM lib...
-const Brain = () => {
+var _default = () => {
   const entityStateMachine = (0, _stateManager.default)();
   let brainData = {};
-  /* Push an idle state to kick things off (can probably make this in to
-      json data later on and auto-create all this) */
-
   const behaviours = {
     talkMode: () => {
       entityStateMachine.push((0, _aiIdleState.default)({
@@ -10988,17 +11040,71 @@ const Brain = () => {
     bootstrap: props => brainData = _objectSpread({}, props),
     update: () => entityStateMachine.update(),
     start: () => behaviours.idleAndRoam(),
-    talkMode: () => {
+    onConvoEnter: () => {
       // TODO: Bug, sometimes stops animations when you clear state like this.
       entityStateMachine.clearStates();
       behaviours.talkMode();
     },
-    reset: () => {
+    onConvoExit: () => {
       entityStateMachine.clearStates();
       behaviours.idleAndRoam();
     }
   };
 };
+
+exports.default = _default;
+},{"../../managers/stateManager":"src/managers/stateManager.js","../../common/aiHelpers":"src/common/aiHelpers.js","../../common/helpers":"src/common/helpers.js","../../states/aiFollowPathState":"src/states/aiFollowPathState.js","../../states/aiIdleState":"src/states/aiIdleState.js"}],"src/ai/aiLoader.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _talkOnly = _interopRequireDefault(require("./scripts/talkOnly"));
+
+var _npcRoam = _interopRequireDefault(require("./scripts/npcRoam"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var _default = useScript => {
+  const scriptList = [{
+    id: "talkOnly",
+    scr: _talkOnly.default
+  }, {
+    id: "npcRoam",
+    scr: _npcRoam.default
+  }];
+  const loadedScript = useScript ? scriptList.find(x => x.id === useScript).scr() : scriptList[0].scr();
+  return {
+    bootstrap: props => loadedScript.bootstrap(props),
+    start: () => loadedScript.start(),
+    update: () => loadedScript.update(),
+    onConvoEnter: () => loadedScript.onConvoEnter(),
+    onConvoExit: () => loadedScript.onConvoExit(),
+    onBattleEnter: () => {},
+    onBattleExit: () => {}
+  };
+};
+
+exports.default = _default;
+},{"./scripts/talkOnly":"src/ai/scripts/talkOnly.js","./scripts/npcRoam":"src/ai/scripts/npcRoam.js"}],"src/sprites/npc.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _spriteFunctions = require("../common/spriteFunctions");
+
+var _helpers = require("../common/helpers");
+
+var _kontra = require("kontra");
+
+var _aiLoader = _interopRequireDefault(require("../ai/aiLoader"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _default = (_ref) => {
   let {
@@ -11017,6 +11123,7 @@ var _default = (_ref) => {
   }
 
   const {
+    aiScript,
     name,
     type,
     animations,
@@ -11035,9 +11142,7 @@ var _default = (_ref) => {
     frameHeight,
     animations
   });
-  const myBrain = Brain();
-  /* Id should really be named 'class' since its re-used. */
-
+  const ai = (0, _aiLoader.default)(aiScript);
   const sprite = (0, _kontra.Sprite)({
     instId: (0, _helpers.uniqueId)(id),
     id,
@@ -11058,8 +11163,8 @@ var _default = (_ref) => {
     collisionBodyOptions,
     collidesWithPlayer,
     manualAnimation,
-    enableMovement: () => myBrain.reset(),
-    disableMovement: () => myBrain.talkMode(),
+    onConvoEnter: () => ai.onConvoEnter(),
+    onConvoExit: () => ai.onConvoExit(),
     lookAt: (_ref2) => {
       let {
         x,
@@ -11073,18 +11178,18 @@ var _default = (_ref) => {
         sprite
       });
     },
-    update: () => myBrain.update()
+    update: () => ai.update()
   });
-  myBrain.bootstrap({
+  ai.bootstrap({
     sprite,
     aiPathGrid
   });
-  myBrain.start();
+  ai.start();
   return sprite;
 };
 
 exports.default = _default;
-},{"../managers/stateManager":"src/managers/stateManager.js","../states/aiFollowPathState":"src/states/aiFollowPathState.js","../states/aiIdleState":"src/states/aiIdleState.js","../common/spriteFunctions":"src/common/spriteFunctions.js","../common/helpers":"src/common/helpers.js","../common/aiHelpers":"src/common/aiHelpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/sprites/fixed.js":[function(require,module,exports) {
+},{"../common/spriteFunctions":"src/common/spriteFunctions.js","../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs","../ai/aiLoader":"src/ai/aiLoader.js"}],"src/sprites/fixed.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -11270,8 +11375,6 @@ var _pickup = _interopRequireDefault(require("../sprites/pickup"));
 
 var _consts = require("../common/consts");
 
-var _events = require("../common/events");
-
 var _store = _interopRequireDefault(require("../services/store"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -11283,15 +11386,7 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 var _default = () => {
-  /* Not sure if we're doing quest giving in the world manager frankly,
-  or even the progress cache. So will move all this later on. */
-
-  /* I'm not 100% sure if an integrity check needs to be done to make sure
-  the right convo is loaded. As it technically the data should be fairly pristine.
-  Keep an eye on it anyway. */
-  (0, _events.on)(_events.EV_GIVEQUEST, d => _store.default.updateQuestData(d));
-  (0, _events.on)(_events.EV_UPDATECONVOTRIGGER, d => _store.default.updateProgress(d)); // TODO: I think it's time to move entity and quest stuff out of world manager.
-
+  // TODO: I think it's time to move entity and quest stuff out of world manager.
   return {
     createWorld: (_ref) => {
       let {
@@ -11366,13 +11461,13 @@ var _default = () => {
           } = entity;
           let ent = null;
 
-          const entityData = _store.default.getEntityData().find(ent => ent.id === id);
+          const entityData = _store.default.getEntityData().find(ent => ent.id === id); // if (entity.customProperties) {
+          //   store.pushProgress({
+          //     id: entity.id,
+          //     ...entity.customProperties
+          //   });
+          // }
 
-          if (entity.customProperties) {
-            _store.default.pushProgress(_objectSpread({
-              id: entity.id
-            }, entity.customProperties));
-          }
 
           switch (entityData.type) {
             case _consts.ENTITY_TYPE.PICKUP:
@@ -11423,7 +11518,7 @@ var _default = () => {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","../sprites/player":"src/sprites/player.js","../sprites/npc":"src/sprites/npc.js","../sprites/fixed":"src/sprites/fixed.js","../sprites/pickup":"src/sprites/pickup.js","../common/consts":"src/common/consts.js","../common/events":"src/common/events.js","../services/store":"src/services/store.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../sprites/player":"src/sprites/player.js","../sprites/npc":"src/sprites/npc.js","../sprites/fixed":"src/sprites/fixed.js","../sprites/pickup":"src/sprites/pickup.js","../common/consts":"src/common/consts.js","../services/store":"src/services/store.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -11551,7 +11646,8 @@ const FieldScene = sceneProps => {
         ctx,
         direction: 1,
         onFadeComplete: () => {
-          (0, _events.allOff)([_events.EV_SCENECHANGE]);
+          // TODO: This needs testing properly. Events in general.
+          (0, _events.allOff)([_events.EV_SCENECHANGE, _events.EV_GIVEQUEST, _events.EV_UPDATECONVOTRIGGER]);
           /* Player start becomes part of the collider data so we attempt to use that. */
 
           (0, _events.emit)(_events.EV_SCENECHANGE, {
@@ -11571,24 +11667,22 @@ const FieldScene = sceneProps => {
       /* So we 'could' get the data from the sprite but it's too static. Instead
       we should use the lookup table and ask it for what we need. */
 
-      const interactibleProgressData = _store.default.getProgressDataStore().find(i => i.id === interactible.id);
+      const interactibleProgressData = _store.default.getProgressDataStore().find(i => i.props.entityId === interactible.id);
 
       if (!Object.keys(customProperties).length) return;
 
       if (customProperties.triggerConvo) {
-        player.disableMovement();
+        player.onConvoEnter();
         sceneStateMachine.push((0, _startConvoState.default)({
-          startId: interactibleProgressData.triggerConvo,
-          //customProperties.triggerConvo,
-          // I feel these might be better done within the state... perhaps the same elsewhere too.
+          startId: interactibleProgressData !== undefined ? interactibleProgressData.props.id : customProperties.triggerConvo,
           onEntry: () => actors.filter(x => x.id !== "player").map(spr => {
-            spr.disableMovement();
+            spr.onConvoEnter();
             spr.lookAt({
               x: player.x,
               y: player.y
             });
           }),
-          onExit: () => actors.map(spr => spr.enableMovement())
+          onExit: () => actors.map(spr => spr.onConvoExit())
         }));
       }
     }
@@ -11681,8 +11775,20 @@ TODO: Can we also const the dataKeys across the board plz. */
 
 (0, _kontra.load)("assets/tileimages/test.png", "assets/tiledata/test.json", "assets/tiledata/test2.json", "assets/tiledata/test3.json", "assets/entityimages/little_devil.png", "assets/entityimages/little_orc.png", "assets/entityimages/little_bob.png", "assets/gameData/conversationData.json", "assets/gameData/entityData.json", "assets/gameData/worldData.json", "assets/gameData/questData.json").then(assets => {
   // Optional
-  _store.default.resetEntityStates(); // Init
+  console.log("Initialised assets.");
 
+  _store.default.resetEntityStates(); // Should these be done here? Or further up? Do they need to be unsubbed each scene load?
+
+  /* Not sure if we're doing quest giving in the world manager frankly,
+  or even the progress cache. So will move all this later on. */
+
+  /* I'm not 100% sure if an integrity check needs to be done to make sure
+  the right convo is loaded. As it technically the data should be fairly pristine.
+  Keep an eye on it anyway. */
+
+
+  (0, _events.on)(_events.EV_GIVEQUEST, d => _store.default.updateQuestData(d));
+  (0, _events.on)(_events.EV_UPDATECONVOTRIGGER, d => _store.default.updateProgress(d)); // Init things
 
   (0, _kontra.initKeys)(); /// Note: There's now a scene manager in kontra that can be used
   // Hook up player start todo
@@ -11732,7 +11838,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50377" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51266" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

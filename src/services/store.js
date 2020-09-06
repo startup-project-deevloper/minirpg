@@ -6,7 +6,7 @@ const Store = () => {
   const entityDataKey = "assets/gameData/entityData.json";
 
   /* NOTE: This brings to light problems with integrity of data and allowing to
-  push the same data (such as quests).*/
+  push the same data (such as quests). Keep an eye on it. */
   return {
     resetEntityStates: () => {
       console.log("Entity states were reset.");
@@ -25,17 +25,29 @@ const Store = () => {
       setStoreItem("progressData", [...existing, item]);
     },
     updateProgress: updated => {
-      const d = getStoreItem("progressData").map(item => {
-        if (item.id === updated.props.entityId) {
-          return {
-            ...item,
-            triggerConvo: updated.props.id
-          };
-        }
-        return item;
-      });
+      // TODO: This all might break down if NPC is in multiple places, be careful.
+      const progressData = getStoreItem("progressData");
+      const entryExists = progressData.some(
+        x => x.props.entityId === updated.props.entityId
+      );
 
-      setStoreItem("progressData", d);
+      if (!entryExists) {
+        setStoreItem("progressData", [...progressData, updated]);
+        return;
+      }
+
+      setStoreItem(
+        "progressData",
+        progressData.map(item => {
+          if (item.id === updated.props.entityId) {
+            return {
+              ...item,
+              triggerConvo: updated.props.id
+            };
+          }
+          return item;
+        })
+      );
     },
     updateQuestData: d => {
       const currentQuests = getStoreItem("quests");
@@ -58,7 +70,6 @@ const Store = () => {
         ? existingEntities.find(x => x.id === id)
         : null;
 
-      /* This needs cleaning up */
       setStoreItem(
         "entities",
         existingEntities

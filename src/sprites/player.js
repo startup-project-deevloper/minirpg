@@ -73,8 +73,8 @@ export default ({
       // Push an internal state for damage effect (whatever that's going to be)
       console.log(id);
     },
-    enableMovement: () => (movementDisabled = false),
-    disableMovement: () => (movementDisabled = true),
+    onConvoEnter: () => (movementDisabled = true),
+    onConvoExit: () => (movementDisabled = false),
     lookAt: ({ x, y }) => {
       flipSprite({
         direction: {
@@ -132,9 +132,6 @@ export default ({
       sprite.advance();
     }
   });
-
-  // console.log("=> Sprite generated:", sprite.name, sprite.id);
-  // console.log(sprite);
 
   return sprite;
 };

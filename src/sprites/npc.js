@@ -1,71 +1,7 @@
-import StateMachine from "../managers/stateManager";
-import aiFollowPathState from "../states/aiFollowPathState";
-import aiIdleState from "../states/aiIdleState";
 import { flipSprite } from "../common/spriteFunctions";
-import { uniqueId, getRandomIntInclusive } from "../common/helpers";
-import { wait } from "../common/aiHelpers";
+import { uniqueId } from "../common/helpers";
 import { Sprite, imageAssets, SpriteSheet } from "kontra";
-
-// TODO: Considering looking at an FSM lib...
-const Brain = () => {
-  const entityStateMachine = StateMachine();
-  let brainData = {};
-
-  /* Push an idle state to kick things off (can probably make this in to
-      json data later on and auto-create all this) */
-  const behaviours = {
-    talkMode: () => {
-      entityStateMachine.push(
-        aiIdleState({
-          props: {
-            sprite: brainData.sprite
-          }
-        })
-      );
-    },
-    idleAndRoam: () => {
-      entityStateMachine.push(
-        aiIdleState({
-          props: {
-            sprite: brainData.sprite
-          },
-          onEntry: async () => {
-            // Sticking this here rather than in update. No idea if it's right.
-            await wait(getRandomIntInclusive(500, 1500));
-            entityStateMachine.popState("idle");
-          },
-          onExit: () => behaviours.followPath()
-        })
-      );
-    },
-    followPath: () => {
-      entityStateMachine.push(
-        aiFollowPathState({
-          props: brainData,
-          onExit: () => {
-            // Hmm... this is a bit weird I feel...
-            behaviours.idleAndRoam();
-          }
-        })
-      );
-    }
-  };
-
-  return {
-    bootstrap: props => (brainData = { ...props }),
-    update: () => entityStateMachine.update(),
-    start: () => behaviours.idleAndRoam(),
-    talkMode: () => {
-      // TODO: Bug, sometimes stops animations when you clear state like this.
-      entityStateMachine.clearStates();
-      behaviours.talkMode()
-    },
-    reset: () => {
-      entityStateMachine.clearStates();
-      behaviours.idleAndRoam();
-    }
-  };
-};
+import aiLoader from "../ai/aiLoader";
 
 export default ({
   id,
@@ -75,7 +11,7 @@ export default ({
   customProperties = {},
   entityData = null,
   aiPathGrid = null,
-  collisionMethod = (layer, sprite) => { }
+  collisionMethod = (layer, sprite) => {}
 }) => {
   if (!id) {
     throw new Error(
@@ -84,6 +20,7 @@ export default ({
   }
 
   const {
+    aiScript,
     name,
     type,
     animations,
@@ -104,9 +41,8 @@ export default ({
     animations
   });
 
-  const myBrain = Brain();
+  const ai = aiLoader(aiScript);
 
-  /* Id should really be named 'class' since its re-used. */
   const sprite = Sprite({
     instId: uniqueId(id),
     id,
@@ -124,8 +60,8 @@ export default ({
     collisionBodyOptions,
     collidesWithPlayer,
     manualAnimation,
-    enableMovement: () => myBrain.reset(),
-    disableMovement: () => myBrain.talkMode(),
+    onConvoEnter: () => ai.onConvoEnter(),
+    onConvoExit: () => ai.onConvoExit(),
     lookAt: ({ x, y }) => {
       flipSprite({
         direction: {
@@ -135,11 +71,11 @@ export default ({
         sprite
       });
     },
-    update: () => myBrain.update()
+    update: () => ai.update()
   });
 
-  myBrain.bootstrap({ sprite, aiPathGrid });
-  myBrain.start();
+  ai.bootstrap({ sprite, aiPathGrid });
+  ai.start();
 
   return sprite;
 };

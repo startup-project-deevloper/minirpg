@@ -11,7 +11,14 @@ import { init, GameLoop, load, initKeys } from "kontra";
 /* Common utils, objects and events */
 import { circleCollision, sortByDist } from "./common/helpers";
 import { ENTITY_TYPE } from "./common/consts";
-import { allOff, on, emit, EV_SCENECHANGE } from "./common/events";
+import {
+  allOff,
+  on,
+  emit,
+  EV_SCENECHANGE,
+  EV_UPDATECONVOTRIGGER,
+  EV_GIVEQUEST
+} from "./common/events";
 
 /* Store services */
 import store from "./services/store";
@@ -99,7 +106,8 @@ const FieldScene = sceneProps => {
             ctx,
             direction: 1,
             onFadeComplete: () => {
-              allOff([EV_SCENECHANGE]);
+              // TODO: This needs testing properly. Events in general.
+              allOff([EV_SCENECHANGE, EV_GIVEQUEST, EV_UPDATECONVOTRIGGER]);
               /* Player start becomes part of the collider data so we attempt to use that. */
               emit(EV_SCENECHANGE, {
                 areaId: interactible.customProperties.goesTo,
@@ -119,26 +127,28 @@ const FieldScene = sceneProps => {
         we should use the lookup table and ask it for what we need. */
         const interactibleProgressData = store
           .getProgressDataStore()
-          .find(i => i.id === interactible.id);
+          .find(i => i.props.entityId === interactible.id);
 
         if (!Object.keys(customProperties).length) return;
 
         if (customProperties.triggerConvo) {
-          player.disableMovement();
+          player.onConvoEnter();
 
           sceneStateMachine.push(
             startConvo({
-              startId: interactibleProgressData.triggerConvo, //customProperties.triggerConvo,
-              // I feel these might be better done within the state... perhaps the same elsewhere too.
+              startId: interactibleProgressData !== undefined
+                ? interactibleProgressData.props.id
+                : customProperties.triggerConvo,
+
               onEntry: () =>
                 actors.filter(x => x.id !== "player").map(spr => {
-                  spr.disableMovement();
+                  spr.onConvoEnter();
                   spr.lookAt({
                     x: player.x,
                     y: player.y
                   });
                 }),
-              onExit: () => actors.map(spr => spr.enableMovement())
+              onExit: () => actors.map(spr => spr.onConvoExit())
             })
           );
         }
@@ -267,9 +277,19 @@ load(
   "assets/gameData/questData.json"
 ).then(assets => {
   // Optional
+  console.log("Initialised assets.");
   store.resetEntityStates();
 
-  // Init
+  // Should these be done here? Or further up? Do they need to be unsubbed each scene load?
+  /* Not sure if we're doing quest giving in the world manager frankly,
+  or even the progress cache. So will move all this later on. */
+  /* I'm not 100% sure if an integrity check needs to be done to make sure
+  the right convo is loaded. As it technically the data should be fairly pristine.
+  Keep an eye on it anyway. */
+  on(EV_GIVEQUEST, d => store.updateQuestData(d));
+  on(EV_UPDATECONVOTRIGGER, d => store.updateProgress(d));
+
+  // Init things
   initKeys();
 
   /// Note: There's now a scene manager in kontra that can be used

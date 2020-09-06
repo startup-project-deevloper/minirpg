@@ -4,18 +4,9 @@ import Npc from "../sprites/npc";
 import Fixed from "../sprites/fixed";
 import Pickup from "../sprites/pickup";
 import { ENTITY_TYPE } from "../common/consts";
-import { on, EV_UPDATECONVOTRIGGER, EV_GIVEQUEST } from "../common/events";
 import store from "../services/store";
 
 export default () => {
-  /* Not sure if we're doing quest giving in the world manager frankly,
-  or even the progress cache. So will move all this later on. */
-  /* I'm not 100% sure if an integrity check needs to be done to make sure
-  the right convo is loaded. As it technically the data should be fairly pristine.
-  Keep an eye on it anyway. */
-  on(EV_GIVEQUEST, d => store.updateQuestData(d));
-  on(EV_UPDATECONVOTRIGGER, d => store.updateProgress(d));
-
   // TODO: I think it's time to move entity and quest stuff out of world manager.
   return {
     createWorld: ({ areaId, playerStartId }) => {
@@ -90,12 +81,12 @@ export default () => {
 
             const entityData = store.getEntityData().find(ent => ent.id === id);
 
-            if (entity.customProperties) {
-              store.pushProgress({
-                id: entity.id,
-                ...entity.customProperties
-              });
-            }
+            // if (entity.customProperties) {
+            //   store.pushProgress({
+            //     id: entity.id,
+            //     ...entity.customProperties
+            //   });
+            // }
 
             switch (entityData.type) {
               case ENTITY_TYPE.PICKUP:
