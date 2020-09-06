@@ -6351,7 +6351,7 @@ exports.emit = emit;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.debug = exports.Queue = exports.getRandomIntInclusive = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.getNormal = exports.between = exports.uniqueId = void 0;
+exports.debug = exports.groupBy = exports.Queue = exports.getRandomIntInclusive = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.getNormal = exports.between = exports.uniqueId = void 0;
 
 var _events = require("../common/events");
 
@@ -6460,8 +6460,34 @@ const Queue = () => {
     peek: () => _elements.length > 0 ? _elements[0] : null
   };
 };
+/*!
+ * Group items from an array together by some criteria or value.
+ * (c) 2019 Tom Bremmer (https://tbremer.com/) and Chris Ferdinandi (https://gomakethings.com), MIT License,
+ * @param  {Array}           arr      The array to group items from
+ * @param  {String|Function} criteria The criteria to group by
+ * @return {Object}                   The grouped object
+ */
+
 
 exports.Queue = Queue;
+
+const groupBy = function groupBy(arr, criteria) {
+  return arr.reduce(function (obj, item) {
+    // Check if the criteria is a function to run on the item or a property of it
+    var key = typeof criteria === "function" ? criteria(item) : item[criteria]; // If the key doesn't exist yet, create it
+
+    if (!obj.hasOwnProperty(key)) {
+      obj[key] = [];
+    } // Push the value to the object
+
+
+    obj[key].push(item); // Return the object to the next item in the loop
+
+    return obj;
+  }, {});
+};
+
+exports.groupBy = groupBy;
 
 const debug = o => {
   console.info(o);
@@ -6558,24 +6584,18 @@ const Store = () => {
 
       (0, _kontra.setStoreItem)("quests", [...currentQuests, d]);
     },
-    updateEntityData: updatedEntity => {
+    updatePickupData: updatedEntity => {
       const {
+        customProperties,
         id,
         type,
         ttl
       } = updatedEntity;
-      const existingEntities = (0, _kontra.getStoreItem)("entities");
-      const existingEntity = existingEntities ? existingEntities.find(x => x.id === id) : null;
-      (0, _kontra.setStoreItem)("entities", existingEntities ? existingEntities.filter(ent => ent.id !== id).concat([{
+      (0, _kontra.setStoreItem)("entities", [...(0, _kontra.getStoreItem)("entities"), {
+        worldId: customProperties.worldId,
         id,
         type,
-        ttl,
-        qty: existingEntity ? existingEntity.qty + 1 : 1
-      }]) : [{
-        id,
-        type,
-        ttl,
-        qty: 1
+        ttl
       }]);
     },
     getMapData: mapKey => _kontra.dataAssets[mapKey],
@@ -6588,9 +6608,11 @@ const Store = () => {
       const entityDataStore = (0, _kontra.getStoreItem)("entities");
       return entityDataStore ? entityDataStore.filter(ent => ent.type === type) : [];
     },
-    getEntityFromStore: id => {
+    getEntityFromStore: function getEntityFromStore(id) {
+      let customQuery = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "id";
       const entityDataStore = (0, _kontra.getStoreItem)("entities");
-      return entityDataStore && entityDataStore.length ? entityDataStore.find(e => e.id === id) : null;
+      console.log(entityDataStore);
+      return entityDataStore && entityDataStore.length ? entityDataStore.find(e => e[customQuery] === id) : null;
     }
   };
 };
@@ -9143,6 +9165,8 @@ var _mithril = _interopRequireDefault(require("mithril"));
 
 var _consts = require("../common/consts");
 
+var _helpers = require("../common/helpers");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 let mounted = false;
@@ -9153,9 +9177,20 @@ const Shell = (_ref) => {
   let {
     attrs
   } = _ref;
+  // TODO: May be better to do a query method in the store instead as it's more flexible.
   const itemsInStore = (0, _kontra.getStoreItem)("entities").filter(x => x.type === _consts.ENTITY_TYPE.PICKUP);
   const dataKey = "assets/gameData/entityData.json";
   const itemsInData = _kontra.dataAssets[dataKey];
+  const groupedItems = (0, _helpers.groupBy)(itemsInStore, "id");
+  const remapped = Object.entries(groupedItems).map((_ref2, i) => {
+    let [k, v] = _ref2;
+    console.log(k, v);
+    return {
+      id: k,
+      data: v,
+      qty: v.length
+    };
+  });
   return {
     oninit: () => mounted = true,
     onremove: () => mounted = false,
@@ -9165,13 +9200,13 @@ const Shell = (_ref) => {
       class: "dialogueBoxOuter"
     }, [(0, _mithril.default)("div", {
       class: "dialogue"
-    }, [itemsInStore.length ? (0, _mithril.default)("dl", {
+    }, [remapped.length ? (0, _mithril.default)("dl", {
       class: "itemListing"
-    }, itemsInStore.map(item => {
-      const data = itemsInData.find((_ref2) => {
+    }, remapped.map(item => {
+      const data = itemsInData.find((_ref3) => {
         let {
           id
-        } = _ref2;
+        } = _ref3;
         return id === item.id;
       });
       const qty = item ? item.qty : 0;
@@ -9202,7 +9237,7 @@ var _default = {
   unmount: () => _mithril.default.mount(document.getElementById("ui"), null)
 };
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","mithril":"node_modules/mithril/index.js","../common/consts":"src/common/consts.js"}],"src/ui/questlog.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","mithril":"node_modules/mithril/index.js","../common/consts":"src/common/consts.js","../common/helpers":"src/common/helpers.js"}],"src/ui/questlog.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -11451,27 +11486,18 @@ var _default = () => {
         aiPathGrid,
         player,
         sprites: entities.map(entity => {
-          // TODO: Tidy all this up
-
-          /* Check if entity exists in store as it may have been destroyed
-          or collected. TODO: Move the pickup check out of here, it's a bit
-          confusing alongside other field entity types. */
           const {
-            id
+            id,
+            customProperties
           } = entity;
+
+          const entityData = _store.default.getEntityData().find(ent => ent.id === id);
+
           let ent = null;
-
-          const entityData = _store.default.getEntityData().find(ent => ent.id === id); // if (entity.customProperties) {
-          //   store.pushProgress({
-          //     id: entity.id,
-          //     ...entity.customProperties
-          //   });
-          // }
-
 
           switch (entityData.type) {
             case _consts.ENTITY_TYPE.PICKUP:
-              const alreadyCollected = _store.default.getEntityFromStore(id);
+              const alreadyCollected = _store.default.getEntityFromStore(customProperties.worldId, "worldId");
 
               if (alreadyCollected) return null;
               ent = (0, _pickup.default)(_objectSpread(_objectSpread({}, entity), {}, {
@@ -11669,7 +11695,6 @@ const FieldScene = sceneProps => {
 
       const interactibleProgressData = _store.default.getProgressDataStore().find(i => i.props.entityId === interactible.id);
 
-      console.log(interactibleProgressData);
       if (!Object.keys(customProperties).length) return;
 
       if (customProperties.triggerConvo) {
@@ -11693,7 +11718,7 @@ const FieldScene = sceneProps => {
       let actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
       interactible.ttl = 0;
 
-      _store.default.updateEntityData(interactible);
+      _store.default.updatePickupData(interactible);
     }
   }]); // TODO: Can we please not have to pass everything in like this? It's a bit too coupled.
 
@@ -11839,7 +11864,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53473" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53787" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

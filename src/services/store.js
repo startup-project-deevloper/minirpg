@@ -65,26 +65,12 @@ const Store = () => {
 
       setStoreItem("quests", [...currentQuests, d]);
     },
-    updateEntityData: updatedEntity => {
-      const { id, type, ttl } = updatedEntity;
-      const existingEntities = getStoreItem("entities");
-      const existingEntity = existingEntities
-        ? existingEntities.find(x => x.id === id)
-        : null;
-
-      setStoreItem(
-        "entities",
-        existingEntities
-          ? existingEntities.filter(ent => ent.id !== id).concat([
-              {
-                id,
-                type,
-                ttl,
-                qty: existingEntity ? existingEntity.qty + 1 : 1
-              }
-            ])
-          : [{ id, type, ttl, qty: 1 }]
-      );
+    updatePickupData: updatedEntity => {
+      const { customProperties, id, type, ttl } = updatedEntity;
+      setStoreItem("entities", [
+        ...getStoreItem("entities"),
+        { worldId: customProperties.worldId, id, type, ttl }
+      ]);
     },
     getMapData: mapKey => dataAssets[mapKey],
     getWorldData: () => dataAssets[worldDataKey],
@@ -98,10 +84,11 @@ const Store = () => {
         ? entityDataStore.filter(ent => ent.type === type)
         : [];
     },
-    getEntityFromStore: id => {
+    getEntityFromStore: (id, customQuery = "id") => {
       const entityDataStore = getStoreItem("entities");
+      console.log(entityDataStore);
       return entityDataStore && entityDataStore.length
-        ? entityDataStore.find(e => e.id === id)
+        ? entityDataStore.find(e => e[customQuery] === id)
         : null;
     }
   };

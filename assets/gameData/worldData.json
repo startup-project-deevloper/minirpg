@@ -106,19 +106,25 @@
         "x": 110,
         "y": 148,
         "id": "potion",
-        "customProperties": {}
+        "customProperties": {
+          "worldId": "area2_pickup_110_148"
+        }
       },
       {
         "x": 128,
         "y": 136,
         "id": "potion",
-        "customProperties": {}
+        "customProperties": {
+          "worldId": "area2_pickup_128_136"
+        }
       },
       {
         "x": 146,
         "y": 148,
         "id": "potion",
-        "customProperties": {}
+        "customProperties": {
+          "worldId": "area2_pickup_146_148"
+        }
       }
     ]
   },

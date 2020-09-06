@@ -71,26 +71,17 @@ export default () => {
         player,
         sprites: entities
           .map(entity => {
-            // TODO: Tidy all this up
-            /* Check if entity exists in store as it may have been destroyed
-            or collected. TODO: Move the pickup check out of here, it's a bit
-            confusing alongside other field entity types. */
-            const { id } = entity;
+            const { id, customProperties } = entity;
+            const entityData = store.getEntityData().find(ent => ent.id === id);
 
             let ent = null;
 
-            const entityData = store.getEntityData().find(ent => ent.id === id);
-
-            // if (entity.customProperties) {
-            //   store.pushProgress({
-            //     id: entity.id,
-            //     ...entity.customProperties
-            //   });
-            // }
-
             switch (entityData.type) {
               case ENTITY_TYPE.PICKUP:
-                const alreadyCollected = store.getEntityFromStore(id);
+                const alreadyCollected = store.getEntityFromStore(
+                  customProperties.worldId,
+                  "worldId"
+                );
                 if (alreadyCollected) return null;
                 ent = Pickup({
                   ...entity,

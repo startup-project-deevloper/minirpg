@@ -129,8 +129,6 @@ const FieldScene = sceneProps => {
           .getProgressDataStore()
           .find(i => i.props.entityId === interactible.id);
 
-        console.log(interactibleProgressData)
-
         if (!Object.keys(customProperties).length) return;
 
         if (customProperties.triggerConvo) {
@@ -160,7 +158,7 @@ const FieldScene = sceneProps => {
       type: ENTITY_TYPE.PICKUP,
       reactionEvent: (interactible, actors = []) => {
         interactible.ttl = 0;
-        store.updateEntityData(interactible);
+        store.updatePickupData(interactible);
       }
     }
   ]);
