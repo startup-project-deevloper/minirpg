@@ -129,6 +129,8 @@ const FieldScene = sceneProps => {
           .getProgressDataStore()
           .find(i => i.props.entityId === interactible.id);
 
+        console.log(interactibleProgressData)
+
         if (!Object.keys(customProperties).length) return;
 
         if (customProperties.triggerConvo) {

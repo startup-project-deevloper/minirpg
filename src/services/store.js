@@ -31,6 +31,9 @@ const Store = () => {
         x => x.props.entityId === updated.props.entityId
       );
 
+      console.log("============>");
+      console.log(progressData, updated, entryExists);
+
       if (!entryExists) {
         setStoreItem("progressData", [...progressData, updated]);
         return;
@@ -39,10 +42,9 @@ const Store = () => {
       setStoreItem(
         "progressData",
         progressData.map(item => {
-          if (item.id === updated.props.entityId) {
+          if (item.props.entityId === updated.props.entityId) {
             return {
-              ...item,
-              triggerConvo: updated.props.id
+              ...updated
             };
           }
           return item;

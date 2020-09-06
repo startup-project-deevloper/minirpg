@@ -6528,6 +6528,8 @@ const Store = () => {
       // TODO: This all might break down if NPC is in multiple places, be careful.
       const progressData = (0, _kontra.getStoreItem)("progressData");
       const entryExists = progressData.some(x => x.props.entityId === updated.props.entityId);
+      console.log("============>");
+      console.log(progressData, updated, entryExists);
 
       if (!entryExists) {
         (0, _kontra.setStoreItem)("progressData", [...progressData, updated]);
@@ -6535,10 +6537,8 @@ const Store = () => {
       }
 
       (0, _kontra.setStoreItem)("progressData", progressData.map(item => {
-        if (item.id === updated.props.entityId) {
-          return _objectSpread(_objectSpread({}, item), {}, {
-            triggerConvo: updated.props.id
-          });
+        if (item.props.entityId === updated.props.entityId) {
+          return _objectSpread({}, updated);
         }
 
         return item;
@@ -11669,6 +11669,7 @@ const FieldScene = sceneProps => {
 
       const interactibleProgressData = _store.default.getProgressDataStore().find(i => i.props.entityId === interactible.id);
 
+      console.log(interactibleProgressData);
       if (!Object.keys(customProperties).length) return;
 
       if (customProperties.triggerConvo) {
@@ -11838,7 +11839,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51266" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53473" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
