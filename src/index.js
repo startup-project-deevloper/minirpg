@@ -266,6 +266,10 @@ load(
   "assets/gameData/worldData.json",
   "assets/gameData/questData.json"
 ).then(assets => {
+  // Optional
+  store.resetEntityStates();
+
+  // Init
   initKeys();
 
   /// Note: There's now a scene manager in kontra that can be used

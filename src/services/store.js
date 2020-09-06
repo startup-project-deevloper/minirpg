@@ -12,6 +12,7 @@ const Store = () => {
       console.log("Entity states were reset.");
       setStoreItem("entities", []);
       setStoreItem("quests", []);
+      setStoreItem("progressData", []);
     },
     pushProgress: item => {
       const existing = getStoreItem("progressData");
