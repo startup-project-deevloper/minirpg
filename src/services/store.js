@@ -1,4 +1,5 @@
 import { dataAssets, setStoreItem, getStoreItem } from "kontra";
+import { emit, EV_ITEMOBTAINED } from "../common/events";
 
 const Store = () => {
   console.info("Initialized store.");
@@ -73,6 +74,8 @@ const Store = () => {
         ...existing,
         { worldId: customProperties.worldId, id, type, ttl }
       ]);
+
+      emit(EV_ITEMOBTAINED, updatedEntity);
     },
     getMapData: mapKey => dataAssets[mapKey],
     getWorldData: () => dataAssets[worldDataKey],

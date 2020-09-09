@@ -6299,7 +6299,7 @@ exports.default = _default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.emit = exports.allOff = exports.off = exports.on = exports.EV_GIVEQUEST = exports.EV_UPDATECONVOTRIGGER = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
+exports.emit = exports.allOff = exports.off = exports.on = exports.EV_ITEMOBTAINED = exports.EV_GIVEQUEST = exports.EV_UPDATECONVOTRIGGER = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
 
 var _kontra = require("kontra");
 
@@ -6319,6 +6319,8 @@ const EV_UPDATECONVOTRIGGER = "ev.onUpdateConvoTrigger";
 exports.EV_UPDATECONVOTRIGGER = EV_UPDATECONVOTRIGGER;
 const EV_GIVEQUEST = "ev.onGiveQuest";
 exports.EV_GIVEQUEST = EV_GIVEQUEST;
+const EV_ITEMOBTAINED = "ev.onItemObtained";
+exports.EV_ITEMOBTAINED = EV_ITEMOBTAINED;
 let registry = {};
 
 const on = (e, fn) => {
@@ -6521,6 +6523,8 @@ exports.default = void 0;
 
 var _kontra = require("kontra");
 
+var _events = require("../common/events");
+
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
@@ -6599,6 +6603,7 @@ const Store = () => {
         type,
         ttl
       }]);
+      (0, _events.emit)(_events.EV_ITEMOBTAINED, updatedEntity);
     },
     getMapData: mapKey => _kontra.dataAssets[mapKey],
     getWorldData: () => _kontra.dataAssets[worldDataKey],
@@ -6621,7 +6626,7 @@ const Store = () => {
 var _default = Store();
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs"}],"node_modules/mithril/render/vnode.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../common/events":"src/common/events.js"}],"node_modules/mithril/render/vnode.js":[function(require,module,exports) {
 "use strict"
 
 function Vnode(tag, key, attrs, children, text, dom) {
@@ -11460,6 +11465,7 @@ var _default = (_ref) => {
     collisionBodyOptions,
     collidesWithPlayer,
     manualAnimation,
+    isOpen: () => opened,
     open: () => {
       if (opened) return;
       sprite.playAnimation("open");
@@ -11740,7 +11746,13 @@ ctx.oImageSmoothingEnabled = false;
 /* Primary field scene */
 
 const FieldScene = sceneProps => {
+  ///////////////
+  (0, _events.on)(_events.EV_ITEMOBTAINED, item => {
+    console.log("Say something about the item.", item);
+  }); ///////////////
+
   /* World creation (can we not have entities just in store, it's a bit confusing) */
+
   const {
     createWorld
   } = (0, _worldManager.default)();
@@ -11826,10 +11838,25 @@ const FieldScene = sceneProps => {
     type: _consts.ENTITY_TYPE.CHEST,
     reactionEvent: function reactionEvent(interactible) {
       let actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-      console.log("This is a chest.", interactible);
-      interactible.open();
+      if (interactible.isOpen()) return;
+      const {
+        customProperties
+      } = interactible;
 
-      _store.default.updatePickupData(interactible);
+      if (customProperties && customProperties.containsPickupId) {
+        console.log("This is a chest.", interactible);
+
+        const itemToAdd = _store.default.getEntityData().find(x => x.id === customProperties.containsPickupId);
+
+        _store.default.updatePickupData({
+          customProperties,
+          id: itemToAdd.id,
+          ttl: interactible.ttl,
+          type: itemToAdd.type
+        });
+
+        interactible.open();
+      }
     }
   }]); // TODO: Can we please not have to pass everything in like this? It's a bit too coupled.
 
@@ -11942,8 +11969,8 @@ TODO: Can we also const the dataKeys across the board plz. */
   */
 
   sceneManager.loadScene({
-    areaId: "area1",
-    playerStartId: "area1_entrance"
+    areaId: "area3",
+    playerStartId: "area3_entrance"
   });
   (0, _events.on)(_events.EV_SCENECHANGE, props => sceneManager.loadScene(_objectSpread({}, props)));
 });
@@ -11975,7 +12002,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59618" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59118" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

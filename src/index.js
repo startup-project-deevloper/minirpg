@@ -17,7 +17,8 @@ import {
   emit,
   EV_SCENECHANGE,
   EV_UPDATECONVOTRIGGER,
-  EV_GIVEQUEST
+  EV_GIVEQUEST,
+  EV_ITEMOBTAINED
 } from "./common/events";
 
 /* Store services */
@@ -76,6 +77,13 @@ ctx.oImageSmoothingEnabled = false;
 
 /* Primary field scene */
 const FieldScene = sceneProps => {
+
+///////////////
+on(EV_ITEMOBTAINED, (item) => {
+  console.log("Say something about the item.", item);
+})
+///////////////
+
   /* World creation (can we not have entities just in store, it's a bit confusing) */
   const { createWorld } = WorldManager();
   const { sprites, player, tileEngine } = createWorld(sceneProps);
@@ -165,9 +173,26 @@ const FieldScene = sceneProps => {
     {
       type: ENTITY_TYPE.CHEST,
       reactionEvent: (interactible, actors = []) => {
-        console.log("This is a chest.", interactible);
-        interactible.open();
-        store.updatePickupData(interactible);
+        if (interactible.isOpen()) return;
+
+        const { customProperties } = interactible;
+
+        if (customProperties && customProperties.containsPickupId) {
+          console.log("This is a chest.", interactible);
+
+          const itemToAdd = store
+            .getEntityData()
+            .find(x => x.id === customProperties.containsPickupId);
+
+          store.updatePickupData({
+            customProperties,
+            id: itemToAdd.id,
+            ttl: interactible.ttl,
+            type: itemToAdd.type
+          });
+
+          interactible.open();
+        }
       }
     }
   ]);
@@ -312,7 +337,7 @@ load(
   so long as you specify the right id for it. That being said, you do have to make sure
   both of them exist in the same context, otherwise you'll never get access to it.
   */
-  sceneManager.loadScene({ areaId: "area1", playerStartId: "area1_entrance" });
+  sceneManager.loadScene({ areaId: "area3", playerStartId: "area3_entrance" });
 
   on(EV_SCENECHANGE, props => sceneManager.loadScene({ ...props }));
 });

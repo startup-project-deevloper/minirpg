@@ -156,7 +156,7 @@
         "id": "chest",
         "customProperties": {
           "worldId": "area3_chest_136_129",
-          "containsPickupId": null
+          "containsPickupId": "potion"
         }
       }
     ]

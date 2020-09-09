@@ -57,6 +57,7 @@ export default ({
     collisionBodyOptions,
     collidesWithPlayer,
     manualAnimation,
+    isOpen: () => opened,
     open: () => {
       if (opened) return;
 
