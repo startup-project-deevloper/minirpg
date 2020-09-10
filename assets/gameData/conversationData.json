@@ -1,5 +1,16 @@
 [
     {
+        "id": "static.itemObtained",
+        "actor": null,
+        "from": null,
+        "to": null,
+        "text": "{0} obtained!",
+        "choices": [],
+        "actions": [
+            "endConversation"
+        ]
+    },
+    {
         "id": "area2.bob.m1",
         "actor": "bob",
         "from": null,

@@ -6353,7 +6353,7 @@ exports.emit = emit;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.debug = exports.groupBy = exports.Queue = exports.getRandomIntInclusive = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.getNormal = exports.between = exports.uniqueId = void 0;
+exports.debug = exports.findReplaceString = exports.groupBy = exports.Queue = exports.getRandomIntInclusive = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.getNormal = exports.between = exports.uniqueId = void 0;
 
 var _events = require("../common/events");
 
@@ -6488,8 +6488,26 @@ const groupBy = function groupBy(arr, criteria) {
     return obj;
   }, {});
 };
+/**
+* Format double braced template string 
+* @param {string} string
+* @param {string} find 
+* @param {string} replace
+* @returns {string}
+*/
+
 
 exports.groupBy = groupBy;
+
+const findReplaceString = (string, find, replace) => {
+  if (/[a-zA-Z\_]+/g.test(string)) {
+    return string.replace(new RegExp("{{(?:\\s+)?(" + find + ")(?:\\s+)?}}"), replace);
+  } else {
+    throw new Error("Find statement does not match regular expression: /[a-zA-Z_]+/");
+  }
+};
+
+exports.findReplaceString = findReplaceString;
 
 const debug = o => {
   console.info(o);
@@ -9056,6 +9074,8 @@ var _kontra = require("kontra");
 
 var _dialogue = _interopRequireDefault(require("../ui/dialogue"));
 
+var _helpers = require("../common/helpers");
+
 var _events = require("../common/events");
 
 var _conversationIterator = _interopRequireWildcard(require("../common/conversationIterator"));
@@ -9076,6 +9096,7 @@ var _default = (_ref) => {
   let {
     id,
     startId,
+    stringVars = [],
     onEntry = () => {},
     onExit = () => {}
   } = _ref;
@@ -9103,9 +9124,12 @@ var _default = (_ref) => {
       text,
       choices
     } = _ref2;
-    return _dialogue.default.callText({
+    // TODO: Doesn't yet deal with multiple literals
+    const modified = stringVars.length ? text.replace(/\[(.+?)\]/g, "{" + stringVars[0] + "}") : text.replace(/\[(.+?)\]/g, "{" + stringVars[0] + "}");
+
+    _dialogue.default.callText({
       name,
-      text,
+      text: modified,
       choices
     });
   };
@@ -9157,7 +9181,7 @@ var _default = (_ref) => {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","../ui/dialogue":"src/ui/dialogue.js","../common/events":"src/common/events.js","../common/conversationIterator":"src/common/conversationIterator.js","../input/onPush":"src/input/onPush.js"}],"src/ui/inventory.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../ui/dialogue":"src/ui/dialogue.js","../common/helpers":"src/common/helpers.js","../common/events":"src/common/events.js","../common/conversationIterator":"src/common/conversationIterator.js","../input/onPush":"src/input/onPush.js"}],"src/ui/inventory.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -11302,6 +11326,8 @@ var _default = (_ref) => {
       // Push an internal state for damage effect (whatever that's going to be)
       console.log(id);
     },
+    onConvoEnter: () => {},
+    onConvoExit: () => {},
     update: () => {
       // Static entities may still have anims so add them in later.
       // Anim code...
@@ -11385,6 +11411,8 @@ var _default = (_ref) => {
       // Push an internal state for damage effect (whatever that's going to be)
       console.log(id);
     },
+    onConvoEnter: () => {},
+    onConvoExit: () => {},
     update: () => {
       // Static entities may still have anims so add them in later.
       // Anim code...
@@ -11475,6 +11503,8 @@ var _default = (_ref) => {
       // Push an internal state for damage effect (whatever that's going to be)
       console.log(id);
     },
+    onConvoEnter: () => {},
+    onConvoExit: () => {},
     update: () => {
       // Static entities may still have anims so add them in later.
       // Anim code...
@@ -11746,13 +11776,7 @@ ctx.oImageSmoothingEnabled = false;
 /* Primary field scene */
 
 const FieldScene = sceneProps => {
-  ///////////////
-  (0, _events.on)(_events.EV_ITEMOBTAINED, item => {
-    console.log("Say something about the item.", item);
-  }); ///////////////
-
   /* World creation (can we not have entities just in store, it's a bit confusing) */
-
   const {
     createWorld
   } = (0, _worldManager.default)();
@@ -11856,6 +11880,13 @@ const FieldScene = sceneProps => {
         });
 
         interactible.open();
+        player.onConvoEnter();
+        sceneStateMachine.push((0, _startConvoState.default)({
+          startId: "static.itemObtained",
+          // TODO: Const this perhaps.
+          stringvars: [itemToAdd.name],
+          onExit: () => actors.map(spr => spr.onConvoExit())
+        }));
       }
     }
   }]); // TODO: Can we please not have to pass everything in like this? It's a bit too coupled.
@@ -12002,7 +12033,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59118" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56791" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

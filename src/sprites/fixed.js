@@ -59,6 +59,8 @@ export default ({
       // Push an internal state for damage effect (whatever that's going to be)
       console.log(id);
     },
+    onConvoEnter: () => {},
+    onConvoExit: () => {},
     update: () => {
       // Static entities may still have anims so add them in later.
       // Anim code...

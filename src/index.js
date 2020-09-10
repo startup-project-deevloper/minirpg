@@ -17,8 +17,7 @@ import {
   emit,
   EV_SCENECHANGE,
   EV_UPDATECONVOTRIGGER,
-  EV_GIVEQUEST,
-  EV_ITEMOBTAINED
+  EV_GIVEQUEST
 } from "./common/events";
 
 /* Store services */
@@ -77,13 +76,6 @@ ctx.oImageSmoothingEnabled = false;
 
 /* Primary field scene */
 const FieldScene = sceneProps => {
-
-///////////////
-on(EV_ITEMOBTAINED, (item) => {
-  console.log("Say something about the item.", item);
-})
-///////////////
-
   /* World creation (can we not have entities just in store, it's a bit confusing) */
   const { createWorld } = WorldManager();
   const { sprites, player, tileEngine } = createWorld(sceneProps);
@@ -192,6 +184,16 @@ on(EV_ITEMOBTAINED, (item) => {
           });
 
           interactible.open();
+
+          player.onConvoEnter();
+
+          sceneStateMachine.push(
+            startConvo({
+              startId: "static.itemObtained", // TODO: Const this perhaps.
+              stringvars: [itemToAdd.name],
+              onExit: () => actors.map(spr => spr.onConvoExit())
+            })
+          );
         }
       }
     }
