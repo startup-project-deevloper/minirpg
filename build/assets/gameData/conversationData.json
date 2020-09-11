@@ -11,6 +11,28 @@
         ]
     },
     {
+        "id": "static.chestUnlocked",
+        "actor": null,
+        "from": null,
+        "to": null,
+        "text": "Unlocked chest using {0}!",
+        "choices": [],
+        "actions": [
+            "endConversation"
+        ]
+    },
+    {
+        "id": "static.isLocked",
+        "actor": null,
+        "from": null,
+        "to": null,
+        "text": "It's locked.",
+        "choices": [],
+        "actions": [
+            "endConversation"
+        ]
+    },
+    {
         "id": "area2.bob.m1",
         "actor": "bob",
         "from": null,
@@ -30,17 +52,17 @@
         "choices": [],
         "dataActions": [
             {
-                "id": "giveKey",
+                "id": "giveItem",
                 "props": {
                     "itemId": "key",
-                    "unlocks": "area3_chest_136_129"
+                    "opensChest": "area3_chest_136_129"
                 }
             },
             {
                 "id": "updateQuest",
                 "props": {
-                    "questId": "bobsBoots",
-                    "questPart": 2
+                    "id": "bobsBoots",
+                    "questIndex": 1
                 }
             },
             {
@@ -156,8 +178,8 @@
             {
                 "id": "giveQuest",
                 "props": {
-                    "questId": "bobsBoots",
-                    "questPart": 1
+                    "id": "bobsBoots",
+                    "questIndex": 0
                 }
             },
             {

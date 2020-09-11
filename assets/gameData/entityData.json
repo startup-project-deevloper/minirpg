@@ -111,6 +111,25 @@
     }
   },
   {
+    "id": "darylsBoots",
+    "name": "Daryls Boots",
+    "description": "Daryl's missing boots that they were asking for.",
+    "type": 2,
+    "sheet": "assets/tileimages/test.png",
+    "thumb": "assets/entityimages/grass-tile.png",
+    "frameWidth": 16,
+    "frameHeight": 16,
+    "collisionBodyOptions": null,
+    "manualAnimation": false,
+    "collidesWithPlayer": true,
+    "animations": {
+      "idle": {
+        "frames": [89],
+        "frameRate": 1
+      }
+    }
+  },
+  {
     "id": "chest",
     "name": "Chest",
     "description": "Usually something inside.",

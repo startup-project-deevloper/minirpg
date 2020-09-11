@@ -29,11 +29,8 @@ const Store = () => {
       // TODO: This all might break down if NPC is in multiple places, be careful.
       const progressData = getStoreItem("progressData");
       const entryExists = progressData.some(
-        x => x.props.entityId === updated.props.entityId
+        x => x.entityId === updated.entityId
       );
-
-      console.log("============>");
-      console.log(progressData, updated, entryExists);
 
       if (!entryExists) {
         setStoreItem("progressData", [...progressData, updated]);
@@ -43,7 +40,7 @@ const Store = () => {
       setStoreItem(
         "progressData",
         progressData.map(item => {
-          if (item.props.entityId === updated.props.entityId) {
+          if (item.entityId === updated.entityId) {
             return {
               ...updated
             };
@@ -52,19 +49,47 @@ const Store = () => {
         })
       );
     },
-    updateQuestData: d => {
+    addQuestData: d => {
       const currentQuests = getStoreItem("quests");
+      const existingQuest = currentQuests.find(x => x.id === d.id) || null;
+
 
       if (!currentQuests) {
         setStoreItem("quests", [d]);
         return;
       }
 
-      if (currentQuests.find(x => x.id === d.id)) {
-        throw new Error("You should not push the same quest data twice.");
+      if (existingQuest) {
+        throw new Error("You should not push the same quest twice.");
       }
 
       setStoreItem("quests", [...currentQuests, d]);
+    },
+    updateQuestData: d => {
+      const currentQuests = getStoreItem("quests");
+      const existingQuest = currentQuests.find(x => x.id === d.id) || null;
+
+      if (!currentQuests) {
+        throw new Error("Tried pushing quest to non-existent data.");
+      }
+
+      if (existingQuest && existingQuest.questIndex === d.questIndex) {
+        throw new Error(
+          "You should not push the same quest or part data twice."
+        );
+      }
+
+      if (existingQuest) {
+        setStoreItem("quests", [
+          ...currentQuests.filter(x => x.id !== existingQuest.id),
+          {
+            ...existingQuest,
+            questIndex: d.questIndex
+          }
+        ]);
+      } else {
+        throw new Error("Nothing was updated.");
+      }
     },
     updatePickupData: updatedEntity => {
       const existing = getStoreItem("entities") || [];
@@ -75,7 +100,10 @@ const Store = () => {
         { worldId: customProperties.worldId, id, type, ttl }
       ]);
 
-      emit(EV_ITEMOBTAINED, updatedEntity);
+      console.log("Pickups updated:", getStoreItem("entities"));
+
+      // Causes major issues if you're listening elsewhere too.
+      //emit(EV_ITEMOBTAINED, updatedEntity);
     },
     getMapData: mapKey => dataAssets[mapKey],
     getWorldData: () => dataAssets[worldDataKey],

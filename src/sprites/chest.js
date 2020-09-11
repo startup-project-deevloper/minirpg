@@ -38,6 +38,7 @@ export default ({
   });
 
   let opened = false;
+  let isLocked = customProperties.startsLocked || false;
 
   /* Id should really be named 'class' since its re-used. */
   const sprite = Sprite({
@@ -58,8 +59,10 @@ export default ({
     collidesWithPlayer,
     manualAnimation,
     isOpen: () => opened,
+    isLocked: () => isLocked,
+    unlock: () => (isLocked = false),
     open: () => {
-      if (opened) return;
+      if (opened || isLocked) return;
 
       sprite.playAnimation("open");
       opened = true;

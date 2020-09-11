@@ -4,8 +4,12 @@
         "name": "Bob's Boots",
         "parts": [
             {
-                "index": 1,
+                "index": 0,
                 "description": "Daryl wants you to get their boots from Bob."
+            },
+            {
+                "index": 1,
+                "description": "Bob mentioned that Daryl's boots are in the basement."
             }
         ]
     }

@@ -1,6 +1,12 @@
 // TODO: Ensure you're definitely calling allOff and no events are hanging on
 // at load or scene change.
-import { emit, EV_UPDATECONVOTRIGGER, EV_GIVEQUEST } from "./events";
+import {
+  emit,
+  EV_UPDATECONVOTRIGGER,
+  EV_GIVEQUEST,
+  EV_UPDATEQUEST,
+  EV_ITEMOBTAINED
+} from "./events";
 
 export const MODES = {
   NOTRUNNING: 100,
@@ -8,15 +14,15 @@ export const MODES = {
   AWAITINGINPUT: 300,
   JUSTFINISHED: 400,
   COMPLETED: 500
-}
+};
 
 export default ({
   conversationData,
-  onChatStarted = (node, props) => { },
-  onChatNext = (node, props) => { },
-  onChatComplete = lastPositionSaved => { },
-  onChainProgress = lastNodeId => { },
-  onChatCancelled = () => { }
+  onChatStarted = (node, props) => {},
+  onChatNext = (node, props) => {},
+  onChatComplete = lastPositionSaved => {},
+  onChainProgress = lastNodeId => {},
+  onChatCancelled = () => {}
 }) => {
   let index = 0;
   let currentNode = conversationData[index];
@@ -68,9 +74,10 @@ export default ({
 
   const goToNext = (props = {}) => {
     // We need to run this 'after' the finish so it avoids chained exec on exit.
-    if (!isRunning) return {
-      mode: MODES.NOTRUNNING
-    };
+    if (!isRunning)
+      return {
+        mode: MODES.NOTRUNNING
+      };
 
     if (isComplete) {
       isRunning = false;
@@ -84,10 +91,11 @@ export default ({
     const { id, to, choices, actions, dataActions } = currentNode;
 
     // Wait if choices are presented.
-    if (choices.length) return {
-      ...currentNode,
-      mode: MODES.AWAITINGINPUT
-    }
+    if (choices.length)
+      return {
+        ...currentNode,
+        mode: MODES.AWAITINGINPUT
+      };
 
     // TODO: Consts please.
     if (
@@ -103,26 +111,32 @@ export default ({
       }
 
       if (dataActions && dataActions.length) {
-        dataActions.forEach(d => {
+        dataActions.forEach(({ id, props }) => {
           // TODO: Might be best to use a 'type' rather than id
-          switch(d.id) {
+          switch (id) {
+            case "giveItem":
+              emit(EV_ITEMOBTAINED, props);
+              break;
             case "giveQuest":
-              emit(EV_GIVEQUEST, d);
+              emit(EV_GIVEQUEST, props);
+              break;
+            case "updateQuest":
+              emit(EV_UPDATEQUEST, props);
               break;
             case "updateConvoTrigger":
-              emit(EV_UPDATECONVOTRIGGER, d);
+              emit(EV_UPDATECONVOTRIGGER, props);
               break;
           }
-        })
+        });
       }
 
       isComplete = true;
       onChatComplete(id);
-      console.log("End reached, close the convo.");
+      // console.log("End reached, close the convo.");
       return {
         ...currentNode,
         mode: MODES.JUSTFINISHED
-      }
+      };
     }
 
     return {

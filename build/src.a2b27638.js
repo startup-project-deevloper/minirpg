@@ -6299,7 +6299,7 @@ exports.default = _default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.emit = exports.allOff = exports.off = exports.on = exports.EV_ITEMOBTAINED = exports.EV_GIVEQUEST = exports.EV_UPDATECONVOTRIGGER = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
+exports.emit = exports.allOff = exports.off = exports.on = exports.EV_ITEMOBTAINED = exports.EV_UPDATEQUEST = exports.EV_GIVEQUEST = exports.EV_UPDATECONVOTRIGGER = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
 
 var _kontra = require("kontra");
 
@@ -6319,6 +6319,8 @@ const EV_UPDATECONVOTRIGGER = "ev.onUpdateConvoTrigger";
 exports.EV_UPDATECONVOTRIGGER = EV_UPDATECONVOTRIGGER;
 const EV_GIVEQUEST = "ev.onGiveQuest";
 exports.EV_GIVEQUEST = EV_GIVEQUEST;
+const EV_UPDATEQUEST = "ev.onUpdateQuest";
+exports.EV_UPDATEQUEST = EV_UPDATEQUEST;
 const EV_ITEMOBTAINED = "ev.onItemObtained";
 exports.EV_ITEMOBTAINED = EV_ITEMOBTAINED;
 let registry = {};
@@ -6576,9 +6578,7 @@ const Store = () => {
     updateProgress: updated => {
       // TODO: This all might break down if NPC is in multiple places, be careful.
       const progressData = (0, _kontra.getStoreItem)("progressData");
-      const entryExists = progressData.some(x => x.props.entityId === updated.props.entityId);
-      console.log("============>");
-      console.log(progressData, updated, entryExists);
+      const entryExists = progressData.some(x => x.entityId === updated.entityId);
 
       if (!entryExists) {
         (0, _kontra.setStoreItem)("progressData", [...progressData, updated]);
@@ -6586,26 +6586,47 @@ const Store = () => {
       }
 
       (0, _kontra.setStoreItem)("progressData", progressData.map(item => {
-        if (item.props.entityId === updated.props.entityId) {
+        if (item.entityId === updated.entityId) {
           return _objectSpread({}, updated);
         }
 
         return item;
       }));
     },
-    updateQuestData: d => {
+    addQuestData: d => {
       const currentQuests = (0, _kontra.getStoreItem)("quests");
+      const existingQuest = currentQuests.find(x => x.id === d.id) || null;
 
       if (!currentQuests) {
         (0, _kontra.setStoreItem)("quests", [d]);
         return;
       }
 
-      if (currentQuests.find(x => x.id === d.id)) {
-        throw new Error("You should not push the same quest data twice.");
+      if (existingQuest) {
+        throw new Error("You should not push the same quest twice.");
       }
 
       (0, _kontra.setStoreItem)("quests", [...currentQuests, d]);
+    },
+    updateQuestData: d => {
+      const currentQuests = (0, _kontra.getStoreItem)("quests");
+      const existingQuest = currentQuests.find(x => x.id === d.id) || null;
+
+      if (!currentQuests) {
+        throw new Error("Tried pushing quest to non-existent data.");
+      }
+
+      if (existingQuest && existingQuest.questIndex === d.questIndex) {
+        throw new Error("You should not push the same quest or part data twice.");
+      }
+
+      if (existingQuest) {
+        (0, _kontra.setStoreItem)("quests", [...currentQuests.filter(x => x.id !== existingQuest.id), _objectSpread(_objectSpread({}, existingQuest), {}, {
+          questIndex: d.questIndex
+        })]);
+      } else {
+        throw new Error("Nothing was updated.");
+      }
     },
     updatePickupData: updatedEntity => {
       const existing = (0, _kontra.getStoreItem)("entities") || [];
@@ -6621,7 +6642,8 @@ const Store = () => {
         type,
         ttl
       }]);
-      (0, _events.emit)(_events.EV_ITEMOBTAINED, updatedEntity);
+      console.log("Pickups updated:", (0, _kontra.getStoreItem)("entities")); // Causes major issues if you're listening elsewhere too.
+      //emit(EV_ITEMOBTAINED, updatedEntity);
     },
     getMapData: mapKey => _kontra.dataAssets[mapKey],
     getWorldData: () => _kontra.dataAssets[worldDataKey],
@@ -9000,23 +9022,36 @@ var _default = (_ref) => {
       }
 
       if (dataActions && dataActions.length) {
-        dataActions.forEach(d => {
+        dataActions.forEach((_ref2) => {
+          let {
+            id,
+            props
+          } = _ref2;
+
           // TODO: Might be best to use a 'type' rather than id
-          switch (d.id) {
+          switch (id) {
+            case "giveItem":
+              (0, _events.emit)(_events.EV_ITEMOBTAINED, props);
+              break;
+
             case "giveQuest":
-              (0, _events.emit)(_events.EV_GIVEQUEST, d);
+              (0, _events.emit)(_events.EV_GIVEQUEST, props);
+              break;
+
+            case "updateQuest":
+              (0, _events.emit)(_events.EV_UPDATEQUEST, props);
               break;
 
             case "updateConvoTrigger":
-              (0, _events.emit)(_events.EV_UPDATECONVOTRIGGER, d);
+              (0, _events.emit)(_events.EV_UPDATECONVOTRIGGER, props);
               break;
           }
         });
       }
 
       _isComplete = true;
-      onChatComplete(id);
-      console.log("End reached, close the convo.");
+      onChatComplete(id); // console.log("End reached, close the convo.");
+
       return _objectSpread(_objectSpread({}, currentNode), {}, {
         mode: MODES.JUSTFINISHED
       });
@@ -9303,21 +9338,20 @@ const Shell = (_ref) => {
       class: "dialogue"
     }, [questsInStore.length ? (0, _mithril.default)("dl", {
       class: "questListing"
-    }, questsInStore.map((_ref2) => {
-      let {
-        props
-      } = _ref2;
-      const data = questsInData.find((_ref3) => {
+    }, questsInStore.map(q => {
+      console.log(q);
+      const data = questsInData.find((_ref2) => {
         let {
           id
-        } = _ref3;
-        return id === props.questId;
-      });
-      const currentSegment = data.parts.find(p => p.index === props.questPart);
+        } = _ref2;
+        return id === q.id;
+      }); // TODO: Can we not do this, and instead just rely on the index from data?
+
+      const currentSegment = data.parts[q.questIndex];
       return (0, _mithril.default)("dd", {
         class: "questNode",
         onclick: () => attrs.onQuestSelected(data)
-      }, [(0, _mithril.default)("h4", data.name), (0, _mithril.default)("h5", currentSegment.description)]);
+      }, [(0, _mithril.default)("h4", data.name), (0, _mithril.default)("h5", currentSegment ? currentSegment.description : "No description.")]);
     })) : (0, _mithril.default)("p", "No quests."), (0, _mithril.default)("div", {
       class: "choiceWindow"
     }, (0, _mithril.default)("button", {
@@ -11471,7 +11505,10 @@ var _default = (_ref) => {
     animations
   });
   let opened = false;
+
+  let _isLocked = customProperties.startsLocked || false;
   /* Id should really be named 'class' since its re-used. */
+
 
   const sprite = (0, _kontra.Sprite)({
     instId: (0, _helpers.uniqueId)(id),
@@ -11494,8 +11531,10 @@ var _default = (_ref) => {
     collidesWithPlayer,
     manualAnimation,
     isOpen: () => opened,
+    isLocked: () => _isLocked,
+    unlock: () => _isLocked = false,
     open: () => {
-      if (opened) return;
+      if (opened || _isLocked) return;
       sprite.playAnimation("open");
       opened = true;
     },
@@ -11810,8 +11849,9 @@ const FieldScene = sceneProps => {
         ctx,
         direction: 1,
         onFadeComplete: () => {
-          // TODO: This needs testing properly. Events in general.
-          (0, _events.allOff)([_events.EV_SCENECHANGE, _events.EV_GIVEQUEST, _events.EV_UPDATECONVOTRIGGER]);
+          // TODO: This needs testing properly. Events in general do. The fact
+          // we bind them at the initializer means this allOff is a problem.
+          (0, _events.allOff)([_events.EV_SCENECHANGE, _events.EV_GIVEQUEST, _events.EV_UPDATEQUEST, _events.EV_UPDATECONVOTRIGGER]);
           /* Player start becomes part of the collider data so we attempt to use that. */
 
           (0, _events.emit)(_events.EV_SCENECHANGE, {
@@ -11831,14 +11871,14 @@ const FieldScene = sceneProps => {
       /* So we 'could' get the data from the sprite but it's too static. Instead
       we should use the lookup table and ask it for what we need. */
 
-      const interactibleProgressData = _store.default.getProgressDataStore().find(i => i.props.entityId === interactible.id);
+      const interactibleProgressData = _store.default.getProgressDataStore().find(i => i.entityId === interactible.id);
 
       if (!Object.keys(customProperties).length) return;
 
       if (customProperties.triggerConvo) {
         player.onConvoEnter();
         sceneStateMachine.push((0, _startConvoState.default)({
-          startId: interactibleProgressData !== undefined ? interactibleProgressData.props.id : customProperties.triggerConvo,
+          startId: interactibleProgressData !== undefined ? interactibleProgressData.id : customProperties.triggerConvo,
           onEntry: () => actors.filter(x => x.id !== "player").map(spr => {
             spr.onConvoEnter();
             spr.lookAt({
@@ -11874,7 +11914,43 @@ const FieldScene = sceneProps => {
       } = interactible;
 
       if (customProperties && customProperties.containsPickupId) {
-        console.log("This is a chest.", interactible);
+        if (interactible.isLocked()) {
+          if (_store.default.getEntityDataStore().find(x => x.customProperties.opensChest === customProperties.id)) {
+            interactible.unlock();
+            sceneStateMachine.push((0, _startConvoState.default)({
+              startId: "static.chestUnlocked",
+              // TODO: Const this perhaps.
+              onExit: () => {// actors.map(spr => spr.onConvoExit());
+                // const itemToAdd = store
+                //   .getEntityData()
+                //   .find(x => x.id === customProperties.containsPickupId);
+                // store.updatePickupData({
+                //   customProperties,
+                //   id: itemToAdd.id,
+                //   ttl: interactible.ttl,
+                //   type: itemToAdd.type
+                // });
+                // interactible.open();
+                // player.onConvoEnter();
+                // sceneStateMachine.push(
+                //   startConvo({
+                //     startId: "static.itemObtained", // TODO: Const this perhaps.
+                //     stringvars: [itemToAdd.name],
+                //     onExit: () => actors.map(spr => spr.onConvoExit())
+                //   })
+                // );
+              }
+            }));
+            return;
+          }
+
+          sceneStateMachine.push((0, _startConvoState.default)({
+            startId: "static.isLocked",
+            // TODO: Const this perhaps.
+            onExit: () => actors.map(spr => spr.onConvoExit())
+          }));
+          return;
+        }
 
         const itemToAdd = _store.default.getEntityData().find(x => x.id === customProperties.containsPickupId);
 
@@ -11895,7 +11971,27 @@ const FieldScene = sceneProps => {
         }));
       }
     }
-  }]); // TODO: Can we please not have to pass everything in like this? It's a bit too coupled.
+  }]); ////// EVENTS
+
+  (0, _events.on)(_events.EV_ITEMOBTAINED, d => {
+    const itemToAdd = _store.default.getEntityData().find(x => x.id === d.itemId);
+
+    _store.default.updatePickupData({
+      id: itemToAdd.id,
+      ttl: itemToAdd.ttl,
+      type: itemToAdd.type,
+      customProperties: _objectSpread({}, d)
+    }); // Doesn't seem to trigger after previous convo...
+
+
+    console.log("=========== v");
+    sceneStateMachine.push((0, _startConvoState.default)({
+      startId: "static.itemObtained",
+      // TODO: Const this perhaps.
+      stringvars: [itemToAdd.name],
+      onExit: () => actors.map(spr => spr.onConvoExit())
+    }));
+  }); // TODO: Can we please not have to pass everything in like this? It's a bit too coupled.
 
   /* Start game within FieldState */
 
@@ -11988,7 +12084,8 @@ TODO: Can we also const the dataKeys across the board plz. */
   Keep an eye on it anyway. */
 
 
-  (0, _events.on)(_events.EV_GIVEQUEST, d => _store.default.updateQuestData(d));
+  (0, _events.on)(_events.EV_GIVEQUEST, d => _store.default.addQuestData(d));
+  (0, _events.on)(_events.EV_UPDATEQUEST, d => _store.default.updateQuestData(d));
   (0, _events.on)(_events.EV_UPDATECONVOTRIGGER, d => _store.default.updateProgress(d)); // Init things
 
   (0, _kontra.initKeys)(); /// Note: There's now a scene manager in kontra that can be used
@@ -12006,8 +12103,8 @@ TODO: Can we also const the dataKeys across the board plz. */
   */
 
   sceneManager.loadScene({
-    areaId: "area3",
-    playerStartId: "area3_entrance"
+    areaId: "area1",
+    playerStartId: "area1_entrance"
   });
   (0, _events.on)(_events.EV_SCENECHANGE, props => sceneManager.loadScene(_objectSpread({}, props)));
 });
@@ -12039,7 +12136,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51046" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51680" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
