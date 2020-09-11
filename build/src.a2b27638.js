@@ -11862,6 +11862,12 @@ const FieldScene = sceneProps => {
     type: _consts.ENTITY_TYPE.CHEST,
     reactionEvent: function reactionEvent(interactible) {
       let actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+
+      /*
+      TODO: Going to make some adjustments here. So if a quest needs an item, it'll look
+      in the inventory rather than rely on being updated via the json data. This just decouples
+      it all more.
+      */
       if (interactible.isOpen()) return;
       const {
         customProperties
@@ -12033,7 +12039,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56791" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51046" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

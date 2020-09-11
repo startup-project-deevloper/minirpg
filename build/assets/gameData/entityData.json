@@ -213,5 +213,23 @@
         "frameRate": 1
       }
     }
+  },
+  {
+    "id": "key",
+    "name": "Key",
+    "description": "Opens something, somewhere.",
+    "type": 0,
+    "sheet": "assets/tileimages/test.png",
+    "frameWidth": 16,
+    "frameHeight": 16,
+    "collisionBodyOptions": null,
+    "manualAnimation": false,
+    "collidesWithPlayer": false,
+    "animations": {
+      "idle": {
+        "frames": [100],
+        "frameRate": 1
+      }
+    }
   }
 ]

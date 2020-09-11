@@ -165,6 +165,11 @@ const FieldScene = sceneProps => {
     {
       type: ENTITY_TYPE.CHEST,
       reactionEvent: (interactible, actors = []) => {
+        /*
+        TODO: Going to make some adjustments here. So if a quest needs an item, it'll look
+        in the inventory rather than rely on being updated via the json data. This just decouples
+        it all more.
+        */
         if (interactible.isOpen()) return;
 
         const { customProperties } = interactible;
