@@ -111,6 +111,48 @@
     }
   },
   {
+    "id": "darylsBoots",
+    "name": "Daryls Boots",
+    "description": "Daryl's missing boots that they were asking for.",
+    "type": 2,
+    "sheet": "assets/tileimages/test.png",
+    "thumb": "assets/entityimages/grass-tile.png",
+    "frameWidth": 16,
+    "frameHeight": 16,
+    "collisionBodyOptions": null,
+    "manualAnimation": false,
+    "collidesWithPlayer": true,
+    "animations": {
+      "idle": {
+        "frames": [89],
+        "frameRate": 1
+      }
+    }
+  },
+  {
+    "id": "chest",
+    "name": "Chest",
+    "description": "Usually something inside.",
+    "type": 4,
+    "sheet": "assets/tileimages/test.png",
+    "thumb": "assets/entityimages/grass-tile.png",
+    "frameWidth": 16,
+    "frameHeight": 16,
+    "collisionBodyOptions": null,
+    "manualAnimation": false,
+    "collidesWithPlayer": true,
+    "animations": {
+      "idle": {
+        "frames": [81],
+        "frameRate": 1
+      },
+      "open": {
+        "frames": [82],
+        "frameRate": 1
+      }
+    }
+  },
+  {
     "id": "door",
     "name": "Door",
     "description": "A door to another area.",
@@ -177,6 +219,24 @@
     "id": "battleMarker",
     "name": "Battle Marker",
     "description": "Used to indicate a point on the map where an entity can stand to attack.",
+    "type": 0,
+    "sheet": "assets/tileimages/test.png",
+    "frameWidth": 16,
+    "frameHeight": 16,
+    "collisionBodyOptions": null,
+    "manualAnimation": false,
+    "collidesWithPlayer": false,
+    "animations": {
+      "idle": {
+        "frames": [100],
+        "frameRate": 1
+      }
+    }
+  },
+  {
+    "id": "key",
+    "name": "Key",
+    "description": "Opens something, somewhere.",
     "type": 0,
     "sheet": "assets/tileimages/test.png",
     "frameWidth": 16,

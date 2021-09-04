@@ -37,6 +37,9 @@ export default ({
     animations
   });
 
+  let opened = false;
+  let isLocked = customProperties.startsLocked || false;
+
   /* Id should really be named 'class' since its re-used. */
   const sprite = Sprite({
     instId: uniqueId(id),
@@ -55,6 +58,15 @@ export default ({
     collisionBodyOptions,
     collidesWithPlayer,
     manualAnimation,
+    isOpen: () => opened,
+    isLocked: () => isLocked,
+    unlock: () => (isLocked = false),
+    open: () => {
+      if (opened || isLocked) return;
+
+      sprite.playAnimation("open");
+      opened = true;
+    },
     onAttacked: () => {
       // Push an internal state for damage effect (whatever that's going to be)
       console.log(id);

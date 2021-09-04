@@ -8,6 +8,8 @@ export const EV_SCENECHANGE = "ev.sceneChange";
 export const EV_INTERACTION = "ev.onInteraction";
 export const EV_UPDATECONVOTRIGGER = "ev.onUpdateConvoTrigger";
 export const EV_GIVEQUEST = "ev.onGiveQuest";
+export const EV_UPDATEQUEST = "ev.onUpdateQuest";
+export const EV_ITEMOBTAINED = "ev.onItemObtained";
 
 let registry = {};
 

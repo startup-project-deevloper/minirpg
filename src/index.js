@@ -17,7 +17,9 @@ import {
   emit,
   EV_SCENECHANGE,
   EV_UPDATECONVOTRIGGER,
-  EV_GIVEQUEST
+  EV_GIVEQUEST,
+  EV_UPDATEQUEST,
+  EV_ITEMOBTAINED
 } from "./common/events";
 
 /* Store services */
@@ -106,8 +108,14 @@ const FieldScene = sceneProps => {
             ctx,
             direction: 1,
             onFadeComplete: () => {
-              // TODO: This needs testing properly. Events in general.
-              allOff([EV_SCENECHANGE, EV_GIVEQUEST, EV_UPDATECONVOTRIGGER]);
+              // TODO: This needs testing properly. Events in general do. The fact
+              // we bind them at the initializer means this allOff is a problem.
+              allOff([
+                EV_SCENECHANGE,
+                EV_GIVEQUEST,
+                EV_UPDATEQUEST,
+                EV_UPDATECONVOTRIGGER
+              ]);
               /* Player start becomes part of the collider data so we attempt to use that. */
               emit(EV_SCENECHANGE, {
                 areaId: interactible.customProperties.goesTo,
@@ -127,7 +135,7 @@ const FieldScene = sceneProps => {
         we should use the lookup table and ask it for what we need. */
         const interactibleProgressData = store
           .getProgressDataStore()
-          .find(i => i.props.entityId === interactible.id);
+          .find(i => i.entityId === interactible.id);
 
         if (!Object.keys(customProperties).length) return;
 
@@ -136,9 +144,10 @@ const FieldScene = sceneProps => {
 
           sceneStateMachine.push(
             startConvo({
-              startId: interactibleProgressData !== undefined
-                ? interactibleProgressData.props.id
-                : customProperties.triggerConvo,
+              startId:
+                interactibleProgressData !== undefined
+                  ? interactibleProgressData.id
+                  : customProperties.triggerConvo,
 
               onEntry: () =>
                 actors.filter(x => x.id !== "player").map(spr => {
@@ -160,8 +169,120 @@ const FieldScene = sceneProps => {
         interactible.ttl = 0;
         store.updatePickupData(interactible);
       }
+    },
+    {
+      type: ENTITY_TYPE.CHEST,
+      reactionEvent: (interactible, actors = []) => {
+        /*
+        TODO: Going to make some adjustments here. So if a quest needs an item, it'll look
+        in the inventory rather than rely on being updated via the json data. This just decouples
+        it all more.
+        */
+        if (interactible.isOpen()) return;
+
+        const { customProperties } = interactible;
+
+        if (customProperties && customProperties.containsPickupId) {
+          if (interactible.isLocked()) {
+            if (
+              store
+                .getEntityDataStore()
+                .find(
+                  x => x.customProperties.opensChest === customProperties.id
+                )
+            ) {
+              interactible.unlock();
+
+              sceneStateMachine.push(
+                startConvo({
+                  startId: "static.chestUnlocked", // TODO: Const this perhaps.
+                  onExit: () => {
+                    // actors.map(spr => spr.onConvoExit());
+                    // const itemToAdd = store
+                    //   .getEntityData()
+                    //   .find(x => x.id === customProperties.containsPickupId);
+                    // store.updatePickupData({
+                    //   customProperties,
+                    //   id: itemToAdd.id,
+                    //   ttl: interactible.ttl,
+                    //   type: itemToAdd.type
+                    // });
+                    // interactible.open();
+                    // player.onConvoEnter();
+                    // sceneStateMachine.push(
+                    //   startConvo({
+                    //     startId: "static.itemObtained", // TODO: Const this perhaps.
+                    //     stringvars: [itemToAdd.name],
+                    //     onExit: () => actors.map(spr => spr.onConvoExit())
+                    //   })
+                    // );
+                  }
+                })
+              );
+
+              return;
+            }
+
+            sceneStateMachine.push(
+              startConvo({
+                startId: "static.isLocked", // TODO: Const this perhaps.
+                onExit: () => actors.map(spr => spr.onConvoExit())
+              })
+            );
+
+            return;
+          }
+
+          const itemToAdd = store
+            .getEntityData()
+            .find(x => x.id === customProperties.containsPickupId);
+
+          store.updatePickupData({
+            customProperties,
+            id: itemToAdd.id,
+            ttl: interactible.ttl,
+            type: itemToAdd.type
+          });
+
+          interactible.open();
+
+          player.onConvoEnter();
+
+          sceneStateMachine.push(
+            startConvo({
+              startId: "static.itemObtained", // TODO: Const this perhaps.
+              stringvars: [itemToAdd.name],
+              onExit: () => actors.map(spr => spr.onConvoExit())
+            })
+          );
+        }
+      }
     }
   ]);
+
+  ////// EVENTS
+  on(EV_ITEMOBTAINED, d => {
+    const itemToAdd = store.getEntityData().find(x => x.id === d.itemId);
+
+    store.updatePickupData({
+      id: itemToAdd.id,
+      ttl: itemToAdd.ttl,
+      type: itemToAdd.type,
+      customProperties: {
+        ...d
+      }
+    });
+    
+    // Doesn't seem to trigger after previous convo...
+    console.log("=========== v");
+    sceneStateMachine.push(
+      startConvo({
+        startId: "static.itemObtained", // TODO: Const this perhaps.
+        stringvars: [itemToAdd.name],
+        onExit: () => actors.map(spr => spr.onConvoExit())
+      })
+    );
+  });
 
   // TODO: Can we please not have to pass everything in like this? It's a bit too coupled.
   /* Start game within FieldState */
@@ -286,9 +407,10 @@ load(
   /* I'm not 100% sure if an integrity check needs to be done to make sure
   the right convo is loaded. As it technically the data should be fairly pristine.
   Keep an eye on it anyway. */
-  on(EV_GIVEQUEST, d => store.updateQuestData(d));
+  on(EV_GIVEQUEST, d => store.addQuestData(d));
+  on(EV_UPDATEQUEST, d => store.updateQuestData(d));
   on(EV_UPDATECONVOTRIGGER, d => store.updateProgress(d));
-
+ 
   // Init things
   initKeys();
 

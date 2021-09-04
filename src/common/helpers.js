@@ -121,6 +121,26 @@ export const groupBy = function(arr, criteria) {
   }, {});
 };
 
+/**
+* Format double braced template string 
+* @param {string} string
+* @param {string} find 
+* @param {string} replace
+* @returns {string}
+*/
+export const findReplaceString = (string, find, replace) => {
+  if (/[a-zA-Z\_]+/g.test(string)) {
+    return string.replace(
+      new RegExp("{{(?:\\s+)?(" + find + ")(?:\\s+)?}}"),
+      replace
+    );
+  } else {
+    throw new Error(
+      "Find statement does not match regular expression: /[a-zA-Z_]+/"
+    );
+  }
+};
+
 export const debug = o => {
   console.info(o);
   emit(EV_DEBUGLOG, o);

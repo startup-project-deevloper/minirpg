@@ -1,10 +1,43 @@
 [
     {
+        "id": "static.itemObtained",
+        "actor": null,
+        "from": null,
+        "to": null,
+        "text": "{0} obtained!",
+        "choices": [],
+        "actions": [
+            "endConversation"
+        ]
+    },
+    {
+        "id": "static.chestUnlocked",
+        "actor": null,
+        "from": null,
+        "to": null,
+        "text": "Unlocked chest using {0}!",
+        "choices": [],
+        "actions": [
+            "endConversation"
+        ]
+    },
+    {
+        "id": "static.isLocked",
+        "actor": null,
+        "from": null,
+        "to": null,
+        "text": "It's locked.",
+        "choices": [],
+        "actions": [
+            "endConversation"
+        ]
+    },
+    {
         "id": "area2.bob.m1",
         "actor": "bob",
         "from": null,
         "to": null,
-        "text": "Can't talk right now. Busy.",
+        "text": "I'm busy, leave me alone pal.",
         "choices": [],
         "actions": [
             "endConversation"
@@ -15,7 +48,41 @@
         "actor": "bob",
         "from": null,
         "to": null,
-        "text": "I do have Daryl's boots. But you haven't updated the quest data yet so this is the end of the current quest chain.",
+        "text": "Daryl's boots? Yeah they're in the basement. Here's the key for the chest.",
+        "choices": [],
+        "dataActions": [
+            {
+                "id": "giveItem",
+                "props": {
+                    "itemId": "key",
+                    "opensChest": "area3_chest_136_129"
+                }
+            },
+            {
+                "id": "updateQuest",
+                "props": {
+                    "id": "bobsBoots",
+                    "questIndex": 1
+                }
+            },
+            {
+                "id": "updateConvoTrigger",
+                "props": {
+                    "entityId": "bob",
+                    "id": "area2.bob.m3"
+                }
+            }
+        ],
+        "actions": [
+            "endConversation"
+        ]
+    },
+    {
+        "id": "area2.bob.m3",
+        "actor": "bob",
+        "from": null,
+        "to": null,
+        "text": "Look, pal, you have what you need. Leave me alone will ya?",
         "choices": [],
         "actions": [
             "endConversation"
@@ -111,8 +178,8 @@
             {
                 "id": "giveQuest",
                 "props": {
-                    "questId": "bobsBoots",
-                    "questPart": 1
+                    "id": "bobsBoots",
+                    "questIndex": 0
                 }
             },
             {

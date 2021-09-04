@@ -6299,7 +6299,7 @@ exports.default = _default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.emit = exports.allOff = exports.off = exports.on = exports.EV_GIVEQUEST = exports.EV_UPDATECONVOTRIGGER = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
+exports.emit = exports.allOff = exports.off = exports.on = exports.EV_ITEMOBTAINED = exports.EV_UPDATEQUEST = exports.EV_GIVEQUEST = exports.EV_UPDATECONVOTRIGGER = exports.EV_INTERACTION = exports.EV_SCENECHANGE = exports.EV_CONVOCHOICE = exports.EV_CONVONEXT = exports.EV_CONVOEND = exports.EV_CONVOSTART = void 0;
 
 var _kontra = require("kontra");
 
@@ -6319,6 +6319,10 @@ const EV_UPDATECONVOTRIGGER = "ev.onUpdateConvoTrigger";
 exports.EV_UPDATECONVOTRIGGER = EV_UPDATECONVOTRIGGER;
 const EV_GIVEQUEST = "ev.onGiveQuest";
 exports.EV_GIVEQUEST = EV_GIVEQUEST;
+const EV_UPDATEQUEST = "ev.onUpdateQuest";
+exports.EV_UPDATEQUEST = EV_UPDATEQUEST;
+const EV_ITEMOBTAINED = "ev.onItemObtained";
+exports.EV_ITEMOBTAINED = EV_ITEMOBTAINED;
 let registry = {};
 
 const on = (e, fn) => {
@@ -6351,7 +6355,7 @@ exports.emit = emit;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.debug = exports.groupBy = exports.Queue = exports.getRandomIntInclusive = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.getNormal = exports.between = exports.uniqueId = void 0;
+exports.debug = exports.findReplaceString = exports.groupBy = exports.Queue = exports.getRandomIntInclusive = exports.circleCollision = exports.sortByDist = exports.dist = exports.vmulti = exports.getNormal = exports.between = exports.uniqueId = void 0;
 
 var _events = require("../common/events");
 
@@ -6486,8 +6490,26 @@ const groupBy = function groupBy(arr, criteria) {
     return obj;
   }, {});
 };
+/**
+* Format double braced template string 
+* @param {string} string
+* @param {string} find 
+* @param {string} replace
+* @returns {string}
+*/
+
 
 exports.groupBy = groupBy;
+
+const findReplaceString = (string, find, replace) => {
+  if (/[a-zA-Z\_]+/g.test(string)) {
+    return string.replace(new RegExp("{{(?:\\s+)?(" + find + ")(?:\\s+)?}}"), replace);
+  } else {
+    throw new Error("Find statement does not match regular expression: /[a-zA-Z_]+/");
+  }
+};
+
+exports.findReplaceString = findReplaceString;
 
 const debug = o => {
   console.info(o);
@@ -6507,6 +6529,7 @@ const ENTITY_TYPE = {
   NPC: 1,
   PICKUP: 2,
   DOOR: 3,
+  CHEST: 4,
   PLAYER: 99
 };
 exports.ENTITY_TYPE = ENTITY_TYPE;
@@ -6519,6 +6542,8 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = void 0;
 
 var _kontra = require("kontra");
+
+var _events = require("../common/events");
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
@@ -6553,9 +6578,7 @@ const Store = () => {
     updateProgress: updated => {
       // TODO: This all might break down if NPC is in multiple places, be careful.
       const progressData = (0, _kontra.getStoreItem)("progressData");
-      const entryExists = progressData.some(x => x.props.entityId === updated.props.entityId);
-      console.log("============>");
-      console.log(progressData, updated, entryExists);
+      const entryExists = progressData.some(x => x.entityId === updated.entityId);
 
       if (!entryExists) {
         (0, _kontra.setStoreItem)("progressData", [...progressData, updated]);
@@ -6563,40 +6586,64 @@ const Store = () => {
       }
 
       (0, _kontra.setStoreItem)("progressData", progressData.map(item => {
-        if (item.props.entityId === updated.props.entityId) {
+        if (item.entityId === updated.entityId) {
           return _objectSpread({}, updated);
         }
 
         return item;
       }));
     },
-    updateQuestData: d => {
+    addQuestData: d => {
       const currentQuests = (0, _kontra.getStoreItem)("quests");
+      const existingQuest = currentQuests.find(x => x.id === d.id) || null;
 
       if (!currentQuests) {
         (0, _kontra.setStoreItem)("quests", [d]);
         return;
       }
 
-      if (currentQuests.find(x => x.id === d.id)) {
-        throw new Error("You should not push the same quest data twice.");
+      if (existingQuest) {
+        throw new Error("You should not push the same quest twice.");
       }
 
       (0, _kontra.setStoreItem)("quests", [...currentQuests, d]);
     },
+    updateQuestData: d => {
+      const currentQuests = (0, _kontra.getStoreItem)("quests");
+      const existingQuest = currentQuests.find(x => x.id === d.id) || null;
+
+      if (!currentQuests) {
+        throw new Error("Tried pushing quest to non-existent data.");
+      }
+
+      if (existingQuest && existingQuest.questIndex === d.questIndex) {
+        throw new Error("You should not push the same quest or part data twice.");
+      }
+
+      if (existingQuest) {
+        (0, _kontra.setStoreItem)("quests", [...currentQuests.filter(x => x.id !== existingQuest.id), _objectSpread(_objectSpread({}, existingQuest), {}, {
+          questIndex: d.questIndex
+        })]);
+      } else {
+        throw new Error("Nothing was updated.");
+      }
+    },
     updatePickupData: updatedEntity => {
+      const existing = (0, _kontra.getStoreItem)("entities") || [];
       const {
         customProperties,
         id,
         type,
         ttl
       } = updatedEntity;
-      (0, _kontra.setStoreItem)("entities", [...(0, _kontra.getStoreItem)("entities"), {
+      (0, _kontra.setStoreItem)("entities", [...existing, {
         worldId: customProperties.worldId,
         id,
         type,
         ttl
       }]);
+      console.log("Pickups updated:", (0, _kontra.getStoreItem)("entities")); // Causes major issues if you're listening elsewhere too.
+      //emit(EV_ITEMOBTAINED, updatedEntity);
     },
     getMapData: mapKey => _kontra.dataAssets[mapKey],
     getWorldData: () => _kontra.dataAssets[worldDataKey],
@@ -6611,7 +6658,6 @@ const Store = () => {
     getEntityFromStore: function getEntityFromStore(id) {
       let customQuery = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "id";
       const entityDataStore = (0, _kontra.getStoreItem)("entities");
-      console.log(entityDataStore);
       return entityDataStore && entityDataStore.length ? entityDataStore.find(e => e[customQuery] === id) : null;
     }
   };
@@ -6620,7 +6666,7 @@ const Store = () => {
 var _default = Store();
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs"}],"node_modules/mithril/render/vnode.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../common/events":"src/common/events.js"}],"node_modules/mithril/render/vnode.js":[function(require,module,exports) {
 "use strict"
 
 function Vnode(tag, key, attrs, children, text, dom) {
@@ -8976,23 +9022,36 @@ var _default = (_ref) => {
       }
 
       if (dataActions && dataActions.length) {
-        dataActions.forEach(d => {
+        dataActions.forEach((_ref2) => {
+          let {
+            id,
+            props
+          } = _ref2;
+
           // TODO: Might be best to use a 'type' rather than id
-          switch (d.id) {
+          switch (id) {
+            case "giveItem":
+              (0, _events.emit)(_events.EV_ITEMOBTAINED, props);
+              break;
+
             case "giveQuest":
-              (0, _events.emit)(_events.EV_GIVEQUEST, d);
+              (0, _events.emit)(_events.EV_GIVEQUEST, props);
+              break;
+
+            case "updateQuest":
+              (0, _events.emit)(_events.EV_UPDATEQUEST, props);
               break;
 
             case "updateConvoTrigger":
-              (0, _events.emit)(_events.EV_UPDATECONVOTRIGGER, d);
+              (0, _events.emit)(_events.EV_UPDATECONVOTRIGGER, props);
               break;
           }
         });
       }
 
       _isComplete = true;
-      onChatComplete(id);
-      console.log("End reached, close the convo.");
+      onChatComplete(id); // console.log("End reached, close the convo.");
+
       return _objectSpread(_objectSpread({}, currentNode), {}, {
         mode: MODES.JUSTFINISHED
       });
@@ -9050,6 +9109,8 @@ var _kontra = require("kontra");
 
 var _dialogue = _interopRequireDefault(require("../ui/dialogue"));
 
+var _helpers = require("../common/helpers");
+
 var _events = require("../common/events");
 
 var _conversationIterator = _interopRequireWildcard(require("../common/conversationIterator"));
@@ -9070,6 +9131,7 @@ var _default = (_ref) => {
   let {
     id,
     startId,
+    stringVars = [],
     onEntry = () => {},
     onExit = () => {}
   } = _ref;
@@ -9097,9 +9159,12 @@ var _default = (_ref) => {
       text,
       choices
     } = _ref2;
-    return _dialogue.default.callText({
+    // TODO: Doesn't yet deal with multiple literals
+    const modified = stringVars.length ? text.replace(/\[(.+?)\]/g, "{" + stringVars[0] + "}") : text.replace(/\[(.+?)\]/g, "{" + stringVars[0] + "}");
+
+    _dialogue.default.callText({
       name,
-      text,
+      text: modified,
       choices
     });
   };
@@ -9151,7 +9216,7 @@ var _default = (_ref) => {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","../ui/dialogue":"src/ui/dialogue.js","../common/events":"src/common/events.js","../common/conversationIterator":"src/common/conversationIterator.js","../input/onPush":"src/input/onPush.js"}],"src/ui/inventory.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../ui/dialogue":"src/ui/dialogue.js","../common/helpers":"src/common/helpers.js","../common/events":"src/common/events.js","../common/conversationIterator":"src/common/conversationIterator.js","../input/onPush":"src/input/onPush.js"}],"src/ui/inventory.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9273,21 +9338,20 @@ const Shell = (_ref) => {
       class: "dialogue"
     }, [questsInStore.length ? (0, _mithril.default)("dl", {
       class: "questListing"
-    }, questsInStore.map((_ref2) => {
-      let {
-        props
-      } = _ref2;
-      const data = questsInData.find((_ref3) => {
+    }, questsInStore.map(q => {
+      console.log(q);
+      const data = questsInData.find((_ref2) => {
         let {
           id
-        } = _ref3;
-        return id === props.questId;
-      });
-      const currentSegment = data.parts.find(p => p.index === props.questPart);
+        } = _ref2;
+        return id === q.id;
+      }); // TODO: Can we not do this, and instead just rely on the index from data?
+
+      const currentSegment = data.parts[q.questIndex];
       return (0, _mithril.default)("dd", {
         class: "questNode",
         onclick: () => attrs.onQuestSelected(data)
-      }, [(0, _mithril.default)("h4", data.name), (0, _mithril.default)("h5", currentSegment.description)]);
+      }, [(0, _mithril.default)("h4", data.name), (0, _mithril.default)("h5", currentSegment ? currentSegment.description : "No description.")]);
     })) : (0, _mithril.default)("p", "No quests."), (0, _mithril.default)("div", {
       class: "choiceWindow"
     }, (0, _mithril.default)("button", {
@@ -11296,6 +11360,8 @@ var _default = (_ref) => {
       // Push an internal state for damage effect (whatever that's going to be)
       console.log(id);
     },
+    onConvoEnter: () => {},
+    onConvoExit: () => {},
     update: () => {
       // Static entities may still have anims so add them in later.
       // Anim code...
@@ -11379,6 +11445,105 @@ var _default = (_ref) => {
       // Push an internal state for damage effect (whatever that's going to be)
       console.log(id);
     },
+    onConvoEnter: () => {},
+    onConvoExit: () => {},
+    update: () => {
+      // Static entities may still have anims so add them in later.
+      // Anim code...
+      // Call this to ensure animations are player
+      sprite.advance();
+    }
+  });
+  return sprite;
+};
+
+exports.default = _default;
+},{"../common/helpers":"src/common/helpers.js","kontra":"node_modules/kontra/kontra.mjs"}],"src/sprites/chest.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _helpers = require("../common/helpers");
+
+var _kontra = require("kontra");
+
+var _default = (_ref) => {
+  let {
+    id,
+    x,
+    y,
+    z = 1,
+    customProperties = {},
+    entityData = null,
+    collisionMethod = (layer, sprite) => {}
+  } = _ref;
+
+  if (!id) {
+    throw new Error("Entity is fairly useless without an id, you should add one.");
+  }
+
+  const {
+    name,
+    type,
+    animations,
+    frameWidth,
+    frameHeight,
+    sheet,
+    collisionBodyOptions = null,
+    manualAnimation = false,
+    controlledByUser = false,
+    collidesWithTiles = true,
+    collidesWithPlayer = true
+  } = entityData;
+  let spriteSheet = (0, _kontra.SpriteSheet)({
+    image: _kontra.imageAssets[sheet],
+    frameWidth,
+    frameHeight,
+    animations
+  });
+  let opened = false;
+
+  let _isLocked = customProperties.startsLocked || false;
+  /* Id should really be named 'class' since its re-used. */
+
+
+  const sprite = (0, _kontra.Sprite)({
+    instId: (0, _helpers.uniqueId)(id),
+    id,
+    type,
+    name,
+    x,
+    y,
+    z,
+    anchor: {
+      x: 0.5,
+      y: 0.5
+    },
+    customProperties,
+    radius: 1,
+    animations: spriteSheet.animations,
+    collidesWithTiles,
+    controlledByUser,
+    collisionBodyOptions,
+    collidesWithPlayer,
+    manualAnimation,
+    isOpen: () => opened,
+    isLocked: () => _isLocked,
+    unlock: () => _isLocked = false,
+    open: () => {
+      if (opened || _isLocked) return;
+      sprite.playAnimation("open");
+      opened = true;
+    },
+    onAttacked: () => {
+      // Push an internal state for damage effect (whatever that's going to be)
+      console.log(id);
+    },
+    onConvoEnter: () => {},
+    onConvoExit: () => {},
     update: () => {
       // Static entities may still have anims so add them in later.
       // Anim code...
@@ -11400,6 +11565,10 @@ exports.default = void 0;
 
 var _kontra = require("kontra");
 
+var _consts = require("../common/consts");
+
+var _store = _interopRequireDefault(require("../services/store"));
+
 var _player = _interopRequireDefault(require("../sprites/player"));
 
 var _npc = _interopRequireDefault(require("../sprites/npc"));
@@ -11408,9 +11577,7 @@ var _fixed = _interopRequireDefault(require("../sprites/fixed"));
 
 var _pickup = _interopRequireDefault(require("../sprites/pickup"));
 
-var _consts = require("../common/consts");
-
-var _store = _interopRequireDefault(require("../services/store"));
+var _chest = _interopRequireDefault(require("../sprites/chest"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -11506,6 +11673,16 @@ var _default = () => {
               }));
               break;
 
+            case _consts.ENTITY_TYPE.CHEST:
+              const alreadyOpened = _store.default.getEntityFromStore(customProperties.worldId, "worldId");
+
+              ent = (0, _chest.default)(_objectSpread(_objectSpread({}, entity), {}, {
+                entityData,
+                collisionMethod: (layer, sprite) => tileEngine.layerCollidesWith(layer, sprite)
+              }));
+              if (alreadyOpened) ent.open();
+              break;
+
             case _consts.ENTITY_TYPE.NPC:
               ent = (0, _npc.default)(_objectSpread(_objectSpread({}, entity), {}, {
                 entityData,
@@ -11544,7 +11721,7 @@ var _default = () => {
 };
 
 exports.default = _default;
-},{"kontra":"node_modules/kontra/kontra.mjs","../sprites/player":"src/sprites/player.js","../sprites/npc":"src/sprites/npc.js","../sprites/fixed":"src/sprites/fixed.js","../sprites/pickup":"src/sprites/pickup.js","../common/consts":"src/common/consts.js","../services/store":"src/services/store.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
+},{"kontra":"node_modules/kontra/kontra.mjs","../common/consts":"src/common/consts.js","../services/store":"src/services/store.js","../sprites/player":"src/sprites/player.js","../sprites/npc":"src/sprites/npc.js","../sprites/fixed":"src/sprites/fixed.js","../sprites/pickup":"src/sprites/pickup.js","../sprites/chest":"src/sprites/chest.js"}],"src/managers/reactionManager.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -11672,8 +11849,9 @@ const FieldScene = sceneProps => {
         ctx,
         direction: 1,
         onFadeComplete: () => {
-          // TODO: This needs testing properly. Events in general.
-          (0, _events.allOff)([_events.EV_SCENECHANGE, _events.EV_GIVEQUEST, _events.EV_UPDATECONVOTRIGGER]);
+          // TODO: This needs testing properly. Events in general do. The fact
+          // we bind them at the initializer means this allOff is a problem.
+          (0, _events.allOff)([_events.EV_SCENECHANGE, _events.EV_GIVEQUEST, _events.EV_UPDATEQUEST, _events.EV_UPDATECONVOTRIGGER]);
           /* Player start becomes part of the collider data so we attempt to use that. */
 
           (0, _events.emit)(_events.EV_SCENECHANGE, {
@@ -11693,14 +11871,14 @@ const FieldScene = sceneProps => {
       /* So we 'could' get the data from the sprite but it's too static. Instead
       we should use the lookup table and ask it for what we need. */
 
-      const interactibleProgressData = _store.default.getProgressDataStore().find(i => i.props.entityId === interactible.id);
+      const interactibleProgressData = _store.default.getProgressDataStore().find(i => i.entityId === interactible.id);
 
       if (!Object.keys(customProperties).length) return;
 
       if (customProperties.triggerConvo) {
         player.onConvoEnter();
         sceneStateMachine.push((0, _startConvoState.default)({
-          startId: interactibleProgressData !== undefined ? interactibleProgressData.props.id : customProperties.triggerConvo,
+          startId: interactibleProgressData !== undefined ? interactibleProgressData.id : customProperties.triggerConvo,
           onEntry: () => actors.filter(x => x.id !== "player").map(spr => {
             spr.onConvoEnter();
             spr.lookAt({
@@ -11720,7 +11898,100 @@ const FieldScene = sceneProps => {
 
       _store.default.updatePickupData(interactible);
     }
-  }]); // TODO: Can we please not have to pass everything in like this? It's a bit too coupled.
+  }, {
+    type: _consts.ENTITY_TYPE.CHEST,
+    reactionEvent: function reactionEvent(interactible) {
+      let actors = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+
+      /*
+      TODO: Going to make some adjustments here. So if a quest needs an item, it'll look
+      in the inventory rather than rely on being updated via the json data. This just decouples
+      it all more.
+      */
+      if (interactible.isOpen()) return;
+      const {
+        customProperties
+      } = interactible;
+
+      if (customProperties && customProperties.containsPickupId) {
+        if (interactible.isLocked()) {
+          if (_store.default.getEntityDataStore().find(x => x.customProperties.opensChest === customProperties.id)) {
+            interactible.unlock();
+            sceneStateMachine.push((0, _startConvoState.default)({
+              startId: "static.chestUnlocked",
+              // TODO: Const this perhaps.
+              onExit: () => {// actors.map(spr => spr.onConvoExit());
+                // const itemToAdd = store
+                //   .getEntityData()
+                //   .find(x => x.id === customProperties.containsPickupId);
+                // store.updatePickupData({
+                //   customProperties,
+                //   id: itemToAdd.id,
+                //   ttl: interactible.ttl,
+                //   type: itemToAdd.type
+                // });
+                // interactible.open();
+                // player.onConvoEnter();
+                // sceneStateMachine.push(
+                //   startConvo({
+                //     startId: "static.itemObtained", // TODO: Const this perhaps.
+                //     stringvars: [itemToAdd.name],
+                //     onExit: () => actors.map(spr => spr.onConvoExit())
+                //   })
+                // );
+              }
+            }));
+            return;
+          }
+
+          sceneStateMachine.push((0, _startConvoState.default)({
+            startId: "static.isLocked",
+            // TODO: Const this perhaps.
+            onExit: () => actors.map(spr => spr.onConvoExit())
+          }));
+          return;
+        }
+
+        const itemToAdd = _store.default.getEntityData().find(x => x.id === customProperties.containsPickupId);
+
+        _store.default.updatePickupData({
+          customProperties,
+          id: itemToAdd.id,
+          ttl: interactible.ttl,
+          type: itemToAdd.type
+        });
+
+        interactible.open();
+        player.onConvoEnter();
+        sceneStateMachine.push((0, _startConvoState.default)({
+          startId: "static.itemObtained",
+          // TODO: Const this perhaps.
+          stringvars: [itemToAdd.name],
+          onExit: () => actors.map(spr => spr.onConvoExit())
+        }));
+      }
+    }
+  }]); ////// EVENTS
+
+  (0, _events.on)(_events.EV_ITEMOBTAINED, d => {
+    const itemToAdd = _store.default.getEntityData().find(x => x.id === d.itemId);
+
+    _store.default.updatePickupData({
+      id: itemToAdd.id,
+      ttl: itemToAdd.ttl,
+      type: itemToAdd.type,
+      customProperties: _objectSpread({}, d)
+    }); // Doesn't seem to trigger after previous convo...
+
+
+    console.log("=========== v");
+    sceneStateMachine.push((0, _startConvoState.default)({
+      startId: "static.itemObtained",
+      // TODO: Const this perhaps.
+      stringvars: [itemToAdd.name],
+      onExit: () => actors.map(spr => spr.onConvoExit())
+    }));
+  }); // TODO: Can we please not have to pass everything in like this? It's a bit too coupled.
 
   /* Start game within FieldState */
 
@@ -11813,7 +12084,8 @@ TODO: Can we also const the dataKeys across the board plz. */
   Keep an eye on it anyway. */
 
 
-  (0, _events.on)(_events.EV_GIVEQUEST, d => _store.default.updateQuestData(d));
+  (0, _events.on)(_events.EV_GIVEQUEST, d => _store.default.addQuestData(d));
+  (0, _events.on)(_events.EV_UPDATEQUEST, d => _store.default.updateQuestData(d));
   (0, _events.on)(_events.EV_UPDATECONVOTRIGGER, d => _store.default.updateProgress(d)); // Init things
 
   (0, _kontra.initKeys)(); /// Note: There's now a scene manager in kontra that can be used
@@ -11864,7 +12136,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53787" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50646" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

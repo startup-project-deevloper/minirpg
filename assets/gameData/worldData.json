@@ -5,7 +5,7 @@
     "entities": [
       {
         "x": 120,
-        "y": 180,
+        "y": 96,
         "id": "daryl",
         "customProperties": {
           "triggerConvo": "area1.daryl.m1"
@@ -148,6 +148,16 @@
         "id": "entrance",
         "customProperties": {
           "playerStartId": "area3_entrance"
+        }
+      },
+      {
+        "x": 136,
+        "y": 129,
+        "id": "chest",
+        "customProperties": {
+          "worldId": "area3_chest_136_129",
+          "containsPickupId": "darylsBoots",
+          "startsLocked": true
         }
       }
     ]

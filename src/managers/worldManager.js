@@ -1,10 +1,11 @@
 import { TileEngine } from "kontra";
+import { ENTITY_TYPE } from "../common/consts";
+import store from "../services/store";
 import Player from "../sprites/player";
 import Npc from "../sprites/npc";
 import Fixed from "../sprites/fixed";
 import Pickup from "../sprites/pickup";
-import { ENTITY_TYPE } from "../common/consts";
-import store from "../services/store";
+import Chest from "../sprites/chest";
 
 export default () => {
   // TODO: I think it's time to move entity and quest stuff out of world manager.
@@ -89,6 +90,19 @@ export default () => {
                   collisionMethod: (layer, sprite) =>
                     tileEngine.layerCollidesWith(layer, sprite)
                 });
+                break;
+              case ENTITY_TYPE.CHEST:
+                const alreadyOpened = store.getEntityFromStore(
+                  customProperties.worldId,
+                  "worldId"
+                );
+                ent = Chest({
+                  ...entity,
+                  entityData,
+                  collisionMethod: (layer, sprite) =>
+                    tileEngine.layerCollidesWith(layer, sprite)
+                });
+                if (alreadyOpened) ent.open();
                 break;
               case ENTITY_TYPE.NPC:
                 ent = Npc({
